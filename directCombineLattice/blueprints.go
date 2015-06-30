@@ -2,28 +2,33 @@ package directCombineLattice
 
 type ID uint32
 
-type ProcSet map[ID]bool
-
 type Blueprint struct {
-	Add ProcSet
-	Rem ProcSet
+	Add map[ID]bool
+	Rem map[ID]bool
 }
 
-func (A ProcSet) union(B ProcSet) ProcSet {
+func union(A, B map[ID]bool) (C map[ID]bool) {
+	C = make( map[ID]bool, len(A))
 	for id := range B {
-		A[id] = true
+		C[id] = true
 	}
-	return A
-}
-/*
-func (A map[ID]bool) difference(B map[ID]bool) map[ID]bool {
-	for id := range B {
-		delete(A, id)
+	for id := range A {
+		C[id] = true
 	}
-	return A
+	return C
 }
 
-func (A *map[ID]bool) in(B *map[ID]bool) bool {
+func difference(A, B map[ID]bool) (C map[ID]bool) {
+	C = make( map[ID]bool, len(A))
+	for id := range A {
+		if ok, _ := B[id]; !ok {
+			C[id]=true
+		}
+	}
+	return C
+}
+
+func subset(A, B map[ID]bool) bool {
 	for id := range A {
 		if ok, _ := B[id]; !ok {
 			return false
@@ -33,21 +38,24 @@ func (A *map[ID]bool) in(B *map[ID]bool) bool {
 }
 
 func (bp *Blueprint) Merge(blpr Blueprint) (mbp Blueprint) {
-	mbp.Rem = bp.Rem.union(blpr.Rem)
-	mbp.Add = bp.Add.union(blpr.Add).difference(mbp.Rem)
+	mbp.Rem = union(bp.Rem,blpr.Rem)
+	mbp.Add = difference(union(bp.Add,blpr.Add),mbp.Rem)
 	return mbp
 }
 
 // a.Compare b = 1 <=> a <= b
 // a.Compare b = -1 <=> b < a
 // a.Compare b = 0 <=> !(b <= a) && !(a <= b)
-func (bp *Blueprint) Compare(blpr *Blueprint) int {
-	if bp.Add.in(blpr.Add) && pb.Rem.in(blpr.Rem) {
+func (bp Blueprint) Compare(blpr Blueprint) int {
+	if subset( bp.Add, union( blpr.Add, blpr.Rem)) && subset( bp.Rem, blpr.Rem) {
 		return 1
 	}
-	if blpr.Add.in(bp.Add) && plbr.Rem.in(bp.Rem) {
+	if subset( blpr.Add, union( bp.Rem, bp.Add)) && subset( blpr.Rem, bp.Rem) {
 		return -1
 	}
 	return 0
 }
-*/
+
+func (bp Blueprint) Equals( blpr Blueprint) bool {
+	return bp.Compare(blpr) == 1 && blpr.Compare(bp) == 1
+}

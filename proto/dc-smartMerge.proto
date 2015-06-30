@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package proto;
+
+service Register {
+	rpc ReadS(ReadRequest) returns (State) {} 
+	rpc WriteS(State) returns (WriteReply) {}
+	rpc ReadN(ReadNRequest) returns (ReadNReply) {}
+	rpc WriteN(Blueprint) returns (WriteNAck) {}
+}
+
+message State {
+	bytes Value = 1;
+	int64 Timestamp = 2;
+}
+
+message WriteReply {
+	bool New = 1;
+}
+
+message ReadRequest {}
+
+message ReadNRequest {}
+	
+message WriteNAck {}
+
+message Blueprint {
+	repeated uint32 Add = 1;
+	repeated uint32 Rem = 2;
+} 
+
+message ReadNReply {
+	repeated Blueprint Next =1;
+}

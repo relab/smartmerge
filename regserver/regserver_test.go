@@ -7,6 +7,7 @@ import (
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 	lat "github.com/relab/smartMerge/directCombineLattice"
+	"google.golang.org/grpc"
 )
 
 var ctx = context.Background()
@@ -81,5 +82,28 @@ func TestWriteReadS(t *testing.T) {
 	
 	if len(expected) != 0 {
 			t.Error("Some expected blueprint was not returned.")
+	}
+}
+
+func TestStartStop(t *testing.T) {
+	Start(10000)
+	
+	var opts []grpc.DialOption
+	conn, err := grpc.Dial("127.0.0.1:10000", opts...)
+	if err != nil {
+		t.Errorf("fail to dial: %v", err)
+	}
+	defer conn.Close()
+	
+	cl := pb.NewRegisterClient(conn)
+	
+	_, err = cl.ReadS(ctx, &pb.ReadRequest{})
+	if err != nil {
+		t.Errorf("ReadS returned error: %v", err)
+	}
+		
+	err = Stop()
+	if err != nil {
+		t.Error("Stop returned error.")
 	}
 }

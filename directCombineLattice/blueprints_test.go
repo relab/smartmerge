@@ -109,3 +109,19 @@ func TestMerge(t *testing.T) {
 		t.Errorf("merge(%v, %v) was ¤v.", bp1, bp2, m)
 	}
 }
+
+func TestToMsg(t *testing.T) {
+	b := GetBlueprint(bp2.ToMsg())
+	if ! b.Equals(bp2) {
+		t.Errorf("Transforming %v to a Protobuf-Msg and back returned %v.", bp2, b)
+	}
+}
+
+var benchadd = map[ID]bool{ID(1):true,ID(2):true,ID(3):true,ID(4):true,ID(5):true,ID(6):true,ID(7):true}
+var benchrem = map[ID]bool{ID(8):true,ID(9):true,ID(10):true,ID(11):true,ID(12):true,ID(13):true,ID(14):true}
+
+var benchbp = Blueprint{benchadd, benchrem}
+
+func BenchmarkToMsg(b *testing.B) {
+	GetBlueprint(benchbp.ToMsg())
+}

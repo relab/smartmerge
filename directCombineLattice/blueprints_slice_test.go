@@ -1,8 +1,8 @@
 package directCombineLattice
 
 import (
-	"testing"
 	pb "github.com/relab/smartMerge/proto"
+	"testing"
 	//"fmt"
 )
 
@@ -15,11 +15,11 @@ var a1i = []uint32{onei, twoi}
 var a2i = []uint32{onei, trei}
 var r1i = []uint32{onei}
 var r2i = []uint32{trei}
-var a3i = []uint32{twoi,trei}
+var a3i = []uint32{twoi, trei}
 
 func TestSUnion(t *testing.T) {
-	u1 := sunion(r1i,r2i)
-	for _,id := range u1 {
+	u1 := sunion(r1i, r2i)
+	for _, id := range u1 {
 		if (id != onei) && id != trei {
 			t.Error("Union did introduce new element.")
 		}
@@ -28,9 +28,9 @@ func TestSUnion(t *testing.T) {
 		t.Error("Union does not have the right number of elements.")
 	}
 
-	u1 = sunion(a1i,a2i)
+	u1 = sunion(a1i, a2i)
 
-	for _,id := range u1 {
+	for _, id := range u1 {
 		if id != onei && id != trei && id != twoi {
 			t.Error("Union did introduce new element.")
 		}
@@ -41,8 +41,8 @@ func TestSUnion(t *testing.T) {
 }
 
 func TestSDifference(t *testing.T) {
-	df := sdifference(a2i,r2i)
-	for _,id := range df {
+	df := sdifference(a2i, r2i)
+	for _, id := range df {
 		if id != onei {
 			t.Error("Unwanted element in sdifference.")
 		}
@@ -51,14 +51,14 @@ func TestSDifference(t *testing.T) {
 		t.Error("Difference does not have the right number of elements.")
 	}
 
-	df = sdifference(a1i,a2i)
+	df = sdifference(a1i, a2i)
 
 	if len(df) != 1 {
 		t.Error("Difference does not have the right number of elements.")
 	}
-	for _,id := range df {
+	for _, id := range df {
 		if id != twoi {
-			t.Errorf("Difference(%v,%v) was %v, not ID(2).",a1i, a2i, df)
+			t.Errorf("Difference(%v,%v) was %v, not ID(2).", a1i, a2i, df)
 		}
 	}
 }
@@ -67,7 +67,7 @@ func TestSSubset(t *testing.T) {
 	if !ssubset(r1i, a1i) {
 		t.Errorf("%v was no ssubset of %v.", r1i, a1i)
 	}
-	if ssubset(a2i,a1i) {
+	if ssubset(a2i, a1i) {
 		t.Errorf("%v was ssubset of %v.", a2i, a1i)
 	}
 }
@@ -76,37 +76,36 @@ var bpi1 = pb.Blueprint{r1i, r2i}
 var bpi2 = pb.Blueprint{a1i, r2i}
 var bpi3 = pb.Blueprint{a2i, a0i}
 var bpix = pb.Blueprint{r2i, r1i}
-var bpiy = pb.Blueprint{a1i,a0i}
-var bpiz = pb.Blueprint{a3i,r1i}
+var bpiy = pb.Blueprint{a1i, a0i}
+var bpiz = pb.Blueprint{a3i, r1i}
 
 func TestSCompar(t *testing.T) {
-	if Compare(bpi1,bpi2) != 1 {
+	if Compare(bpi1, bpi2) != 1 {
 		t.Errorf("%v not smaller %v.", bpi1, bpi2)
 	}
-	if Compare(bpi2,bpi1) != -1 {
+	if Compare(bpi2, bpi1) != -1 {
 		t.Errorf("%v not larger %v.", bpi2, bpi1)
 	}
-	if Compare(bpix,bpiy) != 0 {
+	if Compare(bpix, bpiy) != 0 {
 		t.Errorf("%v comparable to %v.", bpix, bpiy)
 	}
-	if Compare(bpi3,bpi1) != 1 {
+	if Compare(bpi3, bpi1) != 1 {
 		t.Errorf("%v not larger %v.", bpi3, bpi1)
 	}
 
 }
 
-
 func TestSMerge(t *testing.T) {
-	m := Merge(bpi1,bpi2)
-	if !Equals(m,bpi2) {
+	m := Merge(bpi1, bpi2)
+	if !Equals(m, bpi2) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi2, m)
 	}
-	m = Merge(bpi1,bpi3)
-	if !Equals(m,bpi1) {
+	m = Merge(bpi1, bpi3)
+	if !Equals(m, bpi1) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi3, m)
 	}
-	m = Merge(bpix,bpiy)
-	if !Equals(m,bpiz) {
+	m = Merge(bpix, bpiy)
+	if !Equals(m, bpiz) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi2, m)
 	}
 }

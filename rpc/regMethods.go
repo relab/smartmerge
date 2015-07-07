@@ -14,7 +14,7 @@ func (c *Configuration) ReadQuorumSize() int {
 	return c.Size() - c.QuorumSize()
 }
 
-func (m *Manager) SRead(configID uint32, ctx context.Context, args interface{}, opts ...grpc.CallOption) ([]*pb.State, error){
+func (m *Manager) SRead(configID uint32, ctx context.Context, opts ...grpc.CallOption) ([]*pb.State, error){
 	c, found := m.configs[configID]
 	if !found {
 		return nil, ConfigNotFound(configID)
@@ -39,7 +39,7 @@ func (m *Manager) SRead(configID uint32, ctx context.Context, args interface{}, 
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.Register/ReadS", args, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.Register/ReadS", &pb.ReadRequest{}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:

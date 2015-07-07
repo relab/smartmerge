@@ -3,15 +3,16 @@ package regserver
 import (
 	"encoding/binary"
 	"testing"
-	
+	"fmt"
+
+	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	"google.golang.org/grpc"
 )
 
 var ctx = context.Background()
-var bytes = make([]byte,64)
+var bytes = make([]byte, 64)
 
 var onei = uint32(1)
 var twoi = uint32(2)
@@ -29,43 +30,47 @@ func Put(x int, bytes []byte) []byte {
 }
 
 func Get(bytes []byte) int {
-	x,_ := binary.Uvarint(bytes)
+	x, _ := binary.Uvarint(bytes)
 	return int(x)
 }
 
 func TestWriteReadS(t *testing.T) {
 	rs := NewRegServer()
-	var bytes = make([]byte,64)
-	bytes = Put(5,bytes)
-	s := &pb.State{bytes,2}
-	
-	rr,_ := rs.WriteS(ctx, s)
+	var bytes = make([]byte, 64)
+	bytes = Put(5, bytes)
+	s := &pb.State{bytes, 2}
+
+	stest,_ := rs.ReadS(ctx, &pb.ReadRequest{})
+	fmt.Printf("Direct ReadS returned: %v\n", stest)
+	fmt.Printf("Should return: %v\n", &InitState)
+
+	rr, _ := rs.WriteS(ctx, s)
 	if !rr.New {
 		t.Error("Writing to initial state was not acknowledged.")
 	}
-	
-	s = &pb.State{bytes,1}
-	rr,_ = rs.WriteS(ctx, s)
+
+	s = &pb.State{bytes, 1}
+	rr, _ = rs.WriteS(ctx, s)
 	if rr.New {
 		t.Error("Writing old value was acknowledged.")
 	}
-	
-	s,_ = rs.ReadS(ctx, &pb.ReadRequest{})
+
+	s, _ = rs.ReadS(ctx, &pb.ReadRequest{})
 	if s.Timestamp != int64(2) {
 		t.Error("Reading returned wrong timestamp.")
 	}
 	if Get(bytes) != 5 {
 		t.Error("Reading returned wrong bytes.")
-	} 
-	
+	}
+
 	rs.WriteN(ctx, &bpi1)
 	rs.WriteN(ctx, &bpi2)
 	rs.WriteN(ctx, &bpi1)
 
-	next,_ := rs.ReadN(ctx, &pb.ReadNRequest{})
+	next, _ := rs.ReadN(ctx, &pb.ReadNRequest{})
 	expected := []*pb.Blueprint{&bpi1, &bpi2}
-	for _,ab := range next.Next {
-		for i,bl := range expected {
+	for _, ab := range next.Next {
+		for i, bl := range expected {
 			if lat.Equals(*ab, *bl) {
 				if i == 1 {
 					expected = expected[:1]
@@ -77,33 +82,56 @@ func TestWriteReadS(t *testing.T) {
 		}
 	}
 	if len(next.Next) != 2 {
-			t.Error("Some too many blueprints returned.")
+		t.Error("Some too many blueprints returned.")
 	}
-	
+
 	if len(expected) != 0 {
-			t.Error("Some expected blueprint was not returned.")
+		t.Error("Some expected blueprint was not returned.")
 	}
 }
 
 func TestStartStop(t *testing.T) {
 	Start(10000)
-	
+
 	var opts []grpc.DialOption
 	conn, err := grpc.Dial("127.0.0.1:10000", opts...)
 	if err != nil {
 		t.Errorf("fail to dial: %v", err)
 	}
 	defer conn.Close()
-	
+
 	cl := pb.NewRegisterClient(conn)
-	
-	_, err = cl.ReadS(ctx, &pb.ReadRequest{})
+
+	s, err := cl.ReadS(ctx, &pb.ReadRequest{})
 	if err != nil {
 		t.Errorf("ReadS returned error: %v", err)
 	}
-		
+	fmt.Printf("ReadS returned %v\n",s)
+
 	err = Stop()
 	if err != nil {
 		t.Error("Stop returned error.")
+	}
+}
+
+func TestStartTStop(t *testing.T) {
+	srv, err := StartTest(10000)
+	if err != nil {
+		t.Errorf("fail to start: %v", err)
+	}
+
+	defer srv.Stop()
+	var opts []grpc.DialOption
+	conn, err := grpc.Dial("127.0.0.1:10000", opts...)
+	if err != nil {
+		t.Errorf("fail to dial: %v", err)
+	}
+	defer conn.Close()
+
+	cl := pb.NewRegisterClient(conn)
+
+	_, err = cl.ReadS(ctx, &pb.ReadRequest{})
+	if err != nil {
+		t.Errorf("ReadS returned error: %v", err)
 	}
 }

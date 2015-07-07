@@ -2,8 +2,10 @@ package rpc
 
 import (
 	"fmt"
+	"errors"
 
-	pb "github.com/relab/grpc-test/proto"
+	"github.com/relab/smartMerge/regserver"
+	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -52,31 +54,20 @@ func (c *Configuration) Equals(config *Configuration) bool {
 	return c.id == config.id
 }
 
-// TODO(tormod): Everything below should be generated.
-// This is just an example method (write for a register).
-
-func (c *Configuration) Read(ctx context.Context, in *pb.ReadRequest) ([]*pb.State, error) {
-	replies, err := c.mgr.invoke(c.id, ctx, "/proto.Register/Read", in, c.grpcCallOptions...)
+func (c *Configuration) SRead() (pb.State, error) {
+	s := regserver.InitState
+	replies, err :=c.mgr.SRead(c.id, context.Background())
 	if err != nil {
-		return nil, err
+		return s, err
 	}
-	// TODO(tormod): Below - think about this
-	outAsType := make([]*pb.State, len(c.machines))
-	for i, r := range replies {
-		outAsType[i] = r.reply.(*pb.State)
+	if len(replies) < 1 {
+		return s, errors.New("No reply was returned.")
 	}
-	return outAsType, nil
-}
 
-func (c *Configuration) Write(ctx context.Context, in *pb.State) ([]*pb.WriteReply, error) {
-	replies, err := c.mgr.invoke(c.id, ctx, "/proto.Register/Write", in, c.grpcCallOptions...)
-	if err != nil {
-		return nil, err
+	for _, st := range replies {
+		if st != nil && st.Timestamp > s.Timestamp {
+			s = *st
+		}
 	}
-	// TODO(tormod): Below - think about this
-	outAsType := make([]*pb.WriteReply, len(c.machines))
-	for i, r := range replies {
-		outAsType[i] = r.reply.(*pb.WriteReply)
-	}
-	return outAsType, nil
+	return s,nil
 }

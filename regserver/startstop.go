@@ -1,24 +1,21 @@
 package regserver
 
 import (
-	"fmt"
-	"net"
-	"log"
-	"sync"
 	"errors"
+	"fmt"
+	"log"
+	"net"
+	"sync"
 
-	grpc "google.golang.org/grpc"
 	pb "github.com/relab/smartMerge/proto"
+	grpc "google.golang.org/grpc"
 )
 
-
-// For now, I don't imagine needing to start several servers. 
+// For now, I don't imagine needing to start several servers.
 // We therefore do this globally, instead of simply returning the grpcServer.
 var grpcServer *grpc.Server
 var mu sync.Mutex
 var haveServer = false
-
-
 
 func Start(port int) (*RegServer, error) {
 	mu.Lock()
@@ -27,9 +24,9 @@ func Start(port int) (*RegServer, error) {
 		log.Println("Abort start of grpc server, since old server exists.")
 		return nil, errors.New("There already exists an old server.")
 	}
-	
+
 	rs := NewRegServer()
-	
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -40,21 +37,39 @@ func Start(port int) (*RegServer, error) {
 	pb.RegisterRegisterServer(grpcServer, rs)
 	go grpcServer.Serve(lis)
 	haveServer = true
-	
+
 	return rs, nil
-	
+
 }
 
 func Stop() error {
 	mu.Lock()
 	defer mu.Unlock()
-	
+
 	if haveServer == false {
 		log.Println("Tried to stop grpc-server, but no server was found.")
 		return errors.New("No grpc server found.")
 	}
-	
+
 	grpcServer.Stop()
 	haveServer = false
 	return nil
+}
+
+func StartTest(port int) (*grpc.Server, error) {
+	rs := NewRegServer()
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	var opts []grpc.ServerOption
+	grpcServ := grpc.NewServer(opts...)
+	pb.RegisterRegisterServer(grpcServ, rs)
+	go grpcServ.Serve(lis)
+	haveServer = true
+
+	return grpcServ, nil
+
 }

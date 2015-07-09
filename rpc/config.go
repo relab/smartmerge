@@ -6,6 +6,8 @@ import (
 
 	"github.com/relab/smartMerge/regserver"
 	pb "github.com/relab/smartMerge/proto"
+	lat "github.com/relab/smartMerge/directCombineLattice"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -54,9 +56,9 @@ func (c *Configuration) Equals(config *Configuration) bool {
 	return c.id == config.id
 }
 
-func (c *Configuration) SRead() (pb.State, error) {
+func (c *Configuration) ReadS() (pb.State, error) {
 	s := regserver.InitState
-	replies, err :=c.mgr.SRead(c.id, context.Background())
+	replies, err :=c.mgr.ReadS(c.id, context.Background())
 	if err != nil {
 		return s, err
 	}
@@ -70,4 +72,57 @@ func (c *Configuration) SRead() (pb.State, error) {
 		}
 	}
 	return s,nil
+}
+
+func (c *Configuration) WriteS(s *pb.State) error {
+	return c.mgr.WriteS(c.id, context.Background(), s)
+}
+
+func (c *Configuration) ReadN() ([]lat.Blueprint, error) {
+	blps := make([]lat.Blueprint,0)
+	replies, err :=c.mgr.ReadS(c.id, context.Background())
+	if err != nil {
+		return blps, err
+	}
+	if len(replies) < 1 {
+		return blps, errors.New("No reply was returned.")
+	}
+
+	return *GetBlueprintSlice(replies), nil
+}
+
+func (c *Configuration) WriteN(b *lat.Blueprint) error {
+	bp := b.ToMsg()
+	return c.mgr.WriteN(c.id, context.Background(), &bp)
+}
+
+func GetBlueprintSlice(replies []*pb.ReadNReply) *[]lat.Blueprint {
+	blps := make([]lat.Blueprint,0)
+	for _, rNr := range replies {
+		for _,blp := range rNr.Next {
+			bp := lat.GetBlueprint(blp)
+			blps = add(blps,bp)
+		}
+	}
+	return &blps
+}
+
+func add(bls []lat.Blueprint,bp lat.Blueprint) []lat.Blueprint {
+	newbls := make([]lat.Blueprint,len(lat.Blueprint)+1,len(lat.Blueprint)+1)
+	inserted := false
+	for i,b := range bls {
+		switch {
+		case inserted:
+			newbls[i+1]=bls[i]
+		case b.Compare(bp) == -1:
+			newbls[i] = bp
+			inserted = true
+		case b.Compare(bp) != -1:
+			if bp.Compare(b) == 1 {
+				return bls
+			}
+			newbls[i] = bls[i]
+		}
+	}
+	return newbls
 }

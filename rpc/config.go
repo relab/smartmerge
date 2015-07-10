@@ -80,7 +80,7 @@ func (c *Configuration) WriteS(s *pb.State) error {
 
 func (c *Configuration) ReadN() ([]lat.Blueprint, error) {
 	blps := make([]lat.Blueprint,0)
-	replies, err :=c.mgr.ReadS(c.id, context.Background())
+	replies, err :=c.mgr.ReadN(c.id, context.Background())
 	if err != nil {
 		return blps, err
 	}
@@ -100,7 +100,7 @@ func GetBlueprintSlice(replies []*pb.ReadNReply) *[]lat.Blueprint {
 	blps := make([]lat.Blueprint,0)
 	for _, rNr := range replies {
 		for _,blp := range rNr.Next {
-			bp := lat.GetBlueprint(blp)
+			bp := lat.GetBlueprint(*blp)
 			blps = add(blps,bp)
 		}
 	}
@@ -108,21 +108,24 @@ func GetBlueprintSlice(replies []*pb.ReadNReply) *[]lat.Blueprint {
 }
 
 func add(bls []lat.Blueprint,bp lat.Blueprint) []lat.Blueprint {
-	newbls := make([]lat.Blueprint,len(lat.Blueprint)+1,len(lat.Blueprint)+1)
+	newbls := make([]lat.Blueprint,len(bls)+1)
 	inserted := false
-	for i,b := range bls {
+	for i := range newbls {
 		switch {
 		case inserted:
-			newbls[i+1]=bls[i]
-		case b.Compare(bp) == -1:
+			newbls[i]=bls[i-1]
+		case i == len(bls) && !inserted:
+			newbls[i] = bp
+		case bls[i].Compare(bp) == -1:
 			newbls[i] = bp
 			inserted = true
-		case b.Compare(bp) != -1:
-			if bp.Compare(b) == 1 {
+		default:
+			if bp.Compare(bls[i]) == 1 {
 				return bls
 			}
 			newbls[i] = bls[i]
 		}
 	}
+
 	return newbls
 }

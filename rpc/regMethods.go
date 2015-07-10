@@ -141,7 +141,7 @@ func (m *Manager) ReadN(configID uint32, ctx context.Context, opts ...grpc.CallO
 	}
 
 	var (
-		replyChan  = make(chan *ReadNReply, c.quorum)
+		replyChan  = make(chan *pb.ReadNReply, c.quorum)
 		stopSignal = make(chan struct{})
 		errSignal  = make(chan bool, c.quorum)
 		out        = make([]*pb.ReadNReply, c.quorum)

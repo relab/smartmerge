@@ -11,7 +11,7 @@ import (
 )
 
 func (c *Configuration) ReadQuorumSize() int {
-	return c.Size() - c.QuorumSize()
+	return c.Size() - c.QuorumSize() +1
 }
 
 func (m *Manager) ReadS(configID uint32, ctx context.Context, opts ...grpc.CallOption) ([]*pb.State, error){
@@ -24,7 +24,7 @@ func (m *Manager) ReadS(configID uint32, ctx context.Context, opts ...grpc.CallO
 		replyChan  = make(chan *pb.State, c.quorum)
 		stopSignal = make(chan struct{})
 		errSignal  = make(chan bool, c.quorum)
-		out        = make([]*pb.State, c.quorum)
+		out        = make([]*pb.State,0, c.ReadQuorumSize())
 		errCount   int
 	)
 
@@ -144,7 +144,7 @@ func (m *Manager) ReadN(configID uint32, ctx context.Context, opts ...grpc.CallO
 		replyChan  = make(chan *pb.ReadNReply, c.quorum)
 		stopSignal = make(chan struct{})
 		errSignal  = make(chan bool, c.quorum)
-		out        = make([]*pb.ReadNReply, c.quorum)
+		out        = make([]*pb.ReadNReply,0, c.ReadQuorumSize())
 		errCount   int
 	)
 

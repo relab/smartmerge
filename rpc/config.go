@@ -99,9 +99,11 @@ func (c *Configuration) WriteN(b *lat.Blueprint) error {
 func GetBlueprintSlice(replies []*pb.ReadNReply) *[]lat.Blueprint {
 	blps := make([]lat.Blueprint,0)
 	for _, rNr := range replies {
-		for _,blp := range rNr.Next {
-			bp := lat.GetBlueprint(*blp)
-			blps = add(blps,bp)
+		if rNr != nil {
+			for _,blp := range rNr.Next {
+				bp := lat.GetBlueprint(*blp)
+				blps = add(blps,bp)
+			}
 		}
 	}
 	return &blps

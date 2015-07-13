@@ -9,6 +9,7 @@ import (
 
 	"github.com/relab/smartMerge/regserver"
 	pb "github.com/relab/smartMerge/proto"
+	lat "github.com/relab/smartMerge/directCombineLattice"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -54,6 +55,14 @@ func TestRegisterCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	i := myWriteConfig.QuorumSize()
+	if i != 2 {
+		t.Errorf("Quorum Size was %d", i)
+	}
+	i = myWriteConfig.ReadQuorumSize()
+	if i != 1 {
+		t.Errorf("Read Quorum Size was %d", i)
+	}
 
 	s,err := myWriteConfig.ReadS()
 	if err != nil {
@@ -72,4 +81,36 @@ func TestRegisterCall(t *testing.T) {
 	if sr.Timestamp != s.Timestamp {
 		t.Errorf("return was %v, expected %v.", sr, s)
 	}
+
+	blps, err := myWriteConfig.ReadN()
+	if err != nil {
+		t.Fatalf("readN: %v", err)
+	}
+
+	fmt.Printf("ReadN before Write: %v", blps)
+
+	bluep1 := lat.GetBlueprint(bp1)
+	bluep2 := lat.GetBlueprint(bp2)
+
+	err = myWriteConfig.WriteN(&bluep1)
+	if err != nil {
+		t.Fatalf("writeN: %v", err)
+	}
+
+	err = myWriteConfig.WriteN(&bluep2)
+	if err != nil {
+		t.Fatalf("writeN: %v", err)
+	}
+
+	blps, err = myWriteConfig.ReadN()
+	if err != nil {
+		t.Fatalf("readN: %v", err)
+	}
+
+
+
+	if len(blps)!= 2 ||  !blps[0].Equals(bluep1) || !blps[1].Equals(bluep2) {
+		t.Errorf("readN returned: %v", blps)
+	}
+
 }

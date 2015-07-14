@@ -246,3 +246,24 @@ type rpcReply struct {
 	mid   uint32
 	reply interface{}
 }
+
+func MachineID(IP string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(IP))
+	return h.Sum32()
+}
+
+func (m *Manager) NewConfigurationFromIP(IPs []string, quorumSize int, grpcOptions ...grpc.CallOption) (*Configuration, error) {
+	ids := make([]uint32,len(IPs))
+
+	h := fnv.New32a()
+	for i, IP := range IPs {
+		h.Write([]byte(IP))
+		ids[i]=h.Sum32()
+		h.Reset()
+	}
+
+	c, err := m.NewConfiguration(ids, quorumSize, grpcOptions... )
+
+	return c, err
+}

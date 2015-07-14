@@ -3,32 +3,65 @@ syntax = "proto3";
 package proto;
 
 service Register {
-	rpc ReadS(ReadRequest) returns (State) {} 
+	rpc ReadS(ReadRequest) returns (ReadReply) {} 
 	rpc WriteS(State) returns (WriteReply) {}
 	rpc ReadN(ReadNRequest) returns (ReadNReply) {}
-	rpc WriteN(Blueprint) returns (WriteNAck) {}
+	rpc WriteN(Blueprint) returns (WriteNReply) {}
+	rpc SetCur(NewCur) returns (NewCurReply) {}
 }
 
 message State {
 	bytes Value = 1;
-	int64 Timestamp = 2;
+	int32 Timestamp = 2;
+	uint32 Writer = 3;
 }
-
-message WriteReply {
-	bool New = 1;
-}
-
-message ReadRequest {}
-
-message ReadNRequest {}
-	
-message WriteNAck {}
 
 message Blueprint {
 	repeated uint32 Add = 1;
 	repeated uint32 Rem = 2;
 } 
 
+message ReadReply {
+	State State = 1;
+	Blueprint Cur = 2;
+}
+
+message WriteReply {
+	Blueprint Cur = 1;
+}
+
+message ReadRequest {
+	uint32 CurC = 1;	
+}
+
+message WriteRequest {
+	State State = 1;
+	uint32 CurC = 2;
+}
+
+message WriteNRequest {
+	uint32 CurC = 1;
+}
+
+message ReadNRequest {
+	uint32 CurC = 1;
+}	
+	
+message WriteNReply {
+	Blueprint Cur = 1;
+}
+
+
 message ReadNReply {
-	repeated Blueprint Next =1;
+	Blueprint Cur = 1;
+	repeated Blueprint Next = 2;
+}
+
+message NewCur {
+	Blueprint Cur = 1;
+	uint32 CurC = 2;
+}
+
+message NewCurReply {
+	bool New = 1;
 }

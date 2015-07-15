@@ -38,38 +38,39 @@ func TestWriteReadS(t *testing.T) {
 	rs := NewRegServer()
 	var bytes = make([]byte, 64)
 	bytes = Put(5, bytes)
-	s := &pb.State{bytes, 2}
+	s := &pb.State{bytes, 2,0}
 
 	stest,_ := rs.ReadS(ctx, &pb.ReadRequest{})
 	fmt.Printf("Direct ReadS returned: %v\n", stest)
 	fmt.Printf("Should return: %v\n", &InitState)
 
-	rr, _ := rs.WriteS(ctx, s)
-	if !rr.New {
-		t.Error("Writing to initial state was not acknowledged.")
+	rs.WriteS(ctx, &pb.WriteRequest{State: s})
+	if rs.RState != s {
+		t.Error("First write did fail.")
+	}
+	
+	
+	s2 := &pb.State{bytes, 1,0}
+	rs.WriteS(ctx, &pb.WriteRequest{State: s2})
+	if rs.RState != s {
+		t.Error("Second write did fail.")
 	}
 
-	s = &pb.State{bytes, 1}
-	rr, _ = rs.WriteS(ctx, s)
-	if rr.New {
-		t.Error("Writing old value was acknowledged.")
-	}
-
-	s, _ = rs.ReadS(ctx, &pb.ReadRequest{})
-	if s.Timestamp != int64(2) {
+	rrep, _ := rs.ReadS(ctx, &pb.ReadRequest{})
+	if rrep.State.Compare(s) != 0 {
 		t.Error("Reading returned wrong timestamp.")
 	}
 	if Get(bytes) != 5 {
 		t.Error("Reading returned wrong bytes.")
 	}
 
-	rs.WriteN(ctx, &bpi1)
-	rs.WriteN(ctx, &bpi2)
-	rs.WriteN(ctx, &bpi1)
+	rs.WriteN(ctx, &pb.WriteNRequest{Next : &bpi1})
+	rs.WriteN(ctx, &pb.WriteNRequest{Next : &bpi2})
+	rs.WriteN(ctx, &pb.WriteNRequest{Next : &bpi1})
 
-	next, _ := rs.ReadN(ctx, &pb.ReadNRequest{})
+	rNrep, _ := rs.ReadN(ctx, &pb.ReadNRequest{})
 	expected := []*pb.Blueprint{&bpi1, &bpi2}
-	for _, ab := range next.Next {
+	for _, ab := range rNrep.Next {
 		for i, bl := range expected {
 			if lat.Equals(*ab, *bl) {
 				if i == 1 {
@@ -81,7 +82,7 @@ func TestWriteReadS(t *testing.T) {
 			}
 		}
 	}
-	if len(next.Next) != 2 {
+	if len(rNrep.Next) != 2 {
 		t.Error("Some too many blueprints returned.")
 	}
 

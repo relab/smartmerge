@@ -17,7 +17,12 @@ var grpcServer *grpc.Server
 var mu sync.Mutex
 var haveServer = false
 
+
 func Start(port int) (*RegServer, error) {
+	return StartInConf(port, nil, uint32(0))
+}
+
+func StartInConf(port int, init *pb.Blueprint, initC uint32) (*RegServer, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if haveServer == true {
@@ -25,7 +30,7 @@ func Start(port int) (*RegServer, error) {
 		return nil, errors.New("There already exists an old server.")
 	}
 
-	rs := NewRegServer()
+	rs := NewRegServerWithCur(init, initC)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -39,7 +44,6 @@ func Start(port int) (*RegServer, error) {
 	haveServer = true
 
 	return rs, nil
-
 }
 
 func Stop() error {

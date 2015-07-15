@@ -1,56 +1,46 @@
 package rpc
 
 import (
-	"errors"
-
 	"golang.org/x/net/context"
 
 	pb "github.com/relab/smartMerge/proto"
 	lat "github.com/relab/smartMerge/directCombineLattice"
-	"github.com/relab/smartMerge/regserver"
+	//"github.com/relab/smartMerge/regserver"
 )
 
-func (c *Configuration) ReadS() (pb.State, error) {
-	s := regserver.InitState
-	replies, err :=c.mgr.ReadS(c.id, context.Background())
-	if err != nil {
-		return s, err
-	}
-	if len(replies) < 1 {
-		return s, errors.New("No reply was returned.")
+func (c *Configuration) ReadS(cur *lat.Blueprint) (s pb.State, newCur *lat.Blueprint,err error) {
+	replies, newCur, err :=c.mgr.ReadS(c.id, cur, context.Background())
+	if err != nil || newCur != nil  {
+		return
 	}
 
 	for _, st := range replies {
-		if st != nil && st.Timestamp > s.Timestamp {
-			s = *st
+		if st != nil && s.Compare(st.State)== 1 {
+			s = *st.State
 		}
 	}
-	return s,nil
+	return
 }
 
-func (c *Configuration) WriteS(s *pb.State) error {
-	return c.mgr.WriteS(c.id, context.Background(), s)
+func (c *Configuration) WriteS(s *pb.State, cur *lat.Blueprint) (newCur *lat.Blueprint, err error) {
+	return c.mgr.WriteS(c.id, cur, context.Background(), &pb.WriteRequest{s, c.id})
 }
 
-func (c *Configuration) ReadN() ([]lat.Blueprint, error) {
-	blps := make([]lat.Blueprint,0)
-	replies, err :=c.mgr.ReadN(c.id, context.Background())
-	if err != nil {
-		return blps, err
+func (c *Configuration) ReadN(cur *lat.Blueprint) (next []lat.Blueprint, newCur *lat.Blueprint, err error) {
+	replies, newCur, err := c.mgr.ReadN(c.id, cur, context.Background())
+	if err != nil || newCur != nil {
+		return
 	}
-	if len(replies) < 1 {
-		return blps, errors.New("No reply was returned.")
-	}
-
-	return *GetBlueprintSlice(replies), nil
+	next = GetBlueprintSlice(replies)
+	return
 }
 
-func (c *Configuration) WriteN(b *lat.Blueprint) error {
-	bp := b.ToMsg()
-	return c.mgr.WriteN(c.id, context.Background(), &bp)
+func (c *Configuration) WriteN(next *lat.Blueprint, cur *lat.Blueprint) (newCur *lat.Blueprint, err error) {
+	bp := next.ToMsg()
+	return c.mgr.WriteN(c.id, cur, context.Background(), &pb.WriteNRequest{c.id, &bp})
 }
 
-func GetBlueprintSlice(replies []*pb.ReadNReply) *[]lat.Blueprint {
+func GetBlueprintSlice(replies []*pb.ReadNReply) []lat.Blueprint {
 	blps := make([]lat.Blueprint,0)
 	for _, rNr := range replies {
 		if rNr != nil {
@@ -60,7 +50,7 @@ func GetBlueprintSlice(replies []*pb.ReadNReply) *[]lat.Blueprint {
 			}
 		}
 	}
-	return &blps
+	return blps
 }
 
 func add(bls []lat.Blueprint,bp lat.Blueprint) []lat.Blueprint {

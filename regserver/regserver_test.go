@@ -131,8 +131,28 @@ func TestStartTStop(t *testing.T) {
 
 	cl := pb.NewRegisterClient(conn)
 
-	_, err = cl.ReadS(ctx, &pb.ReadRequest{})
+	rSrep, err := cl.ReadS(ctx, &pb.ReadRequest{})
 	if err != nil {
 		t.Errorf("ReadS returned error: %v", err)
+	}
+	if rSrep.Cur != nil {
+		t.Errorf("ReadS returned a new current conf: %v", rSrep.Cur)
+	}
+	
+	cl.SetCur(ctx, &pb.NewCur{&bpi1, twoi})
+	rSrep, err = cl.ReadS(ctx, &pb.ReadRequest{twoi})
+	if err != nil {
+		t.Errorf("ReadS returned error: %v", err)
+	}
+	if rSrep.Cur != nil {
+		t.Errorf("ReadS returned a new current conf: %v", rSrep.Cur)
+	}
+	rSrep, err = cl.ReadS(ctx, &pb.ReadRequest{onei})
+	if err != nil {
+		t.Errorf("ReadS returned error: %v", err)
+	}
+	fmt.Println(rSrep.Cur)
+	if rSrep.Cur == nil {
+		t.Errorf("ReadS returned a new current conf: %v", rSrep.Cur)
 	}
 }

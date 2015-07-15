@@ -14,17 +14,21 @@ func (c *Configuration) ReadQuorumSize() int {
 	return c.Size() - c.QuorumSize() +1
 }
 
-func (m *Manager) ReadS(configID uint32, ctx context.Context, opts ...grpc.CallOption) ([]*pb.State, error){
+//Cur is used to check if some server returned a new current Blueprint.
+//In this case, the call is aborted.
+//If cur == nil, any returned Blueprint results in an abort.
+func (m *Manager) ReadS(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.ReadReply, *lat.Blueprint, error){
 	c, found := m.configs[configID]
 	if !found {
-		return nil, ConfigNotFound(configID)
+		return nil,nil, ConfigNotFound(configID)
 	}
 
 	var (
-		replyChan  = make(chan *pb.State, c.quorum)
+		replyChan  = make(chan *pb.ReadReply, c.quorum)
 		stopSignal = make(chan struct{})
+		defer close(stopSignal)
 		errSignal  = make(chan bool, c.quorum)
-		out        = make([]*pb.State,0, c.ReadQuorumSize())
+		out        = make([]*pb.ReadReply,0, c.ReadQuorumSize())
 		errCount   int
 	)
 
@@ -34,11 +38,11 @@ func (m *Manager) ReadS(configID uint32, ctx context.Context, opts ...grpc.CallO
 			panic("machine not found")
 		}
 		go func(machine *machine) {
-			repl := new(pb.State)
+			repl := new(pb.ReadReply)
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.Register/ReadS", &pb.ReadRequest{}, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.Register/ReadS", &pb.ReadRequest{configID}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:
@@ -58,31 +62,46 @@ func (m *Manager) ReadS(configID uint32, ctx context.Context, opts ...grpc.CallO
 	for {
 		select {
 		case r := <-replyChan:
+			if r.Cur != nil {
+				newCur := lat.GetBlueprint(*(r.Cur))
+				
+				if cur == nil { 
+					//Abort any Cur returned
+					return nil, newCur, nil
+				}
+				
+				if (*cur).Compare(newCur) == 1 { 
+					//Abort only if new cur was returned.
+					return nil, newCur, nil
+				}
+			}
+			
 			out = append(out, r)
 			if len(out) >= c.ReadQuorumSize() {
-				close(stopSignal)
-				return out, nil
+				return out, nil, nil
 			}
+			
+			
 		case <-errSignal:
 			errCount++
 			if errCount > len(c.machines)-c.ReadQuorumSize() {
-				close(stopSignal)
-				return nil, errors.New("could not complete request due to too many errors")
+				return nil, nil, errors.New("could not complete request due to too many errors")
 			}
 		}
 	}
 
 }
 
-func (m *Manager) WriteS(configID uint32, ctx context.Context, args *pb.State, opts ...grpc.CallOption) (error){
+func (m *Manager) WriteS(configID uint32, cur *lat.Blueprint, ctx context.Context, args *pb.State, opts ...grpc.CallOption) (*lat.Blueprint, error){
 	c, found := m.configs[configID]
 	if !found {
 		return ConfigNotFound(configID)
 	}
 
 	var (
-		replyChan  = make(chan bool, c.quorum)
+		replyChan  = make(chan *pb.WriteReply, c.quorum)
 		stopSignal = make(chan struct{})
+		defer close(stopSignal)
 		errSignal  = make(chan bool, c.quorum)
 		outCount   int
 		errCount   int
@@ -108,7 +127,7 @@ func (m *Manager) WriteS(configID uint32, ctx context.Context, args *pb.State, o
 					return
 				}
 				machine.latency = time.Since(start)
-				replyChan <- true
+				replyChan <- repl
 			case <-stopSignal:
 				return
 			}
@@ -134,7 +153,7 @@ func (m *Manager) WriteS(configID uint32, ctx context.Context, args *pb.State, o
 
 }
 
-func (m *Manager) ReadN(configID uint32, ctx context.Context, opts ...grpc.CallOption) ([]*pb.ReadNReply, error){
+func (m *Manager) ReadN(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.ReadNReply, error){
 	c, found := m.configs[configID]
 	if !found {
 		return nil, ConfigNotFound(configID)
@@ -143,6 +162,7 @@ func (m *Manager) ReadN(configID uint32, ctx context.Context, opts ...grpc.CallO
 	var (
 		replyChan  = make(chan *pb.ReadNReply, c.quorum)
 		stopSignal = make(chan struct{})
+		defer close(stopSignal)
 		errSignal  = make(chan bool, c.quorum)
 		out        = make([]*pb.ReadNReply,0, c.ReadQuorumSize())
 		errCount   int
@@ -194,7 +214,7 @@ func (m *Manager) ReadN(configID uint32, ctx context.Context, opts ...grpc.CallO
 
 }
 
-func (m *Manager) WriteN(configID uint32, ctx context.Context, args *pb.Blueprint, opts ...grpc.CallOption) (error){
+func (m *Manager) WriteN(configID uint32, cur *lat.Blueprint, ctx context.Context, args *pb.Blueprint, opts ...grpc.CallOption) (error){
 	c, found := m.configs[configID]
 	if !found {
 		return ConfigNotFound(configID)
@@ -203,6 +223,7 @@ func (m *Manager) WriteN(configID uint32, ctx context.Context, args *pb.Blueprin
 	var (
 		replyChan  = make(chan bool, c.quorum)
 		stopSignal = make(chan struct{})
+		defer close(stopSignal)
 		errSignal  = make(chan bool, c.quorum)
 		outCount   int
 		errCount   int

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	pb "github.com/relab/smartMerge/proto"
 )
 
 type machine struct {
@@ -17,7 +16,6 @@ type machine struct {
 	conn     *grpc.ClientConn
 	lastErr  error
 	latency  time.Duration
-	client	 pb.RegisterClient
 }
 
 func (m *machine) String() string {

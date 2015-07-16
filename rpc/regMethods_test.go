@@ -64,27 +64,40 @@ func TestRegisterCall(t *testing.T) {
 		t.Errorf("Read Quorum Size was %d", i)
 	}
 
-	s,err := myWriteConfig.ReadS()
+	s, newCur, err := myWriteConfig.ReadS(nil)
 	if err != nil {
 		t.Fatalf("write: %v", err)
+	}
+	if newCur != nil {
+		t.Errorf("new Cur: %v", newCur)
 	}
 	fmt.Print(s)
-	s = pb.State{nil,2}
-	err = myWriteConfig.WriteS(&s)
+	s = pb.State{nil,2,0}
+	newCur, err = myWriteConfig.WriteS(&s, nil)
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	sr,err := myWriteConfig.ReadS()
+	if newCur != nil {
+		t.Errorf("new Cur: %v", newCur)
+	}
+	
+	sr, newCur, err := myWriteConfig.ReadS(nil)
 	if err != nil {
 		t.Fatalf("write: %v", err)
+	}
+	if newCur != nil {
+		t.Errorf("new Cur: %v", newCur)
 	}
 	if sr.Timestamp != s.Timestamp {
 		t.Errorf("return was %v, expected %v.", sr, s)
 	}
 
-	blps, err := myWriteConfig.ReadN()
+	blps,newCur, err := myWriteConfig.ReadN(nil)
 	if err != nil {
 		t.Fatalf("readN: %v", err)
+	}
+	if newCur != nil {
+		t.Errorf("new Cur: %v", newCur)
 	}
 
 	fmt.Printf("ReadN before Write: %v", blps)
@@ -92,22 +105,26 @@ func TestRegisterCall(t *testing.T) {
 	bluep1 := lat.GetBlueprint(bp1)
 	bluep2 := lat.GetBlueprint(bp2)
 
-	err = myWriteConfig.WriteN(&bluep1)
+	newCur, err = myWriteConfig.WriteN(&bluep1,nil)
+	if err != nil {
+		t.Fatalf("writeN: %v", err)
+	}
+	if newCur != nil {
+		t.Errorf("new Cur: %v", newCur)
+	}
+
+	_, err = myWriteConfig.WriteN(&bluep2,nil)
 	if err != nil {
 		t.Fatalf("writeN: %v", err)
 	}
 
-	err = myWriteConfig.WriteN(&bluep2)
-	if err != nil {
-		t.Fatalf("writeN: %v", err)
-	}
-
-	blps, err = myWriteConfig.ReadN()
+	blps, newCur, err = myWriteConfig.ReadN(nil)
 	if err != nil {
 		t.Fatalf("readN: %v", err)
 	}
-
-
+	if newCur != nil {
+		t.Errorf("new Cur: %v", newCur)
+	}
 
 	if len(blps)!= 2 ||  !blps[0].Equals(bluep1) || !blps[1].Equals(bluep2) {
 		t.Errorf("readN returned: %v", blps)

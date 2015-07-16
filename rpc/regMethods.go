@@ -1,4 +1,4 @@
- package rpc
+package rpc
 
 import (
 	"time"
@@ -222,13 +222,11 @@ func (m *Manager) ReadN(configID uint32, cur *lat.Blueprint, ctx context.Context
 
 			out = append(out, r)
 			if len(out) >= c.ReadQuorumSize() {
-				close(stopSignal)
 				return out, nil, nil
 			}
 		case <-errSignal:
 			errCount++
 			if errCount > len(c.machines)-c.ReadQuorumSize() {
-				close(stopSignal)
 				return nil, nil, errors.New("could not complete request due to too many errors")
 			}
 		}
@@ -295,13 +293,11 @@ func (m *Manager) WriteN(configID uint32, cur *lat.Blueprint, ctx context.Contex
 
 			outCount++
 			if outCount >= c.QuorumSize() {
-				close(stopSignal)
 				return nil, nil
 			}
 		case <-errSignal:
 			errCount++
 			if errCount > len(c.machines)-c.ReadQuorumSize() {
-				close(stopSignal)
 				return nil, errors.New("could not complete request due to too many errors")
 			}
 		}
@@ -356,13 +352,11 @@ func (m *Manager) SetCur(configID uint32, ctx context.Context, blp *pb.Blueprint
 		case r := <-replyChan:
 			out = append(out, r)
 			if len(out) >= c.QuorumSize() {
-				close(stopSignal)
 				return out, nil
 			}
 		case <-errSignal:
 			errCount++
 			if errCount > len(c.machines)-c.ReadQuorumSize() {
-				close(stopSignal)
 				return nil, errors.New("could not complete request due to too many errors")
 			}
 		}

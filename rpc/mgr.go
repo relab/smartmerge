@@ -14,7 +14,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/relab/smartMerge/proto"
 )
 
 var defaultLocMapper = func(ip net.IP) string {
@@ -141,7 +140,6 @@ func (m *Manager) connectAll(dialOpts ...grpc.DialOption) error {
 			return fmt.Errorf("dialing node %d failed: %v", id, err)
 		}
 		ma.conn = conn
-		ma.client = pb.NewRegisterClient(conn)
 	}
 	return nil
 }

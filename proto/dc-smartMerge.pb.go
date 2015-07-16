@@ -27,6 +27,8 @@ It has these top-level messages:
 	AdvWriteSReply
 	AdvWriteN
 	AdvWriteNReply
+	LAProposal
+	LAReply
 */
 package proto
 
@@ -306,9 +308,10 @@ func (m *AdvWriteN) GetNext() *Blueprint {
 }
 
 type AdvWriteNReply struct {
-	Cur   *Blueprint   `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	State *State       `protobuf:"bytes,2,opt" json:"State,omitempty"`
-	Next  []*Blueprint `protobuf:"bytes,3,rep" json:"Next,omitempty"`
+	Cur     *Blueprint   `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+	State   *State       `protobuf:"bytes,2,opt" json:"State,omitempty"`
+	Next    []*Blueprint `protobuf:"bytes,3,rep" json:"Next,omitempty"`
+	LAState *Blueprint   `protobuf:"bytes,4,opt" json:"LAState,omitempty"`
 }
 
 func (m *AdvWriteNReply) Reset()         { *m = AdvWriteNReply{} }
@@ -330,6 +333,60 @@ func (m *AdvWriteNReply) GetState() *State {
 }
 
 func (m *AdvWriteNReply) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+func (m *AdvWriteNReply) GetLAState() *Blueprint {
+	if m != nil {
+		return m.LAState
+	}
+	return nil
+}
+
+type LAProposal struct {
+	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
+	Prop *Blueprint `protobuf:"bytes,2,opt" json:"Prop,omitempty"`
+}
+
+func (m *LAProposal) Reset()         { *m = LAProposal{} }
+func (m *LAProposal) String() string { return proto1.CompactTextString(m) }
+func (*LAProposal) ProtoMessage()    {}
+
+func (m *LAProposal) GetProp() *Blueprint {
+	if m != nil {
+		return m.Prop
+	}
+	return nil
+}
+
+type LAReply struct {
+	Cur     *Blueprint   `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+	LAState *Blueprint   `protobuf:"bytes,2,opt" json:"LAState,omitempty"`
+	Next    []*Blueprint `protobuf:"bytes,3,rep" json:"Next,omitempty"`
+}
+
+func (m *LAReply) Reset()         { *m = LAReply{} }
+func (m *LAReply) String() string { return proto1.CompactTextString(m) }
+func (*LAReply) ProtoMessage()    {}
+
+func (m *LAReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *LAReply) GetLAState() *Blueprint {
+	if m != nil {
+		return m.LAState
+	}
+	return nil
+}
+
+func (m *LAReply) GetNext() []*Blueprint {
 	if m != nil {
 		return m.Next
 	}
@@ -511,6 +568,7 @@ type AdvRegisterClient interface {
 	AWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
 	AWriteN(ctx context.Context, in *AdvWriteN, opts ...grpc.CallOption) (*AdvWriteNReply, error)
 	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
+	LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error)
 }
 
 type advRegisterClient struct {
@@ -557,6 +615,15 @@ func (c *advRegisterClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc
 	return out, nil
 }
 
+func (c *advRegisterClient) LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error) {
+	out := new(LAReply)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/LAProp", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for AdvRegister service
 
 type AdvRegisterServer interface {
@@ -564,6 +631,7 @@ type AdvRegisterServer interface {
 	AWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
 	AWriteN(context.Context, *AdvWriteN) (*AdvWriteNReply, error)
 	SetCur(context.Context, *NewCur) (*NewCurReply, error)
+	LAProp(context.Context, *LAProposal) (*LAReply, error)
 }
 
 func RegisterAdvRegisterServer(s *grpc.Server, srv AdvRegisterServer) {
@@ -618,6 +686,18 @@ func _AdvRegister_SetCur_Handler(srv interface{}, ctx context.Context, codec grp
 	return out, nil
 }
 
+func _AdvRegister_LAProp_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(LAProposal)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).LAProp(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _AdvRegister_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.AdvRegister",
 	HandlerType: (*AdvRegisterServer)(nil),
@@ -637,6 +717,10 @@ var _AdvRegister_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetCur",
 			Handler:    _AdvRegister_SetCur_Handler,
+		},
+		{
+			MethodName: "LAProp",
+			Handler:    _AdvRegister_LAProp_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

@@ -8,6 +8,11 @@ import (
 	//"github.com/relab/smartMerge/regserver"
 )
 
+
+type NextReport interface {
+	GetNext() []*pb.Blueprint
+}
+
 func (c *Configuration) ReadS(cur *lat.Blueprint) (s pb.State, newCur *lat.Blueprint,err error) {
 	replies, newCur, err :=c.mgr.ReadS(c.id, cur, context.Background())
 	if err != nil || newCur != nil  {
@@ -40,15 +45,14 @@ func (c *Configuration) WriteN(next *lat.Blueprint, cur *lat.Blueprint) (newCur 
 	return c.mgr.WriteN(c.id, cur, context.Background(), &pb.WriteNRequest{c.id, &bp})
 }
 
-func GetBlueprintSlice(replies []*pb.ReadNReply) []lat.Blueprint {
+func GetBlueprintSlice(replies []*NextReport) []lat.Blueprint {
 	blps := make([]lat.Blueprint,0)
-	for _, rNr := range replies {
-		if rNr != nil {
-			for _,blp := range rNr.Next {
+	for _, nr := range replies {
+		for _,blp := range nr.GetNext() {
 				bp := lat.GetBlueprint(*blp)
 				blps = add(blps,bp)
-			}
 		}
+		
 	}
 	return blps
 }

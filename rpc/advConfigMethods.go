@@ -19,7 +19,9 @@ func (c *Configuration) AReadS(cur *lat.Blueprint) (s pb.State, next []lat.Bluep
 			s = *st.State
 		}
 	}
-	next = GetBlueprintSlice(replies)
+	for _,rep := range replies {
+		next = GetBlueprintSlice(next, rep)
+	}
 	return
 }
 
@@ -29,37 +31,54 @@ func (c *Configuration) AWriteS(s *pb.State, cur *lat.Blueprint) (next []lat.Blu
 		return
 	}
 	
-	next = GetBlueprintSlice(replies)
+	for _,rep := range replies {
+		next = GetBlueprintSlice(next, rep)
+	}
 	return
 	
 }
 
-func (c *Configuration) ReadN(cur *lat.Blueprint) (next []lat.Blueprint, newCur *lat.Blueprint, err error) {
-	replies, newCur, err := c.mgr.ReadN(c.id, cur, context.Background())
+func (c *Configuration) LAProp(cur *lat.Blueprint, prop *lat.Blueprint) (las *lat.Blueprint, next []lat.Blueprint, newCur *lat.Blueprint, err error) {
+	bp := prop.ToMsg()
+	replies, newCur, err := c.mgr.LAProp(c.id, cur, context.Background(), &pb.LAProposal{c.id, &bp})
 	if err != nil || newCur != nil {
 		return
 	}
 	
-	next = GetBlueprintSlice(replies)
+	for _,rep := range replies {
+		next = GetBlueprintSlice(next, rep)
+		las = MergeLAState(las,rep)
+	}
 	return
 }
 
 func (c *Configuration) AWriteN(nnext *lat.Blueprint, cur *lat.Blueprint) (las *lat.Blueprint, next []lat.Blueprint, newCur *lat.Blueprint, err error) {
-	bp := next.ToMsg()
+	bp := nnext.ToMsg()
 	replies, newCur, err := c.mgr.AWriteN(c.id, cur, context.Background(), &pb.AdvWriteN{c.id, &bp})
 	if err != nil || newCur != nil {
 		return
 	}
 
-	next = GetBlueprintSlice(replies)
-	las = GetLAState(replies)
+	for _,rep := range replies {
+		next = GetBlueprintSlice(next, rep)
+		las = MergeLAState(las,rep)
+	}
 	return
 }
 
-func GetLAState(reps []*pb.AdvWriteNReply) *lat.Blueprint {
-	b := New(pb.Blueprint)
-	for _,las := range reps {
-		//unfinished
+type LAStateReport interface {
+	GetLAState() *pb.Blueprint
+}
+
+func MergeLAState(las *lat.Blueprint, rep LAStateReport) *lat.Blueprint {
+	pb := rep.GetLAState()
+	if pb == nil {
+		return las
 	}
-	
+	lap := lat.GetBlueprint(*pb)
+	if las == nil {
+		return &lap
+	}
+	newlat := las.Merge(lap)
+	return &newlat
 }

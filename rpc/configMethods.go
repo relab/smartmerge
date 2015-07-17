@@ -36,7 +36,9 @@ func (c *Configuration) ReadN(cur *lat.Blueprint) (next []lat.Blueprint, newCur 
 	if err != nil || newCur != nil {
 		return
 	}
-	next = GetBlueprintSlice(replies)
+	for _,rep := range replies {
+		next = GetBlueprintSlice(next, rep)
+	}
 	return
 }
 
@@ -45,16 +47,13 @@ func (c *Configuration) WriteN(next *lat.Blueprint, cur *lat.Blueprint) (newCur 
 	return c.mgr.WriteN(c.id, cur, context.Background(), &pb.WriteNRequest{c.id, &bp})
 }
 
-func GetBlueprintSlice(replies []*NextReport) []lat.Blueprint {
-	blps := make([]lat.Blueprint,0)
-	for _, nr := range replies {
-		for _,blp := range nr.GetNext() {
-				bp := lat.GetBlueprint(*blp)
-				blps = add(blps,bp)
-		}
-		
+func GetBlueprintSlice(next []lat.Blueprint,rep NextReport) []lat.Blueprint {
+  	for _,blp := range rep.GetNext() {
+			bp := lat.GetBlueprint(*blp)
+			next = add(next,bp)
 	}
-	return blps
+		
+	return next
 }
 
 func add(bls []lat.Blueprint,bp lat.Blueprint) []lat.Blueprint {

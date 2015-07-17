@@ -20,7 +20,7 @@ var bp3 = pb.Blueprint{a2,r2}
 var bp4 = pb.Blueprint{a3,r2}
 var bp5 = pb.Blueprint{a3,r3}
 
-
+//Need to redo these tests.
 func Setup() ([]*pb.ReadNReply, []lat.Blueprint) {
 	replies := make([]*pb.ReadNReply,5)
 	replies[0]=&pb.ReadNReply{Next:[]*pb.Blueprint{&bp1,&bp3}}

@@ -2,7 +2,7 @@ package directCombineLattice
 
 import (
 	"testing"
-	//"fmt"
+	"fmt"
 )
 
 var one = ID(1)
@@ -79,6 +79,9 @@ var bpy = Blueprint{a1, a0}
 var bpz = Blueprint{a3, r1}
 
 func TestCompar(t *testing.T) {
+	fmt.Printf("Rem: %v, len: %d", bp3.Rem, len(bp3.Rem))
+	mybl := new(Blueprint)
+	fmt.Printf("Rem: %v, len: %d", mybl.Rem, len(mybl.Rem))
 	if bp1.Compare(bp2) != 1 {
 		t.Errorf("%v not smaller %v.", bp1, bp2)
 	}
@@ -95,18 +98,23 @@ func TestCompar(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
-	m := bp1.Merge(bp2)
+	pnt := &bp1
+	m := pnt.Merge(bp2)
 	if !m.Equals(bp2) {
 		t.Errorf("merge(%v, %v) was ¤v.", bp1, bp2, m)
 	}
-	m = bp1.Merge(bp3)
+	m = pnt.Merge(bp3)
 	if !m.Equals(bp1) {
 		t.Errorf("merge(%v, %v) was ¤v.", bp1, bp3, m)
 	}
-	m = bpx.Merge(bpy)
+	pnt = &bpx
+	m = pnt.Merge(bpy)
 	if !m.Equals(bpz) {
-		t.Errorf("merge(%v, %v) was ¤v.", bp1, bp2, m)
+		t.Errorf("merge(%v, %v) was ¤v.", bpx, bpy, m)
 	}
+	pnt = nil
+	m = pnt.Merge(bpy)
+	fmt.Println("nil merge returned ", m)
 }
 
 func TestToMsg(t *testing.T) {

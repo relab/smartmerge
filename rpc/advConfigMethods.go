@@ -3,23 +3,23 @@ package rpc
 import (
 	"golang.org/x/net/context"
 
-	pb "github.com/relab/smartMerge/proto"
 	lat "github.com/relab/smartMerge/directCombineLattice"
+	pb "github.com/relab/smartMerge/proto"
 	//"github.com/relab/smartMerge/regserver"
 )
 
-func (c *Configuration) AReadS(cur *lat.Blueprint) (s pb.State, next []lat.Blueprint, newCur *lat.Blueprint,err error) {
-	replies, newCur, err :=c.mgr.AReadS(c.id, cur, context.Background())
-	if err != nil || newCur != nil  {
+func (c *Configuration) AReadS(cur *lat.Blueprint) (s pb.State, next []lat.Blueprint, newCur *lat.Blueprint, err error) {
+	replies, newCur, err := c.mgr.AReadS(c.id, cur, context.Background())
+	if err != nil || newCur != nil {
 		return
 	}
 
 	for _, st := range replies {
-		if st != nil && s.Compare(st.State)== 1 {
+		if st != nil && s.Compare(st.State) == 1 {
 			s = *st.State
 		}
 	}
-	for _,rep := range replies {
+	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 	}
 	return
@@ -27,15 +27,15 @@ func (c *Configuration) AReadS(cur *lat.Blueprint) (s pb.State, next []lat.Bluep
 
 func (c *Configuration) AWriteS(s *pb.State, cur *lat.Blueprint) (next []lat.Blueprint, newCur *lat.Blueprint, err error) {
 	replies, newCur, err := c.mgr.AWriteS(c.id, cur, context.Background(), &pb.AdvWriteS{s, c.id})
-	if err != nil || newCur != nil  {
+	if err != nil || newCur != nil {
 		return
 	}
-	
-	for _,rep := range replies {
+
+	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 	}
 	return
-	
+
 }
 
 func (c *Configuration) LAProp(cur *lat.Blueprint, prop *lat.Blueprint) (las *lat.Blueprint, next []lat.Blueprint, newCur *lat.Blueprint, err error) {
@@ -44,14 +44,15 @@ func (c *Configuration) LAProp(cur *lat.Blueprint, prop *lat.Blueprint) (las *la
 	if err != nil || newCur != nil {
 		return
 	}
-	
-	for _,rep := range replies {
+
+	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
-		las = MergeLAState(las,rep)
+		las = MergeLAState(las, rep)
 	}
 	return
 }
 
+//TODO: This also has to return an RState.
 func (c *Configuration) AWriteN(nnext *lat.Blueprint, cur *lat.Blueprint) (las *lat.Blueprint, next []lat.Blueprint, newCur *lat.Blueprint, err error) {
 	bp := nnext.ToMsg()
 	replies, newCur, err := c.mgr.AWriteN(c.id, cur, context.Background(), &pb.AdvWriteN{c.id, &bp})
@@ -59,9 +60,9 @@ func (c *Configuration) AWriteN(nnext *lat.Blueprint, cur *lat.Blueprint) (las *
 		return
 	}
 
-	for _,rep := range replies {
+	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
-		las = MergeLAState(las,rep)
+		las = MergeLAState(las, rep)
 	}
 	return
 }

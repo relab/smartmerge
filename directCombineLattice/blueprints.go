@@ -21,7 +21,7 @@ func union(A, B map[ID]bool) (C map[ID]bool) {
 func difference(A, B map[ID]bool) (C map[ID]bool) {
 	C = make(map[ID]bool, len(A))
 	for id := range A {
-		if ok, _ := B[id]; !ok {
+		if _, ok := B[id]; !ok {
 			C[id] = true
 		}
 	}
@@ -30,14 +30,18 @@ func difference(A, B map[ID]bool) (C map[ID]bool) {
 
 func subset(A, B map[ID]bool) bool {
 	for id := range A {
-		if ok, _ := B[id]; !ok {
+		if _, ok := B[id]; !ok {
 			return false
 		}
 	}
 	return true
 }
 
+//TODO: These should be pointers all three.
 func (bp *Blueprint) Merge(blpr Blueprint) (mbp Blueprint) {
+	if bp == nil {
+		return blpr
+	}
 	mbp.Rem = union(bp.Rem, blpr.Rem)
 	mbp.Add = difference(union(bp.Add, blpr.Add), mbp.Rem)
 	return mbp
@@ -58,4 +62,12 @@ func (bp Blueprint) Compare(blpr Blueprint) int {
 
 func (bp Blueprint) Equals(blpr Blueprint) bool {
 	return bp.Compare(blpr) == 1 && blpr.Compare(bp) == 1
+}
+
+func (bp *Blueprint) Ids() []uint32 {
+	ids := make([]uint32,0,len(bp.Add))
+	for id, _ := range bp.Add {
+		ids = append(ids, uint32(id))
+	}
+	return ids
 }

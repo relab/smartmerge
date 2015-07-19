@@ -49,4 +49,3 @@ func (c *Configuration) String() string {
 func (c *Configuration) Equals(config *Configuration) bool {
 	return c.id == config.id
 }
-

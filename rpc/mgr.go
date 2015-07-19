@@ -13,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
-
 )
 
 var defaultLocMapper = func(ip net.IP) string {
@@ -252,16 +251,16 @@ func MachineID(IP string) uint32 {
 }
 
 func (m *Manager) NewConfigurationFromIP(IPs []string, quorumSize int, grpcOptions ...grpc.CallOption) (*Configuration, error) {
-	ids := make([]uint32,len(IPs))
+	ids := make([]uint32, len(IPs))
 
 	h := fnv.New32a()
 	for i, IP := range IPs {
 		h.Write([]byte(IP))
-		ids[i]=h.Sum32()
+		ids[i] = h.Sum32()
 		h.Reset()
 	}
 
-	c, err := m.NewConfiguration(ids, quorumSize, grpcOptions... )
+	c, err := m.NewConfiguration(ids, quorumSize, grpcOptions...)
 
 	return c, err
 }

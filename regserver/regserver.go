@@ -23,20 +23,20 @@ var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
 func NewRegServer() *RegServer {
 	return &RegServer{
 		LAState: new(pb.Blueprint),
-		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:   make([]*pb.Blueprint, 0),
-		mu:     sync.RWMutex{},
+		RState:  &pb.State{make([]byte, 0), int32(0), uint32(0)},
+		Next:    make([]*pb.Blueprint, 0),
+		mu:      sync.RWMutex{},
 	}
 }
 
 func NewRegServerWithCur(cur *pb.Blueprint, curc uint32) *RegServer {
 	return &RegServer{
-		Cur:    cur,
-		CurC:   curc,
+		Cur:     cur,
+		CurC:    curc,
 		LAState: new(pb.Blueprint),
-		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:   make([]*pb.Blueprint, 0),
-		mu:     sync.RWMutex{},
+		RState:  &pb.State{make([]byte, 0), int32(0), uint32(0)},
+		Next:    make([]*pb.Blueprint, 0),
+		mu:      sync.RWMutex{},
 	}
 }
 
@@ -178,11 +178,21 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	
-	rs.LAState = lat.Merge(*rs.LAState, *lap.Prop)
-	
 	if lap.CurC != rs.CurC {
-		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
+		//Does not return Values in this case.
+		return &pb.LAReply{Cur: rs.Cur}, nil
 	}
-	return &pb.LAReply{LAState: rs.LAState, Next: rs.Next}, nil 
+
+	if rs.GetLAState() == nil {
+		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
+
+	if lat.Compare(*rs.LAState, *lap.Prop) == 1 {
+		//Accept
+		rs.LAState = newLas
+		return &pb.LAReply{Next: rs.Next}
+	}
+
+	//Not Accepted, try again.
+	rs.LAState = lat.Merge(*rs.LAState, *lap.Prop)
+	return &pb.LAReply{LAState: rs.LAState}, nil
 }

@@ -1,34 +1,34 @@
 package rpc
 
 import (
-	"time"
 	"errors"
+	"time"
 
-	"google.golang.org/grpc"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 
-	pb "github.com/relab/smartMerge/proto"
 	lat "github.com/relab/smartMerge/directCombineLattice"
+	pb "github.com/relab/smartMerge/proto"
 )
 
 func (c *Configuration) ReadQuorumSize() int {
-	return c.Size() - c.QuorumSize() +1
+	return c.Size() - c.QuorumSize() + 1
 }
 
 //Cur is used to check if some server returned a new current Blueprint.
 //In this case, the call is aborted.
 //If cur == nil, any returned Blueprint results in an abort.
-func (m *Manager) ReadS(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.ReadReply, *lat.Blueprint, error){
+func (m *Manager) ReadS(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.ReadReply, *lat.Blueprint, error) {
 	c, found := m.configs[configID]
 	if !found {
-		return nil,nil, ConfigNotFound(configID)
+		return nil, nil, ConfigNotFound(configID)
 	}
 
 	var (
 		replyChan  = make(chan *pb.ReadReply, c.quorum)
 		stopSignal = make(chan struct{})
 		errSignal  = make(chan bool, c.quorum)
-		out        = make([]*pb.ReadReply,0, c.ReadQuorumSize())
+		out        = make([]*pb.ReadReply, 0, c.ReadQuorumSize())
 		errCount   int
 	)
 
@@ -80,7 +80,6 @@ func (m *Manager) ReadS(configID uint32, cur *lat.Blueprint, ctx context.Context
 				return out, nil, nil
 			}
 
-
 		case <-errSignal:
 			errCount++
 			if errCount > len(c.machines)-c.ReadQuorumSize() {
@@ -91,7 +90,7 @@ func (m *Manager) ReadS(configID uint32, cur *lat.Blueprint, ctx context.Context
 
 }
 
-func (m *Manager) WriteS(configID uint32, cur *lat.Blueprint, ctx context.Context, args *pb.WriteRequest, opts ...grpc.CallOption) (*lat.Blueprint, error){
+func (m *Manager) WriteS(configID uint32, cur *lat.Blueprint, ctx context.Context, args *pb.WriteRequest, opts ...grpc.CallOption) (*lat.Blueprint, error) {
 	c, found := m.configs[configID]
 	if !found {
 		return nil, ConfigNotFound(configID)
@@ -162,7 +161,7 @@ func (m *Manager) WriteS(configID uint32, cur *lat.Blueprint, ctx context.Contex
 
 }
 
-func (m *Manager) ReadN(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.ReadNReply, *lat.Blueprint, error){
+func (m *Manager) ReadN(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.ReadNReply, *lat.Blueprint, error) {
 	c, found := m.configs[configID]
 	if !found {
 		return nil, nil, ConfigNotFound(configID)
@@ -172,7 +171,7 @@ func (m *Manager) ReadN(configID uint32, cur *lat.Blueprint, ctx context.Context
 		replyChan  = make(chan *pb.ReadNReply, c.quorum)
 		stopSignal = make(chan struct{})
 		errSignal  = make(chan bool, c.quorum)
-		out        = make([]*pb.ReadNReply,0, c.ReadQuorumSize())
+		out        = make([]*pb.ReadNReply, 0, c.ReadQuorumSize())
 		errCount   int
 	)
 
@@ -188,7 +187,7 @@ func (m *Manager) ReadN(configID uint32, cur *lat.Blueprint, ctx context.Context
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(ctx, "/proto.Register/ReadN",
-				&pb.ReadNRequest{configID}, repl, machine.conn, c.grpcCallOptions...)
+					&pb.ReadNRequest{configID}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:
@@ -234,7 +233,7 @@ func (m *Manager) ReadN(configID uint32, cur *lat.Blueprint, ctx context.Context
 
 }
 
-func (m *Manager) WriteN(configID uint32, cur *lat.Blueprint, ctx context.Context, args *pb.WriteNRequest, opts ...grpc.CallOption) (*lat.Blueprint, error){
+func (m *Manager) WriteN(configID uint32, cur *lat.Blueprint, ctx context.Context, args *pb.WriteNRequest, opts ...grpc.CallOption) (*lat.Blueprint, error) {
 	c, found := m.configs[configID]
 	if !found {
 		return nil, ConfigNotFound(configID)
@@ -305,7 +304,7 @@ func (m *Manager) WriteN(configID uint32, cur *lat.Blueprint, ctx context.Contex
 
 }
 
-func (m *Manager) SetCur(configID uint32, ctx context.Context, blp *pb.Blueprint, opts ...grpc.CallOption) ([]*pb.NewCurReply, error){
+func (m *Manager) SetCur(configID uint32, ctx context.Context, blp *pb.Blueprint, opts ...grpc.CallOption) ([]*pb.NewCurReply, error) {
 	c, found := m.configs[configID]
 	if !found {
 		return nil, ConfigNotFound(configID)
@@ -315,7 +314,7 @@ func (m *Manager) SetCur(configID uint32, ctx context.Context, blp *pb.Blueprint
 		replyChan  = make(chan *pb.NewCurReply, c.quorum)
 		stopSignal = make(chan struct{})
 		errSignal  = make(chan bool, c.quorum)
-		out        = make([]*pb.NewCurReply,0, c.quorum)
+		out        = make([]*pb.NewCurReply, 0, c.quorum)
 		errCount   int
 	)
 
@@ -378,7 +377,7 @@ func (m *Manager) SetCurASync(configID uint32, ctx context.Context, blp *pb.Blue
 		go func(machine *machine) {
 			repl := new(pb.NewCurReply)
 			grpc.Invoke(ctx, "/proto.Register/WriteN", &pb.NewCur{blp, configID}, repl, machine.conn, c.grpcCallOptions...)
-			}(ma)
+		}(ma)
 	}
 
 	return nil

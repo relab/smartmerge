@@ -2,8 +2,8 @@ package regserver
 
 import (
 	"encoding/binary"
-	"testing"
 	"fmt"
+	"testing"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
@@ -38,9 +38,9 @@ func TestWriteReadS(t *testing.T) {
 	rs := NewRegServer()
 	var bytes = make([]byte, 64)
 	bytes = Put(5, bytes)
-	s := &pb.State{bytes, 2,0}
+	s := &pb.State{bytes, 2, 0}
 
-	stest,_ := rs.ReadS(ctx, &pb.ReadRequest{})
+	stest, _ := rs.ReadS(ctx, &pb.ReadRequest{})
 	fmt.Printf("Direct ReadS returned: %v\n", stest)
 	fmt.Printf("Should return: %v\n", &InitState)
 
@@ -48,9 +48,8 @@ func TestWriteReadS(t *testing.T) {
 	if rs.RState != s {
 		t.Error("First write did fail.")
 	}
-	
-	
-	s2 := &pb.State{bytes, 1,0}
+
+	s2 := &pb.State{bytes, 1, 0}
 	rs.WriteS(ctx, &pb.WriteRequest{State: s2})
 	if rs.RState != s {
 		t.Error("Second write did fail.")
@@ -64,9 +63,9 @@ func TestWriteReadS(t *testing.T) {
 		t.Error("Reading returned wrong bytes.")
 	}
 
-	rs.WriteN(ctx, &pb.WriteNRequest{Next : &bpi1})
-	rs.WriteN(ctx, &pb.WriteNRequest{Next : &bpi2})
-	rs.WriteN(ctx, &pb.WriteNRequest{Next : &bpi1})
+	rs.WriteN(ctx, &pb.WriteNRequest{Next: &bpi1})
+	rs.WriteN(ctx, &pb.WriteNRequest{Next: &bpi2})
+	rs.WriteN(ctx, &pb.WriteNRequest{Next: &bpi1})
 
 	rNrep, _ := rs.ReadN(ctx, &pb.ReadNRequest{})
 	expected := []*pb.Blueprint{&bpi1, &bpi2}
@@ -95,9 +94,9 @@ func TestAdvWriteReadS(t *testing.T) {
 	rs := NewRegServer()
 	var bytes = make([]byte, 64)
 	bytes = Put(5, bytes)
-	s := &pb.State{bytes, 2,0}
+	s := &pb.State{bytes, 2, 0}
 
-	stest,_ := rs.AReadS(ctx, &pb.AdvRead{})
+	stest, _ := rs.AReadS(ctx, &pb.AdvRead{})
 	fmt.Printf("Direct ReadS returned: %v\n", stest)
 	fmt.Printf("Should return: %v\n", &InitState)
 
@@ -105,9 +104,8 @@ func TestAdvWriteReadS(t *testing.T) {
 	if rs.RState != s {
 		t.Error("First write did fail.")
 	}
-	
-	
-	s2 := &pb.State{bytes, 1,0}
+
+	s2 := &pb.State{bytes, 1, 0}
 	rs.AWriteS(ctx, &pb.AdvWriteS{State: s2})
 	if rs.RState != s {
 		t.Error("Second write did fail.")
@@ -121,9 +119,9 @@ func TestAdvWriteReadS(t *testing.T) {
 		t.Error("Reading returned wrong bytes.")
 	}
 
-	rs.AWriteN(ctx, &pb.AdvWriteN{Next : &bpi1})
-	rs.AWriteN(ctx, &pb.AdvWriteN{Next : &bpi2})
-	rs.AWriteN(ctx, &pb.AdvWriteN{Next : &bpi1})
+	rs.AWriteN(ctx, &pb.AdvWriteN{Next: &bpi1})
+	rs.AWriteN(ctx, &pb.AdvWriteN{Next: &bpi2})
+	rs.AWriteN(ctx, &pb.AdvWriteN{Next: &bpi1})
 
 	rNrep, _ := rs.AWriteS(ctx, &pb.AdvWriteS{State: s})
 	expected := []*pb.Blueprint{&bpi1, &bpi2}
@@ -148,7 +146,6 @@ func TestAdvWriteReadS(t *testing.T) {
 	}
 }
 
-
 func TestStartStop(t *testing.T) {
 	Start(10000)
 
@@ -165,7 +162,7 @@ func TestStartStop(t *testing.T) {
 	if err != nil {
 		t.Errorf("ReadS returned error: %v", err)
 	}
-	fmt.Printf("ReadS returned %v\n",s)
+	fmt.Printf("ReadS returned %v\n", s)
 
 	err = Stop()
 	if err != nil {
@@ -189,7 +186,7 @@ func TestAdvStartStop(t *testing.T) {
 	if err != nil {
 		t.Errorf("ReadS returned error: %v", err)
 	}
-	fmt.Printf("ReadS returned %v\n",s)
+	fmt.Printf("ReadS returned %v\n", s)
 
 	err = Stop()
 	if err != nil {
@@ -220,7 +217,7 @@ func TestStartTStop(t *testing.T) {
 	if rSrep.Cur != nil {
 		t.Errorf("ReadS returned a new current conf: %v", rSrep.Cur)
 	}
-	
+
 	cl.SetCur(ctx, &pb.NewCur{&bpi1, twoi})
 	rSrep, err = cl.ReadS(ctx, &pb.ReadRequest{twoi})
 	if err != nil {

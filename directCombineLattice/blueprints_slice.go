@@ -58,6 +58,7 @@ func ssubset(A, B []uint32) bool {
 }
 
 func Merge(bp, blpr pb.Blueprint) (mbp *pb.Blueprint) {
+	mbp = new(pb.Blueprint)
 	mbp.Rem = sunion(bp.Rem, blpr.Rem)
 	mbp.Add = sdifference(sunion(bp.Add, blpr.Add), mbp.Rem)
 	return mbp

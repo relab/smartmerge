@@ -97,15 +97,15 @@ func TestSCompar(t *testing.T) {
 
 func TestSMerge(t *testing.T) {
 	m := Merge(bpi1, bpi2)
-	if !Equals(m, bpi2) {
+	if !Equals(*m, bpi2) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi2, m)
 	}
 	m = Merge(bpi1, bpi3)
-	if !Equals(m, bpi1) {
+	if !Equals(*m, bpi1) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi3, m)
 	}
 	m = Merge(bpix, bpiy)
-	if !Equals(m, bpiz) {
+	if !Equals(*m, bpiz) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi2, m)
 	}
 }

@@ -17,7 +17,6 @@ var grpcServer *grpc.Server
 var mu sync.Mutex
 var haveServer = false
 
-
 func Start(port int) (*RegServer, error) {
 	return StartInConf(port, nil, uint32(0))
 }
@@ -77,7 +76,6 @@ func StartTest(port int) (*grpc.Server, error) {
 	return grpcServ, nil
 
 }
-
 
 ////////////////// Advanced Server //////////////////////
 

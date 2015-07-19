@@ -1,15 +1,15 @@
 package rpc
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"testing"
 	"time"
-	"fmt"
 
-	"github.com/relab/smartMerge/regserver"
-	pb "github.com/relab/smartMerge/proto"
 	lat "github.com/relab/smartMerge/directCombineLattice"
+	pb "github.com/relab/smartMerge/proto"
+	"github.com/relab/smartMerge/regserver"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -24,11 +24,10 @@ func TestRegisterCall(t *testing.T) {
 	addr1 := "127.0.0.1:8080"
 	addr2 := "127.0.0.1:9090"
 
-	serv1,err1 := regserver.StartTest(8080)
-	serv2,err2 := regserver.StartTest(9090)
+	serv1, err1 := regserver.StartTest(8080)
+	serv2, err2 := regserver.StartTest(9090)
 	defer serv1.Stop()
 	defer serv2.Stop()
-
 
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Error creating server")
@@ -72,7 +71,7 @@ func TestRegisterCall(t *testing.T) {
 		t.Errorf("new Cur: %v", newCur)
 	}
 	fmt.Print(s)
-	s = pb.State{nil,2,0}
+	s = pb.State{nil, 2, 0}
 	newCur, err = myWriteConfig.WriteS(&s, nil)
 	if err != nil {
 		t.Fatalf("write: %v", err)
@@ -80,7 +79,7 @@ func TestRegisterCall(t *testing.T) {
 	if newCur != nil {
 		t.Errorf("new Cur: %v", newCur)
 	}
-	
+
 	sr, newCur, err := myWriteConfig.ReadS(nil)
 	if err != nil {
 		t.Fatalf("write: %v", err)
@@ -92,7 +91,7 @@ func TestRegisterCall(t *testing.T) {
 		t.Errorf("return was %v, expected %v.", sr, s)
 	}
 
-	blps,newCur, err := myWriteConfig.ReadN(nil)
+	blps, newCur, err := myWriteConfig.ReadN(nil)
 	if err != nil {
 		t.Fatalf("readN: %v", err)
 	}
@@ -105,7 +104,7 @@ func TestRegisterCall(t *testing.T) {
 	bluep1 := lat.GetBlueprint(bp1)
 	bluep2 := lat.GetBlueprint(bp2)
 
-	newCur, err = myWriteConfig.WriteN(&bluep1,nil)
+	newCur, err = myWriteConfig.WriteN(&bluep1, nil)
 	if err != nil {
 		t.Fatalf("writeN: %v", err)
 	}
@@ -113,7 +112,7 @@ func TestRegisterCall(t *testing.T) {
 		t.Errorf("new Cur: %v", newCur)
 	}
 
-	_, err = myWriteConfig.WriteN(&bluep2,nil)
+	_, err = myWriteConfig.WriteN(&bluep2, nil)
 	if err != nil {
 		t.Fatalf("writeN: %v", err)
 	}
@@ -126,7 +125,7 @@ func TestRegisterCall(t *testing.T) {
 		t.Errorf("new Cur: %v", newCur)
 	}
 
-	if len(blps)!= 2 ||  !blps[0].Equals(bluep1) || !blps[1].Equals(bluep2) {
+	if len(blps) != 2 || !blps[0].Equals(bluep1) || !blps[1].Equals(bluep2) {
 		t.Errorf("readN returned: %v", blps)
 	}
 

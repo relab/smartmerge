@@ -46,6 +46,16 @@ func (c *Configuration) WriteN(next *lat.Blueprint, cur *lat.Blueprint) (newCur 
 	return c.mgr.WriteN(c.id, cur, context.Background(), &pb.WriteNRequest{c.id, bp})
 }
 
+func (c *Configuration) SetCur(blp *lat.Blueprint) error {
+	msgBlp := blp.ToMsg()
+
+	_, err := c.mgr.SetCur(c.id, context.Background(), msgBlp)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetBlueprintSlice(next []*lat.Blueprint, rep NextReport) []*lat.Blueprint {
 	for _, blp := range rep.GetNext() {
 		bp := lat.GetBlueprint(blp)

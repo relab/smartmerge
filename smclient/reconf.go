@@ -3,7 +3,7 @@ package smclient
 import (
 	"errors"
 
-	"github.com/relab/smartMerge/rpc"
+	//"github.com/relab/smartMerge/rpc"
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 )
@@ -16,19 +16,19 @@ func (smc *SmClient) reconf(prop *lat.Blueprint) error {
 	if prop.Equals(smc.Blueps[0]) {
 		return nil
 	}
-	
+
 	if prop.Compare(smc.Blueps[0]) == 0 {
 		panic("Lattice agreement returned an uncomparable blueprint")
 	}
-	
+
 	if prop.Compare(smc.Blueps[len(smc.Blueps)-1]) == -1 {
 		prop = smc.Blueps[len(smc.Blueps)-1]
 	}
-	
-	if len(prop.Ids())= 0 {
+
+	if len(prop.Ids()) == 0 {
 		return errors.New("Abort before proposing unacceptable configuration.")
 	}
-	
+
 	cur := 0
 	las := new(lat.Blueprint)
 	rst := new(pb.State)
@@ -49,27 +49,26 @@ func (smc *SmClient) reconf(prop *lat.Blueprint) error {
 		if rst.Compare(st) == 1 {
 			rst = st
 		}
-		
+
 		prop = smc.Blueps[len(smc.Blueps)-1]
 	}
-	
+
 	if i := len(smc.Confs); i > cur {
 		smc.Confs[i].WriteS(rst, smc.Blueps[i])
 		smc.Confs[i].LAProp(smc.Blueps[i], las)
-		smc.Confs[i].NewCur(smc.Blueps[i])
+		smc.Confs[i].SetCur(smc.Blueps[i])
 		cur = i
 	}
-	
+
 	smc.Blueps = smc.Blueps[cur:]
 	smc.Confs = smc.Confs[cur:]
-	
+
 	return nil
 }
 
 func (smc *SmClient) lagree(prop *lat.Blueprint) *lat.Blueprint {
 	cur := 0
-	tmp := prop.Merge(*smc.Blueps[0])
-	prop = &tmp
+	prop = prop.Merge(smc.Blueps[0])
 	for i := 0; i < len(smc.Confs); i++ {
 		if i < cur {
 			continue
@@ -92,5 +91,5 @@ func (smc *SmClient) lagree(prop *lat.Blueprint) *lat.Blueprint {
 		smc.Blueps = smc.Blueps[cur:]
 		smc.Confs = smc.Confs[cur:]
 	}
+	return prop
 }
-

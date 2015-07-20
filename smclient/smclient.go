@@ -1,20 +1,20 @@
 package smclient
 
 import (
-	"github.com/relab/smartMerge/rpc"
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
+	"github.com/relab/smartMerge/rpc"
 )
 
 func majQuorum(bp *lat.Blueprint) int {
-	return len(bp.Add)/2 +1
+	return len(bp.Add)/2 + 1
 }
 
 type SmClient struct {
 	Blueps []*lat.Blueprint
-	Confs []*rpc.Configuration
-	mgr *rpc.Manager
-	ID uint32
+	Confs  []*rpc.Configuration
+	mgr    *rpc.Manager
+	ID     uint32
 }
 
 func NewSmClient(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error) {
@@ -23,11 +23,11 @@ func NewSmClient(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient
 		return nil, err
 	}
 	return &SmClient{
-		Blueps : []*lat.Blueprint{initBlp},
-		Confs  : []*rpc.Configuration{conf},
-		mgr    : mgr,
-		ID     : id,
-	       } , nil
+		Blueps: []*lat.Blueprint{initBlp},
+		Confs:  []*rpc.Configuration{conf},
+		mgr:    mgr,
+		ID:     id,
+	}, nil
 }
 
 //Atomic read

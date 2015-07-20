@@ -1,14 +1,14 @@
 package smclient
 
 import (
-	"github.com/relab/smartMerge/rpc"
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
+	"github.com/relab/smartMerge/rpc"
 )
 
 func (smc *SmClient) get() (rs *pb.State) {
 	cur := 0
-	for i:=0; i < len(smc.Confs); i++ {
+	for i := 0; i < len(smc.Confs); i++ {
 		if i < cur {
 			continue
 		}
@@ -35,7 +35,7 @@ func (smc *SmClient) get() (rs *pb.State) {
 
 func (smc *SmClient) set(rs *pb.State) {
 	cur := 0
-	for i:=0; i < len(smc.Confs); i++ {
+	for i := 0; i < len(smc.Confs); i++ {
 		if i < cur {
 			continue
 		}
@@ -82,19 +82,20 @@ func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 			old = false
 			continue
 		case -1:
-			if old { return i} //This is an outdated blueprint.
-			smc.insert(i,blp)
+			if old {
+				return i
+			} //This is an outdated blueprint.
+			smc.insert(i, blp)
 			i++
 			return i
 		case 0:
 			panic("blueprint not comparable")
 		}
 	}
-	smc.insert(i,blp)
+	smc.insert(i, blp)
 	i++
 	return i
 }
-
 
 func (smc *SmClient) insert(i int, blp *lat.Blueprint) {
 	cnf, err := smc.mgr.NewConfiguration(blp.Ids(), majQuorum(blp))
@@ -108,8 +109,8 @@ func (smc *SmClient) insert(i int, blp *lat.Blueprint) {
 		return
 	}
 
-	blps := make([]*lat.Blueprint,len(smc.Blueps)+1)
-	cnfs := make([]*rpc.Configuration,len(smc.Confs)+1)
+	blps := make([]*lat.Blueprint, len(smc.Blueps)+1)
+	cnfs := make([]*rpc.Configuration, len(smc.Confs)+1)
 
 	copy(blps, smc.Blueps[:i])
 	copy(cnfs, smc.Confs[:i])
@@ -117,7 +118,7 @@ func (smc *SmClient) insert(i int, blp *lat.Blueprint) {
 	blps[i] = blp
 	cnfs[i] = cnf
 
-	for ; i<len(smc.Blueps); i++ {
+	for ; i < len(smc.Blueps); i++ {
 		blps[i+1] = smc.Blueps[i]
 		cnfs[i+1] = smc.Confs[i]
 	}

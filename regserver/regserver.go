@@ -124,7 +124,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 
 func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
 	rs.mu.RLock()
-	defer rs.mu.RUnlock()
+	defer rs.mu.RUnlock() 
 
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
@@ -140,6 +140,10 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 	defer rs.mu.Unlock()
 	if rs.RState.Compare(wr.State) == 1 {
 		rs.RState = wr.State
+	}
+
+	if wr.Curc == 0 {
+		return &pb.AdvWriteSReply{}
 	}
 
 	if wr.CurC != rs.CurC {

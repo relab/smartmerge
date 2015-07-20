@@ -13,7 +13,7 @@ func (smc *SmClient) get() (rs *pb.State) {
 			continue
 		}
 
-		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[cur])
+		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[i])
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
 			//No Quorum Available. Retry
@@ -40,7 +40,7 @@ func (smc *SmClient) set(rs *pb.State) {
 			continue
 		}
 
-		next, newCur, err := smc.Confs[i].AWriteS(rs, smc.Blueps[cur])
+		next, newCur, err := smc.Confs[i].AWriteS(rs, smc.Blueps[i])
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
 			i--

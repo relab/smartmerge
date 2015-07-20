@@ -182,19 +182,20 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
 	}
 	
+	c := new(bp.Blueprint)
 	if lap.CurC != rs.CurC {
 		//Does not return Values in this case.
-		return &pb.LAReply{Cur: rs.Cur}, nil
+		c = rs.Cur
 	}
 
 	
 	if lat.Compare(rs.LAState, lap.Prop) == 1 {
 		//Accept
 		rs.LAState = lap.Prop
-		return &pb.LAReply{Next: rs.Next}, nil
+		return &pb.LAReply{Cur: c, Next: rs.Next}, nil
 	}
 
 	//Not Accepted, try again.
 	rs.LAState = lat.Merge(rs.LAState, lap.Prop)
-	return &pb.LAReply{LAState: rs.LAState}, nil
+	return &pb.LAReply{Cur: c, LAState: rs.LAState}, nil
 }

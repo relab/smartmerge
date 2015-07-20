@@ -293,7 +293,7 @@ func (m *Manager) AWriteN(configID uint32, cur *lat.Blueprint, ctx context.Conte
 					return nil, newCur, nil
 				}
 				if cur.Compare(newCur) == 1 {
-					//Abort only if new cur was returned.
+					//Abort only if newCur larger than current.
 					return nil, newCur, nil
 				}
 			}

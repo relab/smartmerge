@@ -14,14 +14,16 @@ func (c *Configuration) AReadS(cur *lat.Blueprint) (s *pb.State, next []*lat.Blu
 		return
 	}
 
-	for _, st := range replies {
-		if s.Compare(st.State) == 1 {
-			s = st.State
+	for _, rep := range replies {
+		if s.Compare(rep.GetState()) == 1 {
+			s = rep.GetState()
 		}
 	}
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
+		cur = CompareCur(cur, rep)
 	}
+	newCur = cur
 	return
 }
 
@@ -33,7 +35,9 @@ func (c *Configuration) AWriteS(s *pb.State, cur *lat.Blueprint) (next []*lat.Bl
 
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
+		cur = CompareCur(cur, rep)
 	}
+	newCur = cur
 	return
 
 }
@@ -48,22 +52,31 @@ func (c *Configuration) LAProp(cur *lat.Blueprint, prop *lat.Blueprint) (las *la
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 		las = MergeLAState(las, rep)
+		cur = CompareCur(cur, rep)
 	}
+	newCur = cur
 	return
 }
 
 //TODO: This also has to return an RState.
-func (c *Configuration) AWriteN(nnext *lat.Blueprint, cur *lat.Blueprint) (las *lat.Blueprint, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
+func (c *Configuration) AWriteN(nnext *lat.Blueprint, cur *lat.Blueprint) (st *pb.State, las *lat.Blueprint, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
 	bp := nnext.ToMsg()
 	replies, newCur, err := c.mgr.AWriteN(c.id, cur, context.Background(), &pb.AdvWriteN{c.id, bp})
 	if err != nil || newCur != nil {
 		return
 	}
 
+	
+
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 		las = MergeLAState(las, rep)
+		cur = CompareCur(cur, rep)
+		if st.Compare(rep.GetState()) == 1 {
+			st = rep.GetState()
+		}
 	}
+	newCur = cur
 	return
 }
 
@@ -81,4 +94,16 @@ func MergeLAState(las *lat.Blueprint, rep LAStateReport) *lat.Blueprint {
 		return lap
 	}
 	return las.Merge(lap)
+}
+
+type CurReport interface {
+	GetCur() *pb.Blueprint
+}
+
+func CompareCur(cur *lat.Blueprint,rep CurReport) *lat.Blueprint {
+	newCur := lat.GetBlueprint(rep.GetCur())	
+	if cur.Compare(newCur) == 1 {
+		return newCur
+	}
+	return cur
 }

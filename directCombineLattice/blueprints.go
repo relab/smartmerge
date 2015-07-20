@@ -37,11 +37,14 @@ func subset(A, B map[ID]bool) bool {
 	return true
 }
 
-//TODO: These should be pointers all three.
-func (bp *Blueprint) Merge(blpr Blueprint) (mbp Blueprint) {
+func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 	if bp == nil {
 		return blpr
 	}
+	if blpr == nil {
+		return bp
+	}
+	mbp = new(Blueprint)
 	mbp.Rem = union(bp.Rem, blpr.Rem)
 	mbp.Add = difference(union(bp.Add, blpr.Add), mbp.Rem)
 	return mbp
@@ -50,7 +53,14 @@ func (bp *Blueprint) Merge(blpr Blueprint) (mbp Blueprint) {
 // a.Compare b = 1 <=> a <= b
 // a.Compare b = -1 <=> b < a
 // a.Compare b = 0 <=> !(b <= a) && !(a <= b)
-func (bp Blueprint) Compare(blpr Blueprint) int {
+func (bp *Blueprint) Compare(blpr *Blueprint) int {
+	if bp == nil {
+		return 1
+	}
+	if blpr == nil {
+		return -1
+	}
+	
 	if subset(bp.Add, union(blpr.Add, blpr.Rem)) && subset(bp.Rem, blpr.Rem) {
 		return 1
 	}
@@ -60,11 +70,14 @@ func (bp Blueprint) Compare(blpr Blueprint) int {
 	return 0
 }
 
-func (bp Blueprint) Equals(blpr Blueprint) bool {
+func (bp *Blueprint) Equals(blpr *Blueprint) bool {
 	return bp.Compare(blpr) == 1 && blpr.Compare(bp) == 1
 }
 
 func (bp *Blueprint) Ids() []uint32 {
+	if bp == nil {
+		return nil
+	}
 	ids := make([]uint32,0,len(bp.Add))
 	for id, _ := range bp.Add {
 		ids = append(ids, uint32(id))

@@ -71,7 +71,7 @@ func TestWriteReadS(t *testing.T) {
 	expected := []*pb.Blueprint{&bpi1, &bpi2}
 	for _, ab := range rNrep.Next {
 		for i, bl := range expected {
-			if lat.Equals(*ab, *bl) {
+			if lat.Equals(ab, bl) {
 				if i == 1 {
 					expected = expected[:1]
 				} else {
@@ -127,7 +127,7 @@ func TestAdvWriteReadS(t *testing.T) {
 	expected := []*pb.Blueprint{&bpi1, &bpi2}
 	for _, ab := range rNrep.Next {
 		for i, bl := range expected {
-			if lat.Equals(*ab, *bl) {
+			if lat.Equals(ab, bl) {
 				if i == 1 {
 					expected = expected[:1]
 				} else {

@@ -101,10 +101,10 @@ func TestRegisterCall(t *testing.T) {
 
 	fmt.Printf("ReadN before Write: %v", blps)
 
-	bluep1 := lat.GetBlueprint(bp1)
-	bluep2 := lat.GetBlueprint(bp2)
+	bluep1 := lat.GetBlueprint(&bp1)
+	bluep2 := lat.GetBlueprint(&bp2)
 
-	newCur, err = myWriteConfig.WriteN(&bluep1, nil)
+	newCur, err = myWriteConfig.WriteN(bluep1, nil)
 	if err != nil {
 		t.Fatalf("writeN: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestRegisterCall(t *testing.T) {
 		t.Errorf("new Cur: %v", newCur)
 	}
 
-	_, err = myWriteConfig.WriteN(&bluep2, nil)
+	_, err = myWriteConfig.WriteN(bluep2, nil)
 	if err != nil {
 		t.Fatalf("writeN: %v", err)
 	}

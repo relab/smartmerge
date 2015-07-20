@@ -60,14 +60,14 @@ func (m *Manager) AReadS(configID uint32, cur *lat.Blueprint, ctx context.Contex
 		select {
 		case r := <-replyChan:
 			if r.Cur != nil {
-				newCur := lat.GetBlueprint(*(r.Cur))
+				newCur := lat.GetBlueprint(r.Cur)
 				if cur == nil {
 					//Abort if any Cur returned
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
-				if (*cur).Compare(newCur) == 1 {
+				if cur.Compare(newCur) == 1 {
 					//Abort only if new cur was returned.
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
 			}
 
@@ -136,14 +136,14 @@ func (m *Manager) AWriteS(configID uint32, cur *lat.Blueprint, ctx context.Conte
 		select {
 		case r := <-replyChan:
 			if r.Cur != nil {
-				newCur := lat.GetBlueprint(*(r.Cur))
+				newCur := lat.GetBlueprint(r.Cur)
 				if cur == nil {
 					//Abort if any Cur returned
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
-				if (*cur).Compare(newCur) == 1 {
+				if cur.Compare(newCur) == 1 {
 					//Abort only if new cur was returned.
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
 			}
 
@@ -212,14 +212,14 @@ func (m *Manager) LAProp(configID uint32, cur *lat.Blueprint, ctx context.Contex
 		select {
 		case r := <-replyChan:
 			if r.Cur != nil {
-				newCur := lat.GetBlueprint(*(r.Cur))
+				newCur := lat.GetBlueprint(r.Cur)
 				if cur == nil {
 					//Abort if any Cur returned
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
-				if (*cur).Compare(newCur) == 1 {
+				if cur.Compare(newCur) == 1 {
 					//Abort only if new cur was returned.
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
 			}
 
@@ -287,14 +287,14 @@ func (m *Manager) AWriteN(configID uint32, cur *lat.Blueprint, ctx context.Conte
 		select {
 		case r := <-replyChan:
 			if r.Cur != nil {
-				newCur := lat.GetBlueprint(*(r.Cur))
+				newCur := lat.GetBlueprint(r.Cur)
 				if cur == nil {
 					//Abort if any Cur returned
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
-				if (*cur).Compare(newCur) == 1 {
+				if cur.Compare(newCur) == 1 {
 					//Abort only if new cur was returned.
-					return nil, &newCur, nil
+					return nil, newCur, nil
 				}
 			}
 

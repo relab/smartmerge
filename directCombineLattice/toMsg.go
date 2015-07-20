@@ -4,7 +4,11 @@ import (
 	pb "github.com/relab/smartMerge/proto"
 )
 
-func (b Blueprint) ToMsg() (msg pb.Blueprint) {
+func (b *Blueprint) ToMsg() (msg *pb.Blueprint) {
+	if b == nil {
+		return nil
+	}
+	msg = new(pb.Blueprint)
 	msg.Add = make([]uint32, 0, len(b.Add))
 	msg.Rem = make([]uint32, 0, len(b.Rem))
 	for id := range b.Add {
@@ -16,7 +20,11 @@ func (b Blueprint) ToMsg() (msg pb.Blueprint) {
 	return msg
 }
 
-func GetBlueprint(msg pb.Blueprint) (b Blueprint) {
+func GetBlueprint(msg *pb.Blueprint) (b *Blueprint) {
+	if msg == nil {
+		return nil
+	}
+	b = new(Blueprint)
 	b.Add = make(map[ID]bool, len(msg.Add))
 	b.Rem = make(map[ID]bool, len(msg.Rem))
 	for _, i := range msg.Add {

@@ -71,12 +71,12 @@ func TestSubset(t *testing.T) {
 	}
 }
 
-var bp1 = Blueprint{r1, r2}
-var bp2 = Blueprint{a1, r2}
-var bp3 = Blueprint{a2, a0}
-var bpx = Blueprint{r2, r1}
-var bpy = Blueprint{a1, a0}
-var bpz = Blueprint{a3, r1}
+var bp1 = &Blueprint{r1, r2}
+var bp2 = &Blueprint{a1, r2}
+var bp3 = &Blueprint{a2, a0}
+var bpx = &Blueprint{r2, r1}
+var bpy = &Blueprint{a1, a0}
+var bpz = &Blueprint{a3, r1}
 
 func TestCompar(t *testing.T) {
 	fmt.Printf("Rem: %v, len: %d", bp3.Rem, len(bp3.Rem))
@@ -98,7 +98,7 @@ func TestCompar(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
-	pnt := &bp1
+	pnt := bp1
 	m := pnt.Merge(bp2)
 	if !m.Equals(bp2) {
 		t.Errorf("merge(%v, %v) was ¤v.", bp1, bp2, m)
@@ -107,7 +107,7 @@ func TestMerge(t *testing.T) {
 	if !m.Equals(bp1) {
 		t.Errorf("merge(%v, %v) was ¤v.", bp1, bp3, m)
 	}
-	pnt = &bpx
+	pnt = bpx
 	m = pnt.Merge(bpy)
 	if !m.Equals(bpz) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpx, bpy, m)

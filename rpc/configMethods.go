@@ -12,15 +12,15 @@ type NextReport interface {
 	GetNext() []*pb.Blueprint
 }
 
-func (c *Configuration) ReadS(cur *lat.Blueprint) (s pb.State, newCur *lat.Blueprint, err error) {
+func (c *Configuration) ReadS(cur *lat.Blueprint) (s *pb.State, newCur *lat.Blueprint, err error) {
 	replies, newCur, err := c.mgr.ReadS(c.id, cur, context.Background())
 	if err != nil || newCur != nil {
 		return
 	}
 
 	for _, st := range replies {
-		if st != nil && s.Compare(st.State) == 1 {
-			s = *st.State
+		if s.Compare(st.State) == 1 {
+			s = st.State
 		}
 	}
 	return
@@ -30,7 +30,7 @@ func (c *Configuration) WriteS(s *pb.State, cur *lat.Blueprint) (newCur *lat.Blu
 	return c.mgr.WriteS(c.id, cur, context.Background(), &pb.WriteRequest{s, c.id})
 }
 
-func (c *Configuration) ReadN(cur *lat.Blueprint) (next []lat.Blueprint, newCur *lat.Blueprint, err error) {
+func (c *Configuration) ReadN(cur *lat.Blueprint) (next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
 	replies, newCur, err := c.mgr.ReadN(c.id, cur, context.Background())
 	if err != nil || newCur != nil {
 		return
@@ -43,20 +43,20 @@ func (c *Configuration) ReadN(cur *lat.Blueprint) (next []lat.Blueprint, newCur 
 
 func (c *Configuration) WriteN(next *lat.Blueprint, cur *lat.Blueprint) (newCur *lat.Blueprint, err error) {
 	bp := next.ToMsg()
-	return c.mgr.WriteN(c.id, cur, context.Background(), &pb.WriteNRequest{c.id, &bp})
+	return c.mgr.WriteN(c.id, cur, context.Background(), &pb.WriteNRequest{c.id, bp})
 }
 
-func GetBlueprintSlice(next []lat.Blueprint, rep NextReport) []lat.Blueprint {
+func GetBlueprintSlice(next []*lat.Blueprint, rep NextReport) []*lat.Blueprint {
 	for _, blp := range rep.GetNext() {
-		bp := lat.GetBlueprint(*blp)
+		bp := lat.GetBlueprint(blp)
 		next = add(next, bp)
 	}
 
 	return next
 }
 
-func add(bls []lat.Blueprint, bp lat.Blueprint) []lat.Blueprint {
-	newbls := make([]lat.Blueprint, len(bls)+1)
+func add(bls []*lat.Blueprint, bp *lat.Blueprint) []*lat.Blueprint {
+	newbls := make([]*lat.Blueprint, len(bls)+1)
 	inserted := false
 	for i := range newbls {
 		switch {

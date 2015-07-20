@@ -30,6 +30,7 @@ func (smc *SmClient) get() (rs *pb.State) {
 		smc.Blueps = smc.Blueps[cur:]
 		smc.Confs = smc.Confs[cur:]
 	}
+	return
 }
 
 func (smc *SmClient) set(rs *pb.State) {
@@ -62,35 +63,36 @@ func (smc *SmClient) handleNewCur(cur int, newCur *lat.Blueprint) int {
 }
 
 func (smc *SmClient) handleNext(i int, next []*lat.Blueprint) {
-	for nxt := range next {
+	for _, nxt := range next {
 		if nxt != nil {
 			i = smc.findorinsert(i, nxt)
 		}
 	}
 }
 
-func (smc *SmClient) findorinsert(i int, bp *lat.Blueprint) int {
+func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 	old := true
 	for ; i < len(smc.Blueps); i++ {
-		switch (*smc.Blueps[i]).Compare(*blp) {
+		switch (smc.Blueps[i]).Compare(blp) {
 		case 1:
-			if (*blp).Compare(*smc.Blueps[i]) == 1 {
+			if (blp).Compare(smc.Blueps[i]) == 1 {
 				//Are equal
 				return i
 			}
 			old = false
 			continue
 		case -1:
-			if old { return i}
+			if old { return i} //This is an outdated blueprint.
 			smc.insert(i,blp)
-			return i++
+			i++
+			return i
 		case 0:
 			panic("blueprint not comparable")
 		}
 	}
 	smc.insert(i,blp)
-	return i++
-	}
+	i++
+	return i
 }
 
 
@@ -110,12 +112,12 @@ func (smc *SmClient) insert(i int, blp *lat.Blueprint) {
 	cnfs := make([]*rpc.Configuration,len(smc.Confs)+1)
 
 	copy(blps, smc.Blueps[:i])
-	copy(cnfs, rpc.Confs[:i])
+	copy(cnfs, smc.Confs[:i])
 
 	blps[i] = blp
 	cnfs[i] = cnf
 
-	for i; i<len(smc.Blueps); i++ {
+	for ; i<len(smc.Blueps); i++ {
 		blps[i+1] = smc.Blueps[i]
 		cnfs[i+1] = smc.Confs[i]
 	}

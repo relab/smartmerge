@@ -7,4 +7,5 @@ Possible optimizations not yet implemented:
 
 - Instead of sending complete blueprints over the network, we could try to only send changes relative to the current blueprint. This is possible, since we already include the current blueprint in replies, if it differs from the clients current blueprint.
 
+TODO: Implement reliable broadcast, by calling SetCurAsync on finding a new cur.
 

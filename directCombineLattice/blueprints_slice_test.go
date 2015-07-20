@@ -72,12 +72,12 @@ func TestSSubset(t *testing.T) {
 	}
 }
 
-var bpi1 = pb.Blueprint{r1i, r2i}
-var bpi2 = pb.Blueprint{a1i, r2i}
-var bpi3 = pb.Blueprint{a2i, a0i}
-var bpix = pb.Blueprint{r2i, r1i}
-var bpiy = pb.Blueprint{a1i, a0i}
-var bpiz = pb.Blueprint{a3i, r1i}
+var bpi1 = &pb.Blueprint{r1i, r2i}
+var bpi2 = &pb.Blueprint{a1i, r2i}
+var bpi3 = &pb.Blueprint{a2i, a0i}
+var bpix = &pb.Blueprint{r2i, r1i}
+var bpiy = &pb.Blueprint{a1i, a0i}
+var bpiz = &pb.Blueprint{a3i, r1i}
 
 func TestSCompar(t *testing.T) {
 	if Compare(bpi1, bpi2) != 1 {
@@ -97,15 +97,30 @@ func TestSCompar(t *testing.T) {
 
 func TestSMerge(t *testing.T) {
 	m := Merge(bpi1, bpi2)
-	if !Equals(*m, bpi2) {
+	if !Equals(m, bpi2) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi2, m)
 	}
 	m = Merge(bpi1, bpi3)
-	if !Equals(*m, bpi1) {
+	if !Equals(m, bpi1) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi3, m)
 	}
 	m = Merge(bpix, bpiy)
-	if !Equals(*m, bpiz) {
+	if !Equals(m, bpiz) {
 		t.Errorf("merge(%v, %v) was ¤v.", bpi1, bpi2, m)
+	}
+}
+
+// var r1 = map[ID]bool{ID(1): true}
+// var r2 = map[ID]bool{ID(3): true}
+// var bp1 = &Blueprint{r1, r2}
+
+func TestToMsg2(t *testing.T) {
+	b := GetBlueprint(bpi1)
+	if !b.Equals(bp1) {
+		t.Errorf("GetBlueprint returned %v, from %v\n", b, bpi1)
+	}
+	bi := bp1.ToMsg()
+	if !Equals(bi, bpi1) {
+		t.Errorf("ToMsg returned %v, from %v\n",bi, bp1)
 	}
 }

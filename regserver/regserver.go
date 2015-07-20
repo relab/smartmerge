@@ -85,7 +85,7 @@ func (rs *RegServer) WriteN(ctx context.Context, wr *pb.WriteNRequest) (*pb.Writ
 	defer rs.mu.Unlock()
 	found := false
 	for _, bp := range rs.Next {
-		if lat.Equals(*bp, *(wr.Next)) {
+		if lat.Equals(bp, (wr.Next)) {
 			found = true
 			break
 		}
@@ -109,13 +109,13 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if rs.CurC == 0 || lat.Compare(*rs.Cur, *nc.Cur) == 1 {
+	if rs.CurC == 0 || lat.Compare(rs.Cur, nc.Cur) == 1 {
 		rs.Cur = nc.Cur
 		rs.CurC = nc.CurC
 		return &pb.NewCurReply{true}, nil
 	}
 
-	if lat.Compare(*rs.Cur, *nc.Cur) == 0 {
+	if lat.Compare(rs.Cur, nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
@@ -157,7 +157,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 	found := false
 
 	for _, bp := range rs.Next {
-		if lat.Equals(*bp, *(wr.Next)) {
+		if lat.Equals(bp, (wr.Next)) {
 			found = true
 			break
 		}
@@ -178,21 +178,23 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	if lap == nil {
+		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
+	}
+	
 	if lap.CurC != rs.CurC {
 		//Does not return Values in this case.
 		return &pb.LAReply{Cur: rs.Cur}, nil
 	}
 
-	if rs.GetLAState() == nil {
-		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
-
-	if lat.Compare(*rs.LAState, *lap.Prop) == 1 {
+	
+	if lat.Compare(rs.LAState, lap.Prop) == 1 {
 		//Accept
-		rs.LAState = newLas
-		return &pb.LAReply{Next: rs.Next}
+		rs.LAState = lap.Prop
+		return &pb.LAReply{Next: rs.Next}, nil
 	}
 
 	//Not Accepted, try again.
-	rs.LAState = lat.Merge(*rs.LAState, *lap.Prop)
+	rs.LAState = lat.Merge(rs.LAState, lap.Prop)
 	return &pb.LAReply{LAState: rs.LAState}, nil
 }

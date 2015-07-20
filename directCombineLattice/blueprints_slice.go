@@ -57,7 +57,13 @@ func ssubset(A, B []uint32) bool {
 	return true
 }
 
-func Merge(bp, blpr pb.Blueprint) (mbp *pb.Blueprint) {
+func Merge(bp, blpr *pb.Blueprint) (mbp *pb.Blueprint) {
+	if bp == nil {
+		return blpr
+	}
+	if blpr == nil {
+		return bp
+	}
 	mbp = new(pb.Blueprint)
 	mbp.Rem = sunion(bp.Rem, blpr.Rem)
 	mbp.Add = sdifference(sunion(bp.Add, blpr.Add), mbp.Rem)
@@ -67,7 +73,13 @@ func Merge(bp, blpr pb.Blueprint) (mbp *pb.Blueprint) {
 // a.Compare b = 1 <=> a <= b
 // a.Compare b = -1 <=> b < a
 // a.Compare b = 0 <=> !(b <= a) && !(a <= b)
-func Compare(bp, blpr pb.Blueprint) int {
+func Compare(bp, blpr *pb.Blueprint) int {
+	if bp == nil {
+		return 1
+	}
+	if blpr == nil {
+		return -1
+	}
 	if ssubset(bp.Add, sunion(blpr.Add, blpr.Rem)) && ssubset(bp.Rem, blpr.Rem) {
 		return 1
 	}
@@ -77,6 +89,6 @@ func Compare(bp, blpr pb.Blueprint) int {
 	return 0
 }
 
-func Equals(bp, blpr pb.Blueprint) bool {
+func Equals(bp, blpr *pb.Blueprint) bool {
 	return Compare(bp, blpr) == 1 && Compare(blpr, bp) == 1
 }

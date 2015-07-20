@@ -22,7 +22,7 @@ func NewSmClient(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient
 	if err != nil {
 		return nil, err
 	}
-	return SmClient{
+	return &SmClient{
 		Blueps : []*lat.Blueprint{initBlp},
 		Confs  : []*rpc.Configuration{conf},
 		mgr    : mgr,
@@ -43,11 +43,11 @@ func (smc *SmClient) read() []byte {
 func (smc *SmClient) write(val []byte) {
 	rs := smc.get()
 	if rs == nil {
-		rs = &pb.State{Value: val, Timestamp: 1, Writer: id)
+		rs = &pb.State{Value: val, Timestamp: 1, Writer: smc.ID}
 	} else {
 		rs.Value = val
 		rs.Timestamp++
-		rs.Writer = id
+		rs.Writer = smc.ID
 	}
 	smc.set(rs)
 }

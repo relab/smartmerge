@@ -114,6 +114,14 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 		rs.CurC = nc.CurC
 		return &pb.NewCurReply{true}, nil
 	}
+	
+	newNext := make([]*pb.Blueprint,0,len(rs.Next))
+	for _, blp := range rs.Next {
+		if lat.Compare(blp,rs.Cur) != 1 {
+			newNext = append(newNext, blp)
+		}
+	} 
+	rs.Next = newNext
 
 	if lat.Compare(rs.Cur, nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
@@ -142,8 +150,8 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 		rs.RState = wr.State
 	}
 
-	if wr.Curc == 0 {
-		return &pb.AdvWriteSReply{}
+	if wr.CurC == 0 {
+		return &pb.AdvWriteSReply{}, nil
 	}
 
 	if wr.CurC != rs.CurC {
@@ -186,7 +194,7 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
 	}
 	
-	c := new(bp.Blueprint)
+	c := new(pb.Blueprint)
 	if lap.CurC != rs.CurC {
 		//Does not return Values in this case.
 		c = rs.Cur

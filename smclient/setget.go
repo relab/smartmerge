@@ -1,6 +1,8 @@
 package smclient
 
 import (
+	"fmt"
+	
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 	"github.com/relab/smartMerge/rpc"
@@ -16,8 +18,10 @@ func (smc *SmClient) get() (rs *pb.State) {
 		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[i])
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
+			fmt.Println("error from AReadS: ", err)
 			//No Quorum Available. Retry
 			i--
+			//return
 		}
 
 		smc.handleNext(i, next)
@@ -58,7 +62,6 @@ func (smc *SmClient) handleNewCur(cur int, newCur *lat.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
-
 	return smc.findorinsert(cur, newCur)
 }
 
@@ -75,16 +78,17 @@ func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 	for ; i < len(smc.Blueps); i++ {
 		switch (smc.Blueps[i]).Compare(blp) {
 		case 1:
-			if (blp).Compare(smc.Blueps[i]) == 1 {
+			if blp.Compare(smc.Blueps[i]) == 1 {
 				//Are equal
+				//fmt.Println("Blueprints equal, return")
 				return i
 			}
 			old = false
 			continue
 		case -1:
-			if old {
+			if old {//This is an outdated blueprint.
 				return i
-			} //This is an outdated blueprint.
+			} 
 			smc.insert(i, blp)
 			i++
 			return i
@@ -92,6 +96,7 @@ func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 			panic("blueprint not comparable")
 		}
 	}
+	//fmt.Println("Inserting new highest blueprint")
 	smc.insert(i, blp)
 	i++
 	return i

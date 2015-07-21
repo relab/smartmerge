@@ -1,6 +1,9 @@
 package smclient
 
 import (
+	"errors"
+	"fmt"
+	
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 	"github.com/relab/smartMerge/rpc"
@@ -17,10 +20,16 @@ type SmClient struct {
 	ID     uint32
 }
 
-func NewSmClient(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error) {
+func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error) {
 	conf, err := mgr.NewConfiguration(initBlp.Ids(), majQuorum(initBlp))
 	if err != nil {
 		return nil, err
+	}
+	
+	err = conf.SetCur(initBlp)
+	if err != nil {
+		fmt.Println("initial SetCur returned error: ", err)
+		return nil, errors.New("Initial SetCur failed.")
 	}
 	return &SmClient{
 		Blueps: []*lat.Blueprint{initBlp},
@@ -31,16 +40,17 @@ func NewSmClient(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient
 }
 
 //Atomic read
-func (smc *SmClient) read() []byte {
+func (smc *SmClient) Read() []byte {
 	rs := smc.get()
 	if rs == nil {
 		return nil
 	}
+
 	smc.set(rs)
 	return rs.Value
 }
 
-func (smc *SmClient) write(val []byte) {
+func (smc *SmClient) Write(val []byte) {
 	rs := smc.get()
 	if rs == nil {
 		rs = &pb.State{Value: val, Timestamp: 1, Writer: smc.ID}

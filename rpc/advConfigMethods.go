@@ -21,30 +21,28 @@ func (c *Configuration) AReadS(cur *lat.Blueprint) (s *pb.State, next []*lat.Blu
 	}
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
-		cur = CompareCur(cur, rep)
+		newCur = CompareCur(newCur, rep)
 	}
-	newCur = cur
 	return
 }
 
-func (c *Configuration) AWriteS(s *pb.State, cur *lat.Blueprint) (next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
-	replies, newCur, err := c.mgr.AWriteS(c.id, cur, context.Background(), &pb.AdvWriteS{s, c.id})
+func (c *Configuration) AWriteS(s *pb.State, thisBP *lat.Blueprint) (next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
+	replies, newCur, err := c.mgr.AWriteS(c.id, thisBP, context.Background(), &pb.AdvWriteS{s, c.id})
 	if err != nil || newCur != nil {
 		return
 	}
 
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
-		cur = CompareCur(cur, rep)
+		newCur = CompareCur(newCur, rep)
 	}
-	newCur = cur
 	return
 
 }
 
-func (c *Configuration) LAProp(cur *lat.Blueprint, prop *lat.Blueprint) (las *lat.Blueprint, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
+func (c *Configuration) LAProp(thisBP *lat.Blueprint, prop *lat.Blueprint) (las *lat.Blueprint, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
 	bp := prop.ToMsg()
-	replies, newCur, err := c.mgr.LAProp(c.id, cur, context.Background(), &pb.LAProposal{c.id, bp})
+	replies, newCur, err := c.mgr.LAProp(c.id, thisBP, context.Background(), &pb.LAProposal{c.id, bp})
 	if err != nil || newCur != nil {
 		return
 	}
@@ -52,16 +50,15 @@ func (c *Configuration) LAProp(cur *lat.Blueprint, prop *lat.Blueprint) (las *la
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 		las = MergeLAState(las, rep)
-		cur = CompareCur(cur, rep)
+		newCur = CompareCur(newCur, rep)
 	}
-	newCur = cur
 	return
 }
 
 //TODO: This also has to return an RState.
-func (c *Configuration) AWriteN(nnext *lat.Blueprint, cur *lat.Blueprint) (st *pb.State, las *lat.Blueprint, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
+func (c *Configuration) AWriteN(nnext *lat.Blueprint, thisBP *lat.Blueprint) (st *pb.State, las *lat.Blueprint, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
 	bp := nnext.ToMsg()
-	replies, newCur, err := c.mgr.AWriteN(c.id, cur, context.Background(), &pb.AdvWriteN{c.id, bp})
+	replies, newCur, err := c.mgr.AWriteN(c.id, thisBP, context.Background(), &pb.AdvWriteN{c.id, bp})
 	if err != nil || newCur != nil {
 		return
 	}
@@ -71,12 +68,12 @@ func (c *Configuration) AWriteN(nnext *lat.Blueprint, cur *lat.Blueprint) (st *p
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 		las = MergeLAState(las, rep)
-		cur = CompareCur(cur, rep)
+		newCur = CompareCur(newCur, rep)
 		if st.Compare(rep.GetState()) == 1 {
 			st = rep.GetState()
 		}
 	}
-	newCur = cur
+
 	return
 }
 

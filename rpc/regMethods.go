@@ -304,6 +304,7 @@ func (m *Manager) WriteN(configID uint32, cur *lat.Blueprint, ctx context.Contex
 
 }
 
+/*
 func (m *Manager) SetCur(configID uint32, ctx context.Context, blp *pb.Blueprint, opts ...grpc.CallOption) ([]*pb.NewCurReply, error) {
 	c, found := m.configs[configID]
 	if !found {
@@ -329,7 +330,7 @@ func (m *Manager) SetCur(configID uint32, ctx context.Context, blp *pb.Blueprint
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.Register/WriteN", &pb.NewCur{blp, configID}, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.Register/SetCur", &pb.NewCur{blp, configID}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:
@@ -381,4 +382,4 @@ func (m *Manager) SetCurASync(configID uint32, ctx context.Context, blp *pb.Blue
 	}
 
 	return nil
-}
+}*/

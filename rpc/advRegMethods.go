@@ -39,7 +39,7 @@ func (m *Manager) AReadS(configID uint32, cur *lat.Blueprint, ctx context.Contex
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.Register/AReadS", &pb.AdvRead{configID}, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/AReadS", &pb.AdvRead{configID}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:
@@ -65,7 +65,7 @@ func (m *Manager) AReadS(configID uint32, cur *lat.Blueprint, ctx context.Contex
 					//Abort if any Cur returned
 					return nil, newCur, nil
 				}
-				if cur.Compare(newCur) == 1 {
+				if newCur.Compare(cur) == -1 {
 					//Abort only if new cur was returned.
 					return nil, newCur, nil
 				}
@@ -115,7 +115,7 @@ func (m *Manager) AWriteS(configID uint32, cur *lat.Blueprint, ctx context.Conte
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.Register/AWriteS", args, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/AWriteS", args, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:
@@ -141,7 +141,7 @@ func (m *Manager) AWriteS(configID uint32, cur *lat.Blueprint, ctx context.Conte
 					//Abort if any Cur returned
 					return nil, newCur, nil
 				}
-				if cur.Compare(newCur) == 1 {
+				if newCur.Compare(cur) == -1 {
 					//Abort only if new cur was returned.
 					return nil, newCur, nil
 				}
@@ -190,7 +190,7 @@ func (m *Manager) LAProp(configID uint32, cur *lat.Blueprint, ctx context.Contex
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.Register/LAProp",
+				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/LAProp",
 					args, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
@@ -217,7 +217,7 @@ func (m *Manager) LAProp(configID uint32, cur *lat.Blueprint, ctx context.Contex
 					//Abort if any Cur returned
 					return nil, newCur, nil
 				}
-				if cur.Compare(newCur) == 1 {
+				if newCur.Compare(cur) == -1 {
 					//Abort only if new cur was returned.
 					return nil, newCur, nil
 				}
@@ -266,7 +266,7 @@ func (m *Manager) AWriteN(configID uint32, cur *lat.Blueprint, ctx context.Conte
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.Register/AWriteN", args, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/AWriteN", args, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:
@@ -292,7 +292,7 @@ func (m *Manager) AWriteN(configID uint32, cur *lat.Blueprint, ctx context.Conte
 					//Abort if any Cur returned
 					return nil, newCur, nil
 				}
-				if cur.Compare(newCur) == 1 {
+				if newCur.Compare(cur) == -1 {
 					//Abort only if newCur larger than current.
 					return nil, newCur, nil
 				}
@@ -310,4 +310,83 @@ func (m *Manager) AWriteN(configID uint32, cur *lat.Blueprint, ctx context.Conte
 		}
 	}
 
+}
+
+func (m *Manager) SetCur(configID uint32, ctx context.Context, blp *pb.Blueprint, opts ...grpc.CallOption) ([]*pb.NewCurReply, error) {
+	c, found := m.configs[configID]
+	if !found {
+		return nil, ConfigNotFound(configID)
+	}
+
+	var (
+		replyChan  = make(chan *pb.NewCurReply, c.quorum)
+		stopSignal = make(chan struct{})
+		errSignal  = make(chan bool, c.quorum)
+		out        = make([]*pb.NewCurReply, 0, c.quorum)
+		errCount   int
+	)
+
+	defer close(stopSignal)
+	for _, mid := range c.machines {
+		ma, found := m.machines[mid]
+		if !found {
+			panic("machine not found")
+		}
+		go func(machine *machine) {
+			repl := new(pb.NewCurReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/SetCur", &pb.NewCur{blp, configID}, repl, machine.conn, c.grpcCallOptions...)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.lastErr = err
+					errSignal <- true
+					return
+				}
+				machine.latency = time.Since(start)
+				replyChan <- repl
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	for {
+		select {
+		case r := <-replyChan:
+			out = append(out, r)
+			if len(out) >= c.QuorumSize() {
+				return out, nil
+			}
+		case <-errSignal:
+			errCount++
+			if errCount > len(c.machines)-c.ReadQuorumSize() {
+				return nil, errors.New("could not complete request due to too many errors")
+			}
+		}
+	}
+
+}
+
+func (m *Manager) SetCurASync(configID uint32, ctx context.Context, blp *pb.Blueprint, opts ...grpc.CallOption) error {
+	c, found := m.configs[configID]
+	if !found {
+		return ConfigNotFound(configID)
+	}
+
+	for _, mid := range c.machines {
+		ma, found := m.machines[mid]
+		if !found {
+			panic("machine not found")
+		}
+		go func(machine *machine) {
+			repl := new(pb.NewCurReply)
+			grpc.Invoke(ctx, "/proto.AdvRegister/SetCur", &pb.NewCur{blp, configID}, repl, machine.conn, c.grpcCallOptions...)
+		}(ma)
+	}
+
+	return nil
 }

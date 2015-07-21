@@ -37,6 +37,32 @@ func subset(A, B map[ID]bool) bool {
 	return true
 }
 
+func (bp *Blueprint) AddP(id ID) {
+	if bp == nil {
+		bp = new(Blueprint)
+	}
+	if bp.Add == nil {
+		bp.Add = map[ID]bool{id: true}
+		return
+	}
+	bp.Add[id] = true
+}
+
+func (bp *Blueprint) RemP(id ID) {
+	if bp == nil {
+		bp = new(Blueprint)
+	}
+	if bp.Rem == nil {
+		bp.Rem = make(map[ID]bool,1)
+	}
+	bp.Rem[id] = true 
+	if bp.Add != nil {
+		bp.Add = difference(bp.Add, bp.Rem)
+	}
+}
+
+
+
 func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 	if bp == nil {
 		return blpr

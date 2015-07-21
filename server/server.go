@@ -18,7 +18,7 @@ var (
 func main() {
 	flag.Parse()
 	fmt.Println("Starting Server with port: ", *port)
-	_,err := regserver.Start(*port)
+	_,err := regserver.StartAdv(*port)
 	if err != nil {
 		fmt.Println(err)
 		panic("Starting server returned error")

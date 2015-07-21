@@ -3,6 +3,7 @@ package regserver
 import (
 	"errors"
 	"sync"
+	"fmt"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
@@ -16,6 +17,16 @@ type RegServer struct {
 	RState  *pb.State
 	Next    []*pb.Blueprint
 	mu      sync.RWMutex
+}
+
+func (rs *RegServer) PrintState(op string) {
+	fmt.Println("Did operation :", op)
+	fmt.Println("New State:")
+	fmt.Println("Cur ", rs.Cur)
+	fmt.Println("CurC ", rs.CurC)
+	fmt.Println("LAState ", rs.LAState)
+	fmt.Println("RState ", rs.RState)	
+	fmt.Println("Next", rs.Next)
 }
 
 var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
@@ -104,6 +115,7 @@ func (rs *RegServer) WriteN(ctx context.Context, wr *pb.WriteNRequest) (*pb.Writ
 func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	defer rs.PrintState("SetCur")
 
 	if nc.CurC == rs.CurC {
 		return &pb.NewCurReply{false}, nil
@@ -132,7 +144,8 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 
 func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
 	rs.mu.RLock()
-	defer rs.mu.RUnlock() 
+	defer rs.mu.RUnlock()
+	defer rs.PrintState("readS")
 
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
@@ -146,6 +159,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRep
 func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	defer rs.PrintState("writeS")
 	if rs.RState.Compare(wr.State) == 1 {
 		rs.RState = wr.State
 	}
@@ -166,6 +180,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWriteNReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	defer rs.PrintState("writeN")
 	found := false
 
 	for _, bp := range rs.Next {
@@ -181,7 +196,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 	if wr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next/State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteNReply{rs.Cur, rs.RState, rs.Next, rs.LAState}, nil
+		return &pb.AdvWriteNReply{Cur: rs.Cur, State: rs.RState,Next: rs.Next, LAState: rs.LAState}, nil
 	}
 
 	return &pb.AdvWriteNReply{State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
@@ -190,13 +205,13 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	defer rs.PrintState("LAProp")
 	if lap == nil {
 		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
 	}
 	
 	c := new(pb.Blueprint)
 	if lap.CurC != rs.CurC {
-		//Does not return Values in this case.
 		c = rs.Cur
 	}
 
@@ -211,3 +226,4 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	rs.LAState = lat.Merge(rs.LAState, lap.Prop)
 	return &pb.LAReply{Cur: c, LAState: rs.LAState}, nil
 }
+

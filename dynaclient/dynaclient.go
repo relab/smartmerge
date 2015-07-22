@@ -1,11 +1,11 @@
-package smclient
+package dynaclient
 
 import (
 	"errors"
 	"fmt"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
-	pb "github.com/relab/smartMerge/proto"
+	//pb "github.com/relab/smartMerge/proto"
 	"github.com/relab/smartMerge/rpc"
 )
 
@@ -13,14 +13,14 @@ func majQuorum(bp *lat.Blueprint) int {
 	return len(bp.Add)/2 + 1
 }
 
-type SmClient struct {
+type DynaClient struct {
 	Blueps []*lat.Blueprint
 	Confs  []*rpc.Configuration
 	mgr    *rpc.Manager
 	ID     uint32
 }
 
-func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error) {
+func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*DynaClient, error) {
 	conf, err := mgr.NewConfiguration(initBlp.Ids(), majQuorum(initBlp))
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error)
 		fmt.Println("initial SetCur returned error: ", err)
 		return nil, errors.New("Initial SetCur failed.")
 	}
-	return &SmClient{
+	return &DynaClient{
 		Blueps: []*lat.Blueprint{initBlp},
 		Confs:  []*rpc.Configuration{conf},
 		mgr:    mgr,
@@ -40,24 +40,26 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error)
 }
 
 //Atomic read
-func (smc *SmClient) Read() []byte {
-	rs := smc.get()
-	if rs == nil {
-		return nil
+func (dc *DynaClient) Read() []byte {
+	val, err := dc.Traverse(nil, nil)
+	if err != nil {
+		fmt.Println("Traverse returned error: ", err)
 	}
-
-	smc.set(rs)
-	return rs.Value
+	return val
 }
 
-func (smc *SmClient) Write(val []byte) {
-	rs := smc.get()
-	if rs == nil {
-		rs = &pb.State{Value: val, Timestamp: 1, Writer: smc.ID}
-	} else {
-		rs.Value = val
-		rs.Timestamp++
-		rs.Writer = smc.ID
+func (dc *DynaClient) Write(val []byte) {
+	_, err := dc.Traverse(nil, val)
+	if err != nil {
+		fmt.Println("Traverse returned error: ", err)
 	}
-	smc.set(rs)
+	return
+}
+
+func (dc *DynaClient) Reconf(bp *lat.Blueprint) {
+	_, err := dc.Traverse(bp, nil)
+	if err != nil {
+		fmt.Println("Traverse returned error: ", err)
+	}
+	return
 }

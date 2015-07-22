@@ -2,8 +2,8 @@ package regserver
 
 import (
 	"errors"
-	"sync"
 	"fmt"
+	"sync"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
@@ -25,7 +25,7 @@ func (rs *RegServer) PrintState(op string) {
 	fmt.Println("Cur ", rs.Cur)
 	fmt.Println("CurC ", rs.CurC)
 	fmt.Println("LAState ", rs.LAState)
-	fmt.Println("RState ", rs.RState)	
+	fmt.Println("RState ", rs.RState)
 	fmt.Println("Next", rs.Next)
 }
 
@@ -124,20 +124,20 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 	if lat.Compare(nc.Cur, rs.Cur) == 1 {
 		return &pb.NewCurReply{false}, nil
 	}
-	
+
 	if lat.Compare(rs.Cur, nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
-	
+
 	rs.Cur = nc.Cur
 	rs.CurC = nc.CurC
-	
-	newNext := make([]*pb.Blueprint,0,len(rs.Next))
+
+	newNext := make([]*pb.Blueprint, 0, len(rs.Next))
 	for _, blp := range rs.Next {
-		if lat.Compare(blp,rs.Cur) == -1 {
+		if lat.Compare(blp, rs.Cur) == -1 {
 			newNext = append(newNext, blp)
 		}
-	} 
+	}
 	rs.Next = newNext
 
 	return &pb.NewCurReply{true}, nil
@@ -197,7 +197,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 	if wr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next/State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteNReply{Cur: rs.Cur, State: rs.RState,Next: rs.Next, LAState: rs.LAState}, nil
+		return &pb.AdvWriteNReply{Cur: rs.Cur, State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
 	}
 
 	return &pb.AdvWriteNReply{State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
@@ -210,13 +210,12 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	if lap == nil {
 		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
 	}
-	
+
 	c := new(pb.Blueprint)
 	if lap.CurC != rs.CurC {
 		c = rs.Cur
 	}
 
-	
 	if lat.Compare(rs.LAState, lap.Prop) == 1 {
 		//Accept
 		rs.LAState = lap.Prop
@@ -227,4 +226,3 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	rs.LAState = lat.Merge(rs.LAState, lap.Prop)
 	return &pb.LAReply{Cur: c, LAState: rs.LAState}, nil
 }
-

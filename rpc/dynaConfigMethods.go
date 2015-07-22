@@ -50,7 +50,7 @@ func (c *Configuration) GetOneN(thisBP *lat.Blueprint, prop *lat.Blueprint) (nex
 	next = lat.GetBlueprint(reply.Next)
 	newCur = lat.GetBlueprint(reply.Cur)
 
-	return 
+	return
 }
 
 func (c *Configuration) DWriteNSet(nnext []*lat.Blueprint, thisBP *lat.Blueprint) (newCur *lat.Blueprint, err error) {
@@ -68,4 +68,14 @@ func (c *Configuration) DWriteNSet(nnext []*lat.Blueprint, thisBP *lat.Blueprint
 	}
 
 	return
+}
+
+func (c *Configuration) DSetCur(blp *lat.Blueprint) error {
+	msgBlp := blp.ToMsg()
+
+	_, err := c.mgr.DSetCur(c.id, context.Background(), msgBlp)
+	if err != nil {
+		return err
+	}
+	return nil
 }

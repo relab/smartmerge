@@ -1,8 +1,8 @@
 package smclient
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
@@ -11,7 +11,7 @@ import (
 func (smc *SmClient) Reconf(prop *lat.Blueprint) error {
 	prop = smc.lagree(prop)
 	//fmt.Println("LA returned ", prop)
-	
+
 	//Proposed blueprint is already in place, or outdated.
 	if prop.Compare(smc.Blueps[0]) == 1 {
 		return nil
@@ -20,7 +20,7 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) error {
 	if prop.Compare(smc.Blueps[0]) == 0 {
 		panic("Lattice agreement returned an uncomparable blueprint")
 	}
-	
+
 	if prop.Compare(smc.Blueps[len(smc.Blueps)-1]) == 1 {
 		prop = smc.Blueps[len(smc.Blueps)-1]
 	}
@@ -57,7 +57,7 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) error {
 		//fmt.Println("Cur has index ", cur)
 	}
 
-	if i := len(smc.Confs)-1; i > cur {
+	if i := len(smc.Confs) - 1; i > cur {
 		smc.Confs[i].AWriteS(rst, smc.Blueps[i])
 		smc.Confs[i].LAProp(smc.Blueps[i], las)
 		smc.Confs[i].SetCur(smc.Blueps[i])

@@ -2,8 +2,8 @@ package regserver
 
 import (
 	"errors"
-	"sync"
 	"fmt"
+	"sync"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
@@ -11,11 +11,11 @@ import (
 )
 
 type DynaServer struct {
-	Cur     *pb.Blueprint
-	CurC    uint32
-	RState  *pb.State
-	Next    map[uint32][]*pb.Blueprint
-	mu      sync.RWMutex
+	Cur    *pb.Blueprint
+	CurC   uint32
+	RState *pb.State
+	Next   map[uint32][]*pb.Blueprint
+	mu     sync.RWMutex
 }
 
 func (ds *DynaServer) PrintState(op string) {
@@ -23,25 +23,25 @@ func (ds *DynaServer) PrintState(op string) {
 	fmt.Println("New State:")
 	fmt.Println("Cur ", ds.Cur)
 	fmt.Println("CurC ", ds.CurC)
-	fmt.Println("RState ", ds.RState)	
+	fmt.Println("RState ", ds.RState)
 	fmt.Println("Next", ds.Next)
 }
 
 func NewDynaServer() *DynaServer {
 	return &DynaServer{
-		RState:  &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:    make(map[uint32][]*pb.Blueprint, 0),
-		mu:      sync.RWMutex{},
+		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
+		Next:   make(map[uint32][]*pb.Blueprint, 0),
+		mu:     sync.RWMutex{},
 	}
 }
 
 func NewDynaServerWithCur(cur *pb.Blueprint, curc uint32) *DynaServer {
 	return &DynaServer{
-		Cur:     cur,
-		CurC:    curc,
-		RState:  &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:    make(map[uint32][]*pb.Blueprint, 0),
-		mu:      sync.RWMutex{},
+		Cur:    cur,
+		CurC:   curc,
+		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
+		Next:   make(map[uint32][]*pb.Blueprint, 0),
+		mu:     sync.RWMutex{},
 	}
 }
 
@@ -57,11 +57,11 @@ func (rs *DynaServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRepl
 	if rs.CurC == 0 || lat.Compare(nc.Cur, rs.Cur) == 1 {
 		return &pb.NewCurReply{false}, nil
 	}
-	
+
 	if lat.Compare(rs.Cur, nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
-	
+
 	rs.Cur = nc.Cur
 	rs.CurC = nc.CurC
 	return &pb.NewCurReply{false}, nil
@@ -106,12 +106,11 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	defer rs.PrintState("writeN")
-	
 
 	if rs.Next[wr.CurC] == nil {
 		rs.Next[wr.CurC] = wr.Next
 	}
-	
+
 	for i, newBp := range wr.Next {
 		for _, bp := range rs.Next[wr.CurC] {
 			if lat.Equals(bp, newBp) {
@@ -120,7 +119,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 			}
 		}
 	}
-	
+
 	for _, newBp := range wr.Next {
 		if newBp != nil {
 			rs.Next[wr.CurC] = append(rs.Next[wr.CurC], newBp)
@@ -130,7 +129,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 	if wr.CurC != rs.CurC {
 		return &pb.DWriteNReply{Cur: rs.Cur}, nil
 	}
-	
+
 	return &pb.DWriteNReply{}, nil
 }
 
@@ -138,16 +137,15 @@ func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOn
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	defer rs.PrintState("LAProp")
-	
+
 	if len(rs.Next[gt.CurC]) == 0 {
 		rs.Next[gt.CurC] = []*pb.Blueprint{gt.Next}
 	}
-	
+
 	var c *pb.Blueprint
 	if gt.CurC != rs.CurC {
 		c = rs.Cur
 	}
-	
+
 	return &pb.GetOneReply{Cur: c, Next: rs.Next[gt.CurC][0]}, nil
 }
-

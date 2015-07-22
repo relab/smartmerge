@@ -2,7 +2,7 @@ package smclient
 
 import (
 	"fmt"
-	
+
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 	"github.com/relab/smartMerge/rpc"
@@ -86,11 +86,10 @@ func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 			old = false
 			continue
 		case -1:
-			if old {//This is an outdated blueprint.
+			if old { //This is an outdated blueprint.
 				return i
-			} 
+			}
 			smc.insert(i, blp)
-			i++
 			return i
 		case 0:
 			panic("blueprint not comparable")
@@ -98,7 +97,6 @@ func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 	}
 	//fmt.Println("Inserting new highest blueprint")
 	smc.insert(i, blp)
-	i++
 	return i
 }
 

@@ -29,6 +29,10 @@ It has these top-level messages:
 	AdvWriteNReply
 	LAProposal
 	LAReply
+	DWriteN
+	DWriteNReply
+	GetOne
+	GetOneReply
 */
 package proto
 
@@ -393,6 +397,76 @@ func (m *LAReply) GetNext() []*Blueprint {
 	return nil
 }
 
+type DWriteN struct {
+	CurC uint32       `protobuf:"varint,1,opt" json:"CurC,omitempty"`
+	Next []*Blueprint `protobuf:"bytes,2,rep" json:"Next,omitempty"`
+}
+
+func (m *DWriteN) Reset()         { *m = DWriteN{} }
+func (m *DWriteN) String() string { return proto1.CompactTextString(m) }
+func (*DWriteN) ProtoMessage()    {}
+
+func (m *DWriteN) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+type DWriteNReply struct {
+	Cur *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+}
+
+func (m *DWriteNReply) Reset()         { *m = DWriteNReply{} }
+func (m *DWriteNReply) String() string { return proto1.CompactTextString(m) }
+func (*DWriteNReply) ProtoMessage()    {}
+
+func (m *DWriteNReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+type GetOne struct {
+	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
+	Next *Blueprint `protobuf:"bytes,2,opt" json:"Next,omitempty"`
+}
+
+func (m *GetOne) Reset()         { *m = GetOne{} }
+func (m *GetOne) String() string { return proto1.CompactTextString(m) }
+func (*GetOne) ProtoMessage()    {}
+
+func (m *GetOne) GetNext() *Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+type GetOneReply struct {
+	Next *Blueprint `protobuf:"bytes,1,opt" json:"Next,omitempty"`
+	Cur  *Blueprint `protobuf:"bytes,2,opt" json:"Cur,omitempty"`
+}
+
+func (m *GetOneReply) Reset()         { *m = GetOneReply{} }
+func (m *GetOneReply) String() string { return proto1.CompactTextString(m) }
+func (*GetOneReply) ProtoMessage()    {}
+
+func (m *GetOneReply) GetNext() *Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+func (m *GetOneReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
 func init() {
 }
 
@@ -721,6 +795,171 @@ var _AdvRegister_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LAProp",
 			Handler:    _AdvRegister_LAProp_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for DynaDisk service
+
+type DynaDiskClient interface {
+	DReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error)
+	DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
+	DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error)
+	GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error)
+	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
+}
+
+type dynaDiskClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewDynaDiskClient(cc *grpc.ClientConn) DynaDiskClient {
+	return &dynaDiskClient{cc}
+}
+
+func (c *dynaDiskClient) DReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
+	out := new(AdvReadReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DReadS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error) {
+	out := new(AdvWriteSReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error) {
+	out := new(DWriteNReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteNSet", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error) {
+	out := new(GetOneReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/GetOneN", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
+	out := new(NewCurReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/SetCur", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for DynaDisk service
+
+type DynaDiskServer interface {
+	DReadS(context.Context, *AdvRead) (*AdvReadReply, error)
+	DWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
+	DWriteNSet(context.Context, *DWriteN) (*DWriteNReply, error)
+	GetOneN(context.Context, *GetOne) (*GetOneReply, error)
+	SetCur(context.Context, *NewCur) (*NewCurReply, error)
+}
+
+func RegisterDynaDiskServer(s *grpc.Server, srv DynaDiskServer) {
+	s.RegisterService(&_DynaDisk_serviceDesc, srv)
+}
+
+func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(AdvRead)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DReadS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DWriteS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(AdvWriteS)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DWriteS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(DWriteN)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DWriteNSet(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(GetOne)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).GetOneN(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_SetCur_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(NewCur)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).SetCur(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _DynaDisk_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.DynaDisk",
+	HandlerType: (*DynaDiskServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DReadS",
+			Handler:    _DynaDisk_DReadS_Handler,
+		},
+		{
+			MethodName: "DWriteS",
+			Handler:    _DynaDisk_DWriteS_Handler,
+		},
+		{
+			MethodName: "DWriteNSet",
+			Handler:    _DynaDisk_DWriteNSet_Handler,
+		},
+		{
+			MethodName: "GetOneN",
+			Handler:    _DynaDisk_GetOneN_Handler,
+		},
+		{
+			MethodName: "SetCur",
+			Handler:    _DynaDisk_SetCur_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

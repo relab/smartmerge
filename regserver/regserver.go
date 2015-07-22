@@ -121,25 +121,26 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if rs.CurC == 0 || lat.Compare(rs.Cur, nc.Cur) == 1 {
-		rs.Cur = nc.Cur
-		rs.CurC = nc.CurC
-		return &pb.NewCurReply{true}, nil
+	if lat.Compare(nc.Cur, rs.Cur) == 1 {
+		return &pb.NewCurReply{false}, nil
 	}
+	
+	if lat.Compare(rs.Cur, nc.Cur) == 0 {
+		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
+	}
+	
+	rs.Cur = nc.Cur
+	rs.CurC = nc.CurC
 	
 	newNext := make([]*pb.Blueprint,0,len(rs.Next))
 	for _, blp := range rs.Next {
-		if lat.Compare(blp,rs.Cur) != 1 {
+		if lat.Compare(blp,rs.Cur) == -1 {
 			newNext = append(newNext, blp)
 		}
 	} 
 	rs.Next = newNext
 
-	if lat.Compare(rs.Cur, nc.Cur) == 0 {
-		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
-	}
-
-	return &pb.NewCurReply{false}, nil
+	return &pb.NewCurReply{true}, nil
 }
 
 func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {

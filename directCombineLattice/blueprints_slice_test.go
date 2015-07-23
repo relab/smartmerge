@@ -121,6 +121,6 @@ func TestToMsg2(t *testing.T) {
 	}
 	bi := bp1.ToMsg()
 	if !Equals(bi, bpi1) {
-		t.Errorf("ToMsg returned %v, from %v\n",bi, bp1)
+		t.Errorf("ToMsg returned %v, from %v\n", bi, bp1)
 	}
 }

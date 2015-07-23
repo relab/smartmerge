@@ -63,8 +63,6 @@ func (c *Configuration) AWriteN(nnext *lat.Blueprint, thisBP *lat.Blueprint) (st
 		return
 	}
 
-	
-
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 		las = MergeLAState(las, rep)
@@ -97,8 +95,8 @@ type CurReport interface {
 	GetCur() *pb.Blueprint
 }
 
-func CompareCur(cur *lat.Blueprint,rep CurReport) *lat.Blueprint {
-	newCur := lat.GetBlueprint(rep.GetCur())	
+func CompareCur(cur *lat.Blueprint, rep CurReport) *lat.Blueprint {
+	newCur := lat.GetBlueprint(rep.GetCur())
 	if cur.Compare(newCur) == 1 {
 		return newCur
 	}

@@ -1,8 +1,8 @@
 package directCombineLattice
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 var one = ID(1)

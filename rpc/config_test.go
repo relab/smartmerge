@@ -42,11 +42,11 @@ func TestGetBlueprintSliceSmall(t *testing.T) {
 
 	expected := []*lat.Blueprint{lat.GetBlueprint(replies[0].Next[0])}
 
-	result := make([]*lat.Blueprint,0)
+	result := make([]*lat.Blueprint, 0)
 	for _, rep := range replies {
 		result = GetBlueprintSlice(result, rep)
 	}
-	
+
 	for i := range result {
 		if !(result[i].Equals(expected[i])) {
 			t.Fatalf("GetBlueprint returned at index %d  returned: %v, expected: %v.\n", i, result[i], expected[i])
@@ -56,7 +56,7 @@ func TestGetBlueprintSliceSmall(t *testing.T) {
 
 func TestGetBlueprintSlice(t *testing.T) {
 	replies, expected := Setup()
-	result := make([]*lat.Blueprint,0)
+	result := make([]*lat.Blueprint, 0)
 	for _, rep := range replies {
 		result = GetBlueprintSlice(result, rep)
 	}

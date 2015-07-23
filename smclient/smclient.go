@@ -40,7 +40,7 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error)
 }
 
 //Atomic read
-func (smc *SmClient) Read() (val []byte,cnt int) {
+func (smc *SmClient) Read() (val []byte, cnt int) {
 	rs, cnt := smc.get()
 	if rs == nil {
 		return nil, cnt

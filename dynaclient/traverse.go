@@ -9,7 +9,7 @@ import (
 	"github.com/relab/smartMerge/rpc"
 )
 
-func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte,error) {
+func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, error) {
 	cur := 0
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Confs); i++ {
@@ -102,7 +102,7 @@ func (dc *DynaClient) handleNewCur(cur int, newCur *lat.Blueprint) int {
 	}
 	cur, remove := dc.findorinsert(cur, newCur)
 	if remove {
-		for ; cur < len(dc.Blueps) - 1; cur++ {
+		for ; cur < len(dc.Blueps)-1; cur++ {
 			if dc.Blueps[cur+1].Compare(dc.Blueps[cur]) == 0 {
 				dc.Blueps[cur+1] = dc.Blueps[cur]
 			} else {
@@ -111,7 +111,6 @@ func (dc *DynaClient) handleNewCur(cur int, newCur *lat.Blueprint) int {
 		}
 	}
 	return cur
-
 
 }
 
@@ -129,7 +128,7 @@ func (dc *DynaClient) findorinsert(i int, blp *lat.Blueprint) (index int, old bo
 	old = true
 	for ; i < len(dc.Blueps); i++ {
 		switch (dc.Blueps[i]).Compare(blp) {
-		case 1,0:
+		case 1, 0:
 			if blp.Compare(dc.Blueps[i]) == 1 {
 				//Are equal
 				//fmt.Println("Blueprints equal, return")
@@ -139,7 +138,7 @@ func (dc *DynaClient) findorinsert(i int, blp *lat.Blueprint) (index int, old bo
 			continue
 		case -1:
 			if old { //This is an outdated blueprint.
-				return i,false
+				return i, false
 			}
 			dc.insert(i, blp)
 			return i, false

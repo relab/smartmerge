@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	
+
 	"github.com/relab/smartMerge/regserver"
 )
 
@@ -18,12 +18,12 @@ var (
 func main() {
 	flag.Parse()
 	fmt.Println("Starting Server with port: ", *port)
-	_,err := regserver.StartAdv(*port)
+	_, err := regserver.StartAdv(*port)
 	if err != nil {
 		fmt.Println(err)
 		panic("Starting server returned error")
 	}
-	
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, os.Kill, syscall.SIGTERM)
 
@@ -33,7 +33,7 @@ func main() {
 			if exit := handleSignal(signal); exit {
 				err = regserver.Stop()
 				if err != nil {
-					fmt.Printf("Stopping server returned error: %v\n",err)
+					fmt.Printf("Stopping server returned error: %v\n", err)
 				}
 				return
 			}

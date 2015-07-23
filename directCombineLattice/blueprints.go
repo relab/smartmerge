@@ -53,15 +53,13 @@ func (bp *Blueprint) RemP(id ID) {
 		bp = new(Blueprint)
 	}
 	if bp.Rem == nil {
-		bp.Rem = make(map[ID]bool,1)
+		bp.Rem = make(map[ID]bool, 1)
 	}
-	bp.Rem[id] = true 
+	bp.Rem[id] = true
 	if bp.Add != nil {
 		bp.Add = difference(bp.Add, bp.Rem)
 	}
 }
-
-
 
 func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 	if bp == nil {
@@ -86,7 +84,7 @@ func (bp *Blueprint) Compare(blpr *Blueprint) int {
 	if blpr == nil {
 		return -1
 	}
-	
+
 	if subset(bp.Add, union(blpr.Add, blpr.Rem)) && subset(bp.Rem, blpr.Rem) {
 		return 1
 	}
@@ -104,7 +102,7 @@ func (bp *Blueprint) Ids() []uint32 {
 	if bp == nil {
 		return nil
 	}
-	ids := make([]uint32,0,len(bp.Add))
+	ids := make([]uint32, 0, len(bp.Add))
 	for id, _ := range bp.Add {
 		ids = append(ids, uint32(id))
 	}

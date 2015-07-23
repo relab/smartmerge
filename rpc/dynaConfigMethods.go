@@ -54,8 +54,8 @@ func (c *Configuration) GetOneN(thisBP *lat.Blueprint, prop *lat.Blueprint) (nex
 }
 
 func (c *Configuration) DWriteNSet(nnext []*lat.Blueprint, thisBP *lat.Blueprint) (newCur *lat.Blueprint, err error) {
-	mnext := make([]*pb.Blueprint,len(nnext))
-	for i,bp := range nnext {
+	mnext := make([]*pb.Blueprint, len(nnext))
+	for i, bp := range nnext {
 		mnext[i] = bp.ToMsg()
 	}
 	replies, newCur, err := c.mgr.DWriteNSet(c.id, thisBP, context.Background(), &pb.DWriteN{c.id, mnext})

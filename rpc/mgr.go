@@ -266,11 +266,11 @@ func (m *Manager) NewConfigurationFromIP(IPs []string, quorumSize int, grpcOptio
 }
 
 func (m *Manager) GetErrors() map[uint32]error {
-	err := make(map[uint32]error,len(m.machines))
+	err := make(map[uint32]error, len(m.machines))
 	for id, ma := range m.machines {
 		if ma.lastErr != nil {
-			err[id]= ma.lastErr
-		} 
+			err[id] = ma.lastErr
+		}
 	}
 	return err
 }

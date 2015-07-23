@@ -27,8 +27,8 @@ const (
 	ThroughputSample Type = 16
 
 	// Client Request Latency: 88-95
-	ClientReadLatency Type = 88
-	ClientWriteLatency Type = 89
+	ClientReadLatency   Type = 88
+	ClientWriteLatency  Type = 89
 	ClientReconfLatency Type = 90
 )
 
@@ -59,10 +59,10 @@ func NewTimedEvent(t Type, start time.Time) Event {
 
 func NewTimedEventWithMetric(t Type, start time.Time, v uint64) Event {
 	return Event{
-		Type: t,
-		Time: start,
+		Type:    t,
+		Time:    start,
 		EndTime: time.Now(),
-		Value: v,
+		Value:   v,
 	}
 }
 

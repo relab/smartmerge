@@ -10,12 +10,7 @@ import (
 	"github.com/relab/smartMerge/smclient"
 )
 
-var( 
-	confFile = flag.String("conf","config", "the config file, a list of host:port addresses.")
-	clientid = flag.Int("id", 0, "the client id")
-)
-
-func main() {
+func usermain() {
 	flag.Parse()
 	addrs, ids := util.GetProcs(*confFile, true)
 	
@@ -51,7 +46,7 @@ func main() {
 		
 		switch op {
 		case 1:
-			bytes := client.Read()
+			bytes,_ := client.Read()
 			state := string(bytes)
 			fmt.Println("Current value is: ", state)
 		case 2:
@@ -107,7 +102,7 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 		}
 		target.AddP(lid)
 		fmt.Println("Starting reconfiguration with target ", target)
-		err = c.Reconf(target)
+		_, err = c.Reconf(target)
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)
 		}
@@ -135,7 +130,7 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 		target := new(lat.Blueprint)
 		target.RemP(lid)
 		target = target.Merge(c.Blueps[0])
-		err = c.Reconf(target)
+		_, err = c.Reconf(target)
 		
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)

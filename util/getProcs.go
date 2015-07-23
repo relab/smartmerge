@@ -24,6 +24,7 @@ func GetProcs(confFile string, prnt bool) (addrs []string, ids []uint32) {
 	ids = make([]uint32,0)
 
 	scanner := bufio.NewScanner(fi)
+	if prnt {fmt.Printf("Processes from Config file")}
 	for scanner.Scan() {
 		s := strings.TrimSpace(scanner.Text())
 		_,err = net.ResolveTCPAddr("tcp", s)

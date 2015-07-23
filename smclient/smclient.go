@@ -40,18 +40,18 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error)
 }
 
 //Atomic read
-func (smc *SmClient) Read() []byte {
-	rs := smc.get()
+func (smc *SmClient) Read() (val []byte,cnt int) {
+	rs, cnt := smc.get()
 	if rs == nil {
-		return nil
+		return nil, cnt
 	}
 
-	smc.set(rs)
-	return rs.Value
+	mcnt := smc.set(rs)
+	return rs.Value, cnt + mcnt
 }
 
-func (smc *SmClient) Write(val []byte) {
-	rs := smc.get()
+func (smc *SmClient) Write(val []byte) int {
+	rs, cnt := smc.get()
 	if rs == nil {
 		rs = &pb.State{Value: val, Timestamp: 1, Writer: smc.ID}
 	} else {
@@ -59,5 +59,6 @@ func (smc *SmClient) Write(val []byte) {
 		rs.Timestamp++
 		rs.Writer = smc.ID
 	}
-	smc.set(rs)
+	mcnt := smc.set(rs)
+	return cnt + mcnt
 }

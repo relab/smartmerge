@@ -8,7 +8,8 @@ import (
 	"github.com/relab/smartMerge/rpc"
 )
 
-func (smc *SmClient) get() (rs *pb.State) {
+func (smc *SmClient) get() (rs *pb.State, cnt int) {
+	cnt = 0
 	cur := 0
 	for i := 0; i < len(smc.Confs); i++ {
 		if i < cur {
@@ -16,6 +17,7 @@ func (smc *SmClient) get() (rs *pb.State) {
 		}
 
 		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[i])
+		cnt++
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
 			fmt.Println("error from AReadS: ", err)
@@ -37,7 +39,8 @@ func (smc *SmClient) get() (rs *pb.State) {
 	return
 }
 
-func (smc *SmClient) set(rs *pb.State) {
+func (smc *SmClient) set(rs *pb.State) int {
+	cnt := 0
 	cur := 0
 	for i := 0; i < len(smc.Confs); i++ {
 		if i < cur {
@@ -45,6 +48,7 @@ func (smc *SmClient) set(rs *pb.State) {
 		}
 
 		next, newCur, err := smc.Confs[i].AWriteS(rs, smc.Blueps[i])
+		cnt++
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
 			i--
@@ -56,6 +60,7 @@ func (smc *SmClient) set(rs *pb.State) {
 		smc.Blueps = smc.Blueps[cur:]
 		smc.Confs = smc.Confs[cur:]
 	}
+	return cnt
 }
 
 func (smc *SmClient) handleNewCur(cur int, newCur *lat.Blueprint) int {

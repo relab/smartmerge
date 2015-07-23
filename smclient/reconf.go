@@ -8,13 +8,13 @@ import (
 	pb "github.com/relab/smartMerge/proto"
 )
 
-func (smc *SmClient) Reconf(prop *lat.Blueprint) error {
-	prop = smc.lagree(prop)
+func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
+	prop, cnt = smc.lagree(prop)
 	//fmt.Println("LA returned ", prop)
 
 	//Proposed blueprint is already in place, or outdated.
 	if prop.Compare(smc.Blueps[0]) == 1 {
-		return nil
+		return cnt, nil
 	}
 
 	if prop.Compare(smc.Blueps[0]) == 0 {
@@ -26,7 +26,7 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) error {
 	}
 
 	if len(prop.Ids()) == 0 {
-		return errors.New("Abort before proposing unacceptable configuration.")
+		return cnt, errors.New("Abort before proposing unacceptable configuration.")
 	}
 
 	cur := 0
@@ -39,6 +39,7 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) error {
 		}
 
 		st, newlas, next, newCur, err := smc.Confs[i].AWriteN(prop, smc.Blueps[i])
+		cnt++
 		//fmt.Println("NewCur was: ", newCur)
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
@@ -61,17 +62,18 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) error {
 		smc.Confs[i].AWriteS(rst, smc.Blueps[i])
 		smc.Confs[i].LAProp(smc.Blueps[i], las)
 		smc.Confs[i].SetCur(smc.Blueps[i])
+		cnt = cnt + 3
 		cur = i
 	}
 
 	smc.Blueps = smc.Blueps[cur:]
 	smc.Confs = smc.Confs[cur:]
 
-	return nil
+	return cnt, nil
 }
 
-func (smc *SmClient) lagree(prop *lat.Blueprint) *lat.Blueprint {
-	//fmt.Println("Start LA")
+func (smc *SmClient) lagree(prop *lat.Blueprint) (*lat.Blueprint, int) {
+	cnt := 0
 	cur := 0
 	prop = prop.Merge(smc.Blueps[0])
 	for i := 0; i < len(smc.Confs); i++ {
@@ -81,6 +83,7 @@ func (smc *SmClient) lagree(prop *lat.Blueprint) *lat.Blueprint {
 		}
 
 		la, next, newCur, err := smc.Confs[i].LAProp(smc.Blueps[i], prop)
+		cnt++
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
 			fmt.Println("LA prop returned error: ", err)
@@ -99,5 +102,5 @@ func (smc *SmClient) lagree(prop *lat.Blueprint) *lat.Blueprint {
 		smc.Blueps = smc.Blueps[cur:]
 		smc.Confs = smc.Confs[cur:]
 	}
-	return prop
+	return prop, cnt
 }

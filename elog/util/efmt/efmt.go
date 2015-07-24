@@ -32,7 +32,7 @@ func main() {
 	if *outfile == "" {
 		of = os.Stderr
 	} else {
-		fl, err := os.OpenFile(*outfile,os.O_APPEND,0666)
+		fl, err := os.OpenFile(*outfile,os.O_APPEND|os.O_WRONLY,0666)
 		if err != nil {
 			fmt.Println("Could not open file, create.")
 			fl, err = os.Create(*outfile)

@@ -10,9 +10,9 @@ import (
 	"github.com/relab/smartMerge/rpc"
 	//"github.com/relab/smartMerge/smclient"
 	//"github.com/relab/smartMerge/dynaclient"
-	"github.com/relab/smartMerge/util"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
+	"github.com/relab/smartMerge/util"
 )
 
 func usermain() {
@@ -34,12 +34,11 @@ func usermain() {
 	initBlp := lat.Blueprint{Add: iadd, Rem: nil}
 
 	client, mgr, err := NewClient(addrs, &initBlp, *alg, *clientid)
+	defer PrintErrors(mgr)
 	if err != nil {
 		fmt.Println("Error creating client: ", err)
 		return
 	}
-		
-	defer PrintErrors(mgr)
 
 	if *doelog {
 		elog.Enable()
@@ -155,7 +154,7 @@ func handleReconf(c RWRer, ids []uint32) {
 		target := new(lat.Blueprint)
 		target.RemP(lid)
 		target = target.Merge(cur)
-		
+
 		reqsent := time.Now()
 		cnt, err := c.Reconf(target)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
@@ -173,10 +172,18 @@ func handleReconf(c RWRer, ids []uint32) {
 }
 
 func PrintErrors(mgr *rpc.Manager) {
-	fmt.Println("Printing connection errors.")
 	errs := mgr.GetErrors()
+	founderrs := false
 	for id, e := range errs {
+		if !founderrs {
+			fmt.Println("Printing connection errors.")
+		}
 		fmt.Printf("id %d: error %v\n", id, e)
+		founderrs = true
 	}
+	if !founderrs {
+		fmt.Println("No connection errors.")
+	}
+
 	return
 }

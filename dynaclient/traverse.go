@@ -103,9 +103,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 	dc.Confs = dc.Confs[cur:]
 
 	if val == nil {
-		return nil, cnt, nil
+		return rst.Value, cnt, nil
 	}
-	return rst.Value, cnt, nil
+	return nil, cnt, nil
 }
 
 func (dc *DynaClient) handleNewCur(cur int, newCur *lat.Blueprint) int {

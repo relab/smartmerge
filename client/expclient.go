@@ -13,11 +13,11 @@ import (
 
 	"github.com/relab/goxos/kvs/bgen"
 	lat "github.com/relab/smartMerge/directCombineLattice"
+	"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	"github.com/relab/smartMerge/rpc"
 	"github.com/relab/smartMerge/smclient"
-	"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -35,14 +35,14 @@ var (
 	nclients = flag.Int("nclients", 1, "the number of clients")
 	initsize = flag.Int("initsize", 1, "the number of servers in the initial configuration")
 
-	alg = flag.String("alg","","algorithm to be used: (sm | dyna | cons)")
+	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | cons)")
 
 	contW  = flag.Bool("contW", false, "continuously write")
 	contR  = flag.Bool("contR", false, "continuously read")
 	reads  = flag.Int("reads", 0, "number of reads to be performed.")
 	writes = flag.Int("writes", 0, "number of writes to be performed.")
 	size   = flag.Int("size", 16, "number of bytes for value.")
-	
+
 	doelog = flag.Bool("elog", false, "log latencies in user mode.")
 )
 
@@ -54,11 +54,11 @@ func Usage() {
 
 func main() {
 	parseFlags()
-	
+
 	if *gcOff {
 		debug.SetGCPercent(-1)
 	}
-	
+
 	switch *mode {
 	case "", "user":
 		usermain()
@@ -127,7 +127,7 @@ func expmain() {
 		signalChan := make(chan os.Signal, 1)
 		signal.Notify(signalChan, os.Interrupt, os.Kill, syscall.SIGTERM)
 
-		loopSignals:
+	loopSignals:
 		for {
 			select {
 			case signal := <-signalChan:
@@ -172,7 +172,7 @@ func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
 
 	bgen.GetBytes(value)
 	cchan := make(chan int, 1)
-	loop:
+loop:
 	for {
 		reqsent = time.Now()
 		go func() {
@@ -198,7 +198,7 @@ func contRead(cl RWRer, stop chan struct{}, wg *sync.WaitGroup) {
 	)
 
 	cchan := make(chan int, 1)
-	loop:
+loop:
 	for {
 		reqsent = time.Now()
 		go func() {
@@ -269,7 +269,7 @@ func handleSignal(signal os.Signal) bool {
 	}
 }
 
-type RWRer interface{
+type RWRer interface {
 	Read() ([]byte, int)
 	Write(val []byte) int
 	Reconf(prop *lat.Blueprint) (int, error)

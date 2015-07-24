@@ -72,11 +72,11 @@ func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRe
 	defer rs.mu.RUnlock()
 	defer rs.PrintState("DReadS")
 
-	var next []*pb.Blueprints
+	var next []*pb.Blueprint
 	if len(rs.Next[rr.CurC]) > 0 {
 		next = rs.Next[rr.CurC]
 	}
-	
+
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.

@@ -2,7 +2,7 @@ package dynaclient
 
 import (
 	//"errors"
-	//"fmt"
+	"fmt"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"

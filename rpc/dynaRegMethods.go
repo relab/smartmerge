@@ -191,7 +191,7 @@ func (m *Manager) GetOneN(configID uint32, cur *lat.Blueprint, ctx context.Conte
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/GetOne",
+				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/GetOneN",
 					&pb.GetOne{configID, prop}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {

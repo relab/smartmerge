@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -16,6 +17,7 @@ import (
 	e "github.com/relab/smartMerge/elog/event"
 	"github.com/relab/smartMerge/rpc"
 	"github.com/relab/smartMerge/smclient"
+	"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -32,6 +34,8 @@ var (
 	clientid = flag.Int("id", 0, "the client id")
 	nclients = flag.Int("nclients", 1, "the number of clients")
 	initsize = flag.Int("initsize", 1, "the number of servers in the initial configuration")
+
+	alg = flag.String("alg","","algorithm to be used: (sm | dyna | cons)")
 
 	contW  = flag.Bool("contW", false, "continuously write")
 	contR  = flag.Bool("contR", false, "continuously read")
@@ -99,7 +103,7 @@ func expmain() {
 
 	for i := 0; i < *nclients; i++ {
 		fmt.Println("starting client number: ", i)
-		cl, mgr, err := NewClient(addrs, initBlp, (*clientid)+i)
+		cl, mgr, err := NewClient(addrs, initBlp, *alg, (*clientid)+i)
 		if err != nil {
 			fmt.Println("Error creating client: ", err)
 			continue
@@ -141,22 +145,24 @@ func expmain() {
 	return
 }
 
-func NewClient(addrs []string, initB *lat.Blueprint, id int) (*smclient.SmClient, *rpc.Manager, error) {
-	mgr, err := rpc.NewManager(addrs)
+func NewClient(addrs []string, initB *lat.Blueprint, alg string, id int) (cl RWRer, mgr *rpc.Manager, err error) {
+	mgr, err = rpc.NewManager(addrs)
 	if err != nil {
 		fmt.Println("Creating manager returned error: ", err)
-		return nil, nil, err
+		return
 	}
-
-	client, err := smclient.New(initB, mgr, uint32(id))
-	if err != nil {
-		fmt.Println("Creating client returned error: ", err)
-		return nil, nil, err
+	switch alg {
+	case "", "sm":
+		cl, err = smclient.New(initB, mgr, uint32(id))
+	case "dyna":
+		cl, err = dynaclient.New(initB, mgr, uint32(id))
+	case "cons":
+		return nil, nil, errors.New("Consensus based algorithm not implemented yet.")
 	}
-	return client, mgr, nil
+	return
 }
 
-func contWrite(cl *smclient.SmClient, size int, stop chan struct{}, wg *sync.WaitGroup) {
+func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
 	fmt.Println("starting continous write")
 	var (
 		value   = make([]byte, size)
@@ -183,7 +189,7 @@ func contWrite(cl *smclient.SmClient, size int, stop chan struct{}, wg *sync.Wai
 	wg.Done()
 }
 
-func contRead(cl *smclient.SmClient, stop chan struct{}, wg *sync.WaitGroup) {
+func contRead(cl RWRer, stop chan struct{}, wg *sync.WaitGroup) {
 	fmt.Println("starting continous read")
 	var (
 		c       int
@@ -211,7 +217,7 @@ func contRead(cl *smclient.SmClient, stop chan struct{}, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func doWrites(cl *smclient.SmClient, size int, writes int, wg *sync.WaitGroup) {
+func doWrites(cl RWRer, size int, writes int, wg *sync.WaitGroup) {
 	var (
 		value   = make([]byte, size)
 		cnt     int
@@ -228,7 +234,7 @@ func doWrites(cl *smclient.SmClient, size int, writes int, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func doReads(cl *smclient.SmClient, reads int, wg *sync.WaitGroup) {
+func doReads(cl RWRer, reads int, wg *sync.WaitGroup) {
 	var (
 		cnt     int
 		reqsent time.Time
@@ -261,4 +267,11 @@ func handleSignal(signal os.Signal) bool {
 		//glog.Warningln("unhandled signal", signal)
 		return false
 	}
+}
+
+type RWRer interface{
+	Read() ([]byte, int)
+	Write(val []byte) int
+	Reconf(prop *lat.Blueprint) (int, error)
+	GetCur() *lat.Blueprint
 }

@@ -9,7 +9,8 @@ import (
 	"github.com/relab/smartMerge/rpc"
 )
 
-func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, error) {
+func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, error) {
+	cnt := 0
 	cur := 0
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Confs); i++ {
@@ -20,36 +21,39 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, error) 
 		if !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
+			cnt++
 			cur = dc.handleNewCur(i, newCur)
 			if i < cur {
 				continue
 			}
 
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 
 			//A possible optimization would combine this WriteN with the ReadS below
 			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
+			cnt++
 			cur = dc.handleNewCur(i, newCur)
 			if i < cur {
 				continue
 			}
 
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 
 		}
 
 		//ReadInView
 		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i])
+		cnt++
 		cur = dc.handleNewCur(i, newCur)
 		if i < cur {
 			continue
 		}
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		prop = dc.handleNext(i, next, prop)
@@ -61,22 +65,24 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, error) 
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
 			next, newCur, err := dc.Confs[i].DWriteS(wst, dc.Blueps[i])
+			cnt++
 			cur = dc.handleNewCur(i, newCur)
 			if i < cur {
 				continue
 			}
 
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			prop = dc.handleNext(i, next, prop)
 		}
 
 		if len(next) > 0 {
 			newCur, err = dc.Confs[i].DWriteNSet(next, dc.Blueps[i])
+			cnt++
 			cur = dc.handleNewCur(i, newCur)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			continue
 		}
@@ -84,6 +90,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, error) 
 
 	if i := len(dc.Confs) - 1; i > cur {
 		dc.Confs[i].DSetCur(dc.Blueps[i])
+		cnt++
 		cur = i
 	}
 
@@ -91,9 +98,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, error) 
 	dc.Confs = dc.Confs[cur:]
 
 	if val == nil {
-		return nil, nil
+		return nil, cnt, nil
 	}
-	return rst.Value, nil
+	return rst.Value, cnt, nil
 }
 
 func (dc *DynaClient) handleNewCur(cur int, newCur *lat.Blueprint) int {

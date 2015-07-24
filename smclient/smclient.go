@@ -62,3 +62,10 @@ func (smc *SmClient) Write(val []byte) int {
 	mcnt := smc.set(rs)
 	return cnt + mcnt
 }
+
+func (smc *SmClient) GetCur() *lat.Blueprint {
+	if len(smc.Blueps) == 0 {
+		return nil
+	}
+	return smc.Blueps[0]
+}

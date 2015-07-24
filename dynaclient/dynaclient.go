@@ -40,26 +40,30 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*DynaClient, erro
 }
 
 //Atomic read
-func (dc *DynaClient) Read() []byte {
-	val, err := dc.Traverse(nil, nil)
+func (dc *DynaClient) Read() (val []byte, cnt int) {
+	val, cnt, err := dc.Traverse(nil, nil)
 	if err != nil {
 		fmt.Println("Traverse returned error: ", err)
 	}
-	return val
+	return val, cnt
 }
 
-func (dc *DynaClient) Write(val []byte) {
-	_, err := dc.Traverse(nil, val)
+func (dc *DynaClient) Write(val []byte) int {
+	_, cnt, err := dc.Traverse(nil, val)
 	if err != nil {
 		fmt.Println("Traverse returned error: ", err)
 	}
-	return
+	return cnt
 }
 
-func (dc *DynaClient) Reconf(bp *lat.Blueprint) {
-	_, err := dc.Traverse(bp, nil)
-	if err != nil {
-		fmt.Println("Traverse returned error: ", err)
+func (dc *DynaClient) Reconf(bp *lat.Blueprint) (int, error) {
+	_, cnt, err := dc.Traverse(bp, nil)
+	return cnt, err
+}
+
+func (dc *DynaClient) GetCur() *lat.Blueprint {
+	if len(dc.Blueps) == 0 {
+		return nil
 	}
-	return
+	return dc.Blueps[0]
 }

@@ -8,7 +8,8 @@ import (
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	"github.com/relab/smartMerge/rpc"
-	"github.com/relab/smartMerge/smclient"
+	//"github.com/relab/smartMerge/smclient"
+	//"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/util"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
@@ -32,20 +33,14 @@ func usermain() {
 
 	initBlp := lat.Blueprint{Add: iadd, Rem: nil}
 
-	mgr, err := rpc.NewManager(addrs)
+	client, mgr, err := NewClient(addrs, &initBlp, *alg, *clientid)
 	if err != nil {
-		fmt.Println("Creating manager returned error: ", err)
+		fmt.Println("Error creating client: ", err)
 		return
 	}
+		
+		defer PrintErrors(mgr)
 
-	defer PrintErrors(mgr)
-
-	client, err := smclient.New(&initBlp, mgr, uint32(*clientid))
-	if err != nil {
-		fmt.Println("Creating client returned error: ", err)
-		return
-	}
-	
 	if *doelog {
 		elog.Enable()
 		defer elog.Flush()
@@ -89,8 +84,9 @@ func usermain() {
 
 }
 
-func handleReconf(c *smclient.SmClient, ids []uint32) {
-	fmt.Println("Current Blueprint is: ", c.Blueps[0])
+func handleReconf(c RWRer, ids []uint32) {
+	cur := c.GetCur()
+	fmt.Println("Current Blueprint is: ", cur)
 	fmt.Println("Type 1 or 2 for add or remove?")
 	fmt.Println("  1: Add")
 	fmt.Println("  2: Remove")
@@ -111,18 +107,18 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 			return
 		}
 		lid := lat.ID(id)
-		if _, ok := c.Blueps[0].Rem[lid]; ok {
+		if _, ok := cur.Rem[lid]; ok {
 			return
 		}
-		if _, ok := c.Blueps[0].Add[lid]; ok {
+		if _, ok := cur.Add[lid]; ok {
 			return
 		}
 
 		target := new(lat.Blueprint)
-		for k, _ := range c.Blueps[0].Add {
+		for k, _ := range cur.Add {
 			target.AddP(k)
 		}
-		for k, _ := range c.Blueps[0].Rem {
+		for k, _ := range cur.Rem {
 			target.RemP(k)
 		}
 		target.AddP(lid)
@@ -133,9 +129,11 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)
 		}
+		fmt.Println("new blueprint is ", c.GetCur())
+		return
 	case 2:
 		fmt.Println("Ids in the current configuration:")
-		for id := range c.Blueps[0].Add {
+		for id := range cur.Add {
 			fmt.Println(id)
 		}
 		fmt.Println("Type the id to be removed.")
@@ -147,16 +145,16 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 		}
 
 		lid := lat.ID(id)
-		if _, ok := c.Blueps[0].Rem[lid]; ok {
+		if _, ok := cur.Rem[lid]; ok {
 			return
 		}
-		if _, ok := c.Blueps[0].Add[lid]; !ok {
+		if _, ok := cur.Add[lid]; !ok {
 			return
 		}
 
 		target := new(lat.Blueprint)
 		target.RemP(lid)
-		target = target.Merge(c.Blueps[0])
+		target = target.Merge(cur)
 		
 		reqsent := time.Now()
 		cnt, err := c.Reconf(target)
@@ -166,7 +164,7 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 			fmt.Println("Reconf returned error: ", err)
 		}
 
-		fmt.Println("new blueprint is ", c.Blueps[0])
+		fmt.Println("new blueprint is ", c.GetCur())
 		return
 	default:
 		return

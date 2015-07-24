@@ -15,6 +15,7 @@ import (
 var (
 	port = flag.Int("port", 10000, "this servers address ip:port.")
 	gcoff = flag.Bool("gcoff", false, "turn garbage collection off.")
+	alg = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
 )
 
 func main() {
@@ -24,8 +25,17 @@ func main() {
 		debug.SetGCPercent(-1)
 	}
 	
+	var err error
 	fmt.Println("Starting Server with port: ", *port)
-	_, err := regserver.StartAdv(*port)
+	switch *alg {
+	case "", "sm":
+		_, err = regserver.StartAdv(*port)
+	case "dyna":
+		_, err = regserver.StartDyna(*port)
+	case "cons":
+		fmt.Println("Consensus based variant not implemented yet.")
+	}
+	
 	if err != nil {
 		fmt.Println(err)
 		panic("Starting server returned error")

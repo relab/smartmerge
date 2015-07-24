@@ -39,7 +39,7 @@ func usermain() {
 		return
 	}
 		
-		defer PrintErrors(mgr)
+	defer PrintErrors(mgr)
 
 	if *doelog {
 		elog.Enable()
@@ -173,6 +173,7 @@ func handleReconf(c RWRer, ids []uint32) {
 }
 
 func PrintErrors(mgr *rpc.Manager) {
+	fmt.Println("Printing connection errors.")
 	errs := mgr.GetErrors()
 	for id, e := range errs {
 		fmt.Printf("id %d: error %v\n", id, e)

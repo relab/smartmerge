@@ -115,7 +115,7 @@ func (rs *RegServer) WriteN(ctx context.Context, wr *pb.WriteNRequest) (*pb.Writ
 func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("SetCur")
+	//defer rs.PrintState("SetCur")
 
 	if nc.CurC == rs.CurC {
 		return &pb.NewCurReply{false}, nil
@@ -146,7 +146,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	defer rs.PrintState("readS")
+	//defer rs.PrintState("readS")
 
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
@@ -160,7 +160,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRep
 func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("writeS")
+	//defer rs.PrintState("writeS")
 	if rs.RState.Compare(wr.State) == 1 {
 		rs.RState = wr.State
 	}
@@ -181,7 +181,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWriteNReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("writeN")
+	//defer rs.PrintState("writeN")
 	found := false
 
 	for _, bp := range rs.Next {
@@ -206,7 +206,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("LAProp")
+	//defer rs.PrintState("LAProp")
 	if lap == nil {
 		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
 	}

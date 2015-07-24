@@ -3,3 +3,5 @@
 server/server
 client/client
 
+# Logs
+*.elog

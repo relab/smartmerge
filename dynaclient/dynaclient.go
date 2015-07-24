@@ -26,7 +26,7 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*DynaClient, erro
 		return nil, err
 	}
 
-	err = conf.SetCur(initBlp)
+	err = conf.DSetCur(initBlp)
 	if err != nil {
 		fmt.Println("initial SetCur returned error: ", err)
 		return nil, errors.New("Initial SetCur failed.")

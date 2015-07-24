@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	"github.com/relab/smartMerge/rpc"
@@ -14,7 +15,19 @@ func usermain() {
 	flag.Parse()
 	addrs, ids := util.GetProcs(*confFile, true)
 
-	initBlp := lat.Blueprint{Add: map[lat.ID]bool{lat.ID(ids[0]): true}, Rem: nil}
+	//Build initial blueprint.
+	if *initsize > len(ids) {
+		fmt.Fprintln(os.Stderr, "Not enough servers to fulfill initsize.")
+		return
+	}
+
+	iadd := make(map[lat.ID]bool, *initsize)
+
+	for i := 0; i < *initsize; i++ {
+		iadd[lat.ID(ids[i])] = true
+	}
+
+	initBlp := lat.Blueprint{Add: iadd, Rem: nil}
 
 	mgr, err := rpc.NewManager(addrs)
 	if err != nil {

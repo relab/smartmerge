@@ -35,7 +35,7 @@ var (
 
 	contW  = flag.Bool("contW", false, "continuously write")
 	contR  = flag.Bool("contR", false, "continuously read")
-	reads  = flag.Int("reads", 500, "number of reads to be performed.")
+	reads  = flag.Int("reads", 0, "number of reads to be performed.")
 	writes = flag.Int("writes", 0, "number of writes to be performed.")
 	size   = flag.Int("size", 16, "number of bytes for value.")
 )
@@ -91,6 +91,7 @@ func expmain() {
 	stop := make(chan struct{}, *nclients)
 
 	for i := 0; i < *nclients; i++ {
+		fmt.Println("starting client number: ", i)
 		cl, mgr, err := NewClient(addrs, initBlp, (*clientid)+i)
 		if err != nil {
 			fmt.Println("Error creating client: ", err)
@@ -101,13 +102,13 @@ func expmain() {
 		wg.Add(1)
 		switch {
 		case *contW:
-			go contWrite(cl, *size, stop, wg)
+			go contWrite(cl, *size, stop, &wg)
 		case *contR:
-			go contRead(cl, stop, wg)
+			go contRead(cl, stop, &wg)
 		case *reads > 0:
-			go doReads(cl, *reads, wg)
+			go doReads(cl, *reads, &wg)
 		case *writes > 0:
-			go doWrites(cl, *size, *writes, wg)
+			go doWrites(cl, *size, *writes, &wg)
 		}
 	}
 
@@ -115,16 +116,22 @@ func expmain() {
 		signalChan := make(chan os.Signal, 1)
 		signal.Notify(signalChan, os.Interrupt, os.Kill, syscall.SIGTERM)
 
+		loopSignals:
 		for {
 			select {
 			case signal := <-signalChan:
 				if exit := handleSignal(signal); exit {
+					fmt.Println("stopping goroutines")
 					close(stop)
+					break loopSignals //break for loop, not only select
 				}
 			}
 		}
 	}
+	fmt.Println("waiting for goroutines")
 	wg.Wait()
+	fmt.Println("finished waiting")
+	return
 }
 
 func NewClient(addrs []string, initB *lat.Blueprint, id int) (*smclient.SmClient, *rpc.Manager, error) {
@@ -142,7 +149,8 @@ func NewClient(addrs []string, initB *lat.Blueprint, id int) (*smclient.SmClient
 	return client, mgr, nil
 }
 
-func contWrite(cl *smclient.SmClient, size int, stop chan struct{}, wg sync.WaitGroup) {
+func contWrite(cl *smclient.SmClient, size int, stop chan struct{}, wg *sync.WaitGroup) {
+	fmt.Println("starting continous write")
 	var (
 		value   = make([]byte, size)
 		cnt     int
@@ -151,6 +159,7 @@ func contWrite(cl *smclient.SmClient, size int, stop chan struct{}, wg sync.Wait
 
 	bgen.GetBytes(value)
 	cchan := make(chan int, 1)
+	loop:
 	for {
 		reqsent = time.Now()
 		go func() {
@@ -160,13 +169,15 @@ func contWrite(cl *smclient.SmClient, size int, stop chan struct{}, wg sync.Wait
 		case cnt = <-cchan:
 			elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
 		case <-stop:
-			break
+			break loop
 		}
 	}
+	fmt.Println("finished continous write")
 	wg.Done()
 }
 
-func contRead(cl *smclient.SmClient, stop chan struct{}, wg sync.WaitGroup) {
+func contRead(cl *smclient.SmClient, stop chan struct{}, wg *sync.WaitGroup) {
+	fmt.Println("starting continous read")
 	var (
 		c       int
 		cnt     int
@@ -174,6 +185,7 @@ func contRead(cl *smclient.SmClient, stop chan struct{}, wg sync.WaitGroup) {
 	)
 
 	cchan := make(chan int, 1)
+	loop:
 	for {
 		reqsent = time.Now()
 		go func() {
@@ -181,16 +193,18 @@ func contRead(cl *smclient.SmClient, stop chan struct{}, wg sync.WaitGroup) {
 			cchan <- c
 		}()
 		select {
+		case <-stop:
+			fmt.Println("received stopping signal")
+			break loop
 		case cnt = <-cchan:
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
-		case <-stop:
-			break
 		}
 	}
+	fmt.Println("finished continous read")
 	wg.Done()
 }
 
-func doWrites(cl *smclient.SmClient, size int, writes int, wg sync.WaitGroup) {
+func doWrites(cl *smclient.SmClient, size int, writes int, wg *sync.WaitGroup) {
 	var (
 		value   = make([]byte, size)
 		cnt     int
@@ -203,10 +217,11 @@ func doWrites(cl *smclient.SmClient, size int, writes int, wg sync.WaitGroup) {
 		cnt = cl.Write(value)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
 	}
+	fmt.Println("finished writes")
 	wg.Done()
 }
 
-func doReads(cl *smclient.SmClient, reads int, wg sync.WaitGroup) {
+func doReads(cl *smclient.SmClient, reads int, wg *sync.WaitGroup) {
 	var (
 		cnt     int
 		reqsent time.Time
@@ -217,6 +232,7 @@ func doReads(cl *smclient.SmClient, reads int, wg sync.WaitGroup) {
 		_, cnt = cl.Read()
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 	}
+	fmt.Println("finished reads")
 	wg.Done()
 }
 
@@ -230,7 +246,7 @@ func parseFlags() {
 }
 
 func handleSignal(signal os.Signal) bool {
-	//log("received signal,", signal)
+	fmt.Println("received signal,", signal)
 	switch signal {
 	case os.Interrupt, os.Kill, syscall.SIGTERM:
 		return true

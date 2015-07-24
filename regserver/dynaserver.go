@@ -90,16 +90,16 @@ func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 	}
 
 	if wr.CurC == 0 {
-		return &pb.AdvWriteReply{}, nil
+		return &pb.AdvWriteSReply{}, nil
 	}
 
 	if wr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteReply{rs.Cur, rs.Next[wr.CurC]}, nil
+		return &pb.AdvWriteSReply{rs.Cur, rs.Next[wr.CurC]}, nil
 	}
 
-	return &pb.AdvWriteReply{Next: rs.Next[wr.CurC]}, nil
+	return &pb.AdvWriteSReply{Next: rs.Next[wr.CurC]}, nil
 }
 
 func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWriteNReply, error) {

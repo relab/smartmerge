@@ -18,7 +18,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			continue
 		}
 
-		if !prop.Equals(dc.Blueps[i]) {
+		if  prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
 			cnt++

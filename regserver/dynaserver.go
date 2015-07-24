@@ -70,21 +70,26 @@ func (rs *DynaServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRepl
 func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	defer rs.PrintState("readS")
+	defer rs.PrintState("DReadS")
 
+	var next []*pb.Blueprints
+	if len(rs.Next[rr.CurC]) > 0 {
+		next = rs.Next[rr.CurC]
+	}
+	
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{rs.RState, rs.Cur, rs.Next[rr.CurC]}, nil
+		return &pb.AdvReadReply{rs.RState, rs.Cur, next}, nil
 	}
 
-	return &pb.AdvReadReply{State: rs.RState, Next: rs.Next[rr.CurC]}, nil
+	return &pb.AdvReadReply{State: rs.RState, Next: next}, nil
 }
 
 func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("writeS")
+	defer rs.PrintState("DWriteS")
 	if rs.RState.Compare(wr.State) == 1 {
 		rs.RState = wr.State
 	}
@@ -105,7 +110,7 @@ func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWriteNReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("writeN")
+	defer rs.PrintState("DWriteNSet")
 
 	if rs.Next[wr.CurC] == nil {
 		rs.Next[wr.CurC] = wr.Next
@@ -136,7 +141,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("LAProp")
+	defer rs.PrintState("GetOneN")
 
 	if len(rs.Next[gt.CurC]) == 0 {
 		rs.Next[gt.CurC] = []*pb.Blueprint{gt.Next}

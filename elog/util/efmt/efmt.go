@@ -54,21 +54,30 @@ func main() {
 
 	readl, writel, reconfl := sortLatencies(events)
 	if len(readl) > 0 {
-		fmt.Fprintln(of, "Read Latencies:")
+		_,err = fmt.Fprintln(of, "Read Latencies:")
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+		}
 		for k, durs := range readl {
 			avg := MeanDuration(durs...)
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
 		}
 	}
 	if len(writel) > 0 {
-		fmt.Fprintln(of, "Write Latencies:")
+		_, err = fmt.Fprintln(of, "Write Latencies:")
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+		}
 		for k, durs := range writel {
 			avg := MeanDuration(durs...)
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
 		}
 	}
 	if len(reconfl) > 0 {
-		fmt.Fprintln(of, "Reconf Latencies:")
+		_,err = fmt.Fprintln(of, "Reconf Latencies:")
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+		}
 		for k, durs := range reconfl {
 			avg := MeanDuration(durs...)
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)

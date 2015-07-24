@@ -50,6 +50,11 @@ func Usage() {
 
 func main() {
 	parseFlags()
+	
+	if *gcOff {
+		debug.SetGCPercent(-1)
+	}
+	
 	switch *mode {
 	case "", "user":
 		usermain()

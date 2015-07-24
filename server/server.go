@@ -7,16 +7,23 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"runtime/debug"
 
 	"github.com/relab/smartMerge/regserver"
 )
 
 var (
 	port = flag.Int("port", 10000, "this servers address ip:port.")
+	gcoff = flag.Bool("gcoff", false, "turn garbage collection off.")
 )
 
 func main() {
 	flag.Parse()
+	
+	if *gcoff {
+		debug.SetGCPercent(-1)
+	}
+	
 	fmt.Println("Starting Server with port: ", *port)
 	_, err := regserver.StartAdv(*port)
 	if err != nil {

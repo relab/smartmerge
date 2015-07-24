@@ -38,6 +38,8 @@ var (
 	reads  = flag.Int("reads", 0, "number of reads to be performed.")
 	writes = flag.Int("writes", 0, "number of writes to be performed.")
 	size   = flag.Int("size", 16, "number of bytes for value.")
+	
+	doelog = flag.Bool("elog", false, "log latencies in user mode.")
 )
 
 func Usage() {

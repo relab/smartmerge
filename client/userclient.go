@@ -4,11 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
 	"github.com/relab/smartMerge/rpc"
 	"github.com/relab/smartMerge/smclient"
 	"github.com/relab/smartMerge/util"
+	"github.com/relab/smartMerge/elog"
+	e "github.com/relab/smartMerge/elog/event"
 )
 
 func usermain() {
@@ -41,6 +44,11 @@ func usermain() {
 	if err != nil {
 		fmt.Println("Creating client returned error: ", err)
 		return
+	}
+	
+	if *doelog {
+		elog.Enable()
+		defer elog.Flush()
 	}
 
 	for {
@@ -142,7 +150,10 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 		target := new(lat.Blueprint)
 		target.RemP(lid)
 		target = target.Merge(c.Blueps[0])
-		_, err = c.Reconf(target)
+		
+		reqsent := time.Now()
+		cnt, err := c.Reconf(target)
+		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)

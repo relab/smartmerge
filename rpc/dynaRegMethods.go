@@ -261,7 +261,7 @@ func (m *Manager) DWriteNSet(configID uint32, cur *lat.Blueprint, ctx context.Co
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/DWriteN", args, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/DWriteNSet", args, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:

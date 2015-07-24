@@ -32,10 +32,14 @@ func main() {
 	if *outfile == "" {
 		of = os.Stderr
 	} else {
-		fl, err := os.Create(*outfile)
+		fl, err := os.OpenFile(*outfile,os.O_APPEND,0666)
 		if err != nil {
-			fmt.Println("Could not create file: ", *outfile)
-			return
+			fmt.Println("Could not open file, create.")
+			fl, err = os.Create(*outfile)
+			if err != nil {
+				fmt.Println("Could not create file: ", *outfile)
+				return
+			}
 		}
 		defer fl.Close()
 		of = fl

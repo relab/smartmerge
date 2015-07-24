@@ -48,7 +48,7 @@ func NewDynaServerWithCur(cur *pb.Blueprint, curc uint32) *DynaServer {
 func (rs *DynaServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("SetCur")
+	//defer rs.PrintState("SetCur")
 
 	if nc.CurC == rs.CurC {
 		return &pb.NewCurReply{false}, nil
@@ -70,7 +70,7 @@ func (rs *DynaServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRepl
 func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	defer rs.PrintState("DReadS")
+	//defer rs.PrintState("DReadS")
 
 	var next []*pb.Blueprint
 	if len(rs.Next[rr.CurC]) > 0 {
@@ -89,7 +89,7 @@ func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRe
 func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("DWriteS")
+	//defer rs.PrintState("DWriteS")
 	if rs.RState.Compare(wr.State) == 1 {
 		rs.RState = wr.State
 	}
@@ -98,19 +98,28 @@ func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 		return &pb.AdvWriteSReply{}, nil
 	}
 
+	var next []*pb.Blueprint
+	if len(rs.Next[wr.CurC]) > 0 {
+		next = rs.Next[wr.CurC]
+	}
+
 	if wr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteSReply{rs.Cur, rs.Next[wr.CurC]}, nil
+		return &pb.AdvWriteSReply{rs.Cur, next}, nil
 	}
 
-	return &pb.AdvWriteSReply{Next: rs.Next[wr.CurC]}, nil
+	return &pb.AdvWriteSReply{Next: next}, nil
 }
 
 func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWriteNReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("DWriteNSet")
+	//defer rs.PrintState("DWriteNSet")
+
+	if wr.Next == nil {
+		return &pb.DWriteNReply{}, nil
+	}
 
 	if rs.Next[wr.CurC] == nil {
 		rs.Next[wr.CurC] = wr.Next
@@ -141,7 +150,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	defer rs.PrintState("GetOneN")
+	//defer rs.PrintState("GetOneN")
 
 	if len(rs.Next[gt.CurC]) == 0 {
 		rs.Next[gt.CurC] = []*pb.Blueprint{gt.Next}

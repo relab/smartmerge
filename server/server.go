@@ -6,25 +6,25 @@ import (
 	//"strconv"
 	"os"
 	"os/signal"
-	"syscall"
 	"runtime/debug"
+	"syscall"
 
 	"github.com/relab/smartMerge/regserver"
 )
 
 var (
-	port = flag.Int("port", 10000, "this servers address ip:port.")
+	port  = flag.Int("port", 10000, "this servers address ip:port.")
 	gcoff = flag.Bool("gcoff", false, "turn garbage collection off.")
-	alg = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
+	alg   = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
 )
 
 func main() {
 	flag.Parse()
-	
+
 	if *gcoff {
 		debug.SetGCPercent(-1)
 	}
-	
+
 	var err error
 	fmt.Println("Starting Server with port: ", *port)
 	switch *alg {
@@ -35,7 +35,7 @@ func main() {
 	case "cons":
 		fmt.Println("Consensus based variant not implemented yet.")
 	}
-	
+
 	if err != nil {
 		fmt.Println(err)
 		panic("Starting server returned error")

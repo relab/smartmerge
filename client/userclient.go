@@ -67,14 +67,19 @@ func usermain() {
 
 		switch op {
 		case 1:
-			bytes, _ := client.Read()
+			reqsent := time.Now()
+			bytes, cnt := client.Read()
+			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			state := string(bytes)
 			fmt.Println("Current value is: ", state)
+			fmt.Printf("Has %d bytes.\n", len(bytes))
 		case 2:
 			var str string
 			fmt.Print("Insert string to write: ")
 			fmt.Scanln(&str)
-			client.Write([]byte(str))
+			reqsent := time.Now()
+			cnt := client.Write([]byte(str))
+			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 		case 3:
 			handleReconf(client, ids)
 		default:
@@ -122,7 +127,9 @@ func handleReconf(c *smclient.SmClient, ids []uint32) {
 		}
 		target.AddP(lid)
 		fmt.Println("Starting reconfiguration with target ", target)
-		_, err = c.Reconf(target)
+		reqsent := time.Now()
+		cnt, err := c.Reconf(target)
+		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)
 		}

@@ -28,6 +28,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			}
 
 			if err != nil {
+				fmt.Println("Error from GetOneN")
 				return nil, 0, err
 			}
 
@@ -40,6 +41,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			}
 
 			if err != nil {
+				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
 			}
 
@@ -53,6 +55,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			continue
 		}
 		if err != nil {
+			fmt.Println("Error from DReadS")
 			return nil, 0, err
 		}
 
@@ -72,6 +75,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			}
 
 			if err != nil {
+				fmt.Println("Error from DWriteS")
 				return nil, 0, err
 			}
 			prop = dc.handleNext(i, next, prop)
@@ -82,6 +86,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			cnt++
 			cur = dc.handleNewCur(i, newCur)
 			if err != nil {
+				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
 			}
 			continue

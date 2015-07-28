@@ -51,6 +51,9 @@ func main() {
 	events := make([]e.Event,0,len(infiles))
 
 	for _,fi := range infiles {
+		if fi == "" {
+			continue
+		}
 		fievents, err := e.Parse(fi)
 		if err != nil {
 			fmt.Printf("Error %v  parsing events from %v", err, fi)

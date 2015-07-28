@@ -1,8 +1,9 @@
 #!/bin/sh
 
 Files=""
-for log in client.pitter22.*.elog 
+for log in client.*.*.elog 
 do 
 	Files="$Files,$log"
 done
-efmt -file="$Files" -outfile=sm
+#echo $Files
+efmt -file="$Files" -outfile="$*"

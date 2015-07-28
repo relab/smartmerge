@@ -47,7 +47,8 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 
 		}
 
-		//ReadInView
+		//ReadInView: 
+		//This already is an optimization. Could be split in reads and readN
 		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i])
 		cnt++
 		cur = dc.handleNewCur(i, newCur)
@@ -82,6 +83,11 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		}
 
 		if len(next) > 0 {
+			for _,bp := range next {
+				if bp == nil {
+					fmt.Println("nil element in bp slice.")
+				}
+			}
 			newCur, err = dc.Confs[i].DWriteNSet(next, dc.Blueps[i])
 			cnt++
 			cur = dc.handleNewCur(i, newCur)

@@ -76,7 +76,6 @@ func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRe
 	if len(rs.Next[rr.CurC]) > 0 {
 		next = rs.Next[rr.CurC]
 	}
-
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
@@ -124,20 +123,14 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 	if rs.Next[wr.CurC] == nil {
 		rs.Next[wr.CurC] = wr.Next
 	}
-
-	for i, newBp := range wr.Next {
+	outerLoop:
+	for _, newBp := range wr.Next {
 		for _, bp := range rs.Next[wr.CurC] {
 			if lat.Equals(bp, newBp) {
-				wr.Next[i] = nil
-				break
+				continue outerLoop
 			}
 		}
-	}
-
-	for _, newBp := range wr.Next {
-		if newBp != nil {
-			rs.Next[wr.CurC] = append(rs.Next[wr.CurC], newBp)
-		}
+		rs.Next[wr.CurC] = append(rs.Next[wr.CurC], newBp)
 	}
 
 	if wr.CurC != rs.CurC {
@@ -160,6 +153,17 @@ func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOn
 	if gt.CurC != rs.CurC {
 		c = rs.Cur
 	}
-
+	
 	return &pb.GetOneReply{Cur: c, Next: rs.Next[gt.CurC][0]}, nil
+}
+
+func (ds *DynaServer) CheckNext(curc uint32, op string) {
+	if ds.Next[curc] == nil {
+		return
+	}
+	for _,pb := range ds.Next[curc] {
+		if pb == nil {
+			fmt.Println("found nil in bp slice, doing ", op)
+		}
+	}
 }

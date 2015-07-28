@@ -1,0 +1,8 @@
+#!/bin/sh
+
+Files=""
+for log in client.pitter22.*.elog 
+do 
+	Files="$Files,$log"
+done
+efmt -file="$Files" -outfile=sm

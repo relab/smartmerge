@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	e "github.com/relab/smartMerge/elog/event"
 )
 
 func main() {
-	var file = flag.String("file", "", "elog file to parse")
+	var file = flag.String("file", "", "elog files to parse, separated by comma")
 	//var filter = flag.Bool("filter", true, "filter out throughput samples")
 	var outfile = flag.String("outfile", "", "write results to file")
 
@@ -46,15 +47,23 @@ func main() {
 
 	}
 
-	events, err := e.Parse(*file)
-	if err != nil {
-		fmt.Println("Error parsing events:", err)
-		return
+	infiles := strings.Split(*file, ",")
+	events := make([]e.Event,0,len(infiles))
+
+	for _,fi := range infiles {
+		fievents, err := e.Parse(fi)
+		if err != nil {
+			fmt.Printf("Error %v  parsing events from %v", err, fi)
+			return
+		}
+		for _,e := range fievents {
+			events = append(events, e)
+		}
 	}
 
 	readl, writel, reconfl := sortLatencies(events)
 	if len(readl) > 0 {
-		_,err = fmt.Fprintln(of, "Read Latencies:")
+		_,err := fmt.Fprintln(of, "Read Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 		}
@@ -64,7 +73,7 @@ func main() {
 		}
 	}
 	if len(writel) > 0 {
-		_, err = fmt.Fprintln(of, "Write Latencies:")
+		_, err := fmt.Fprintln(of, "Write Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 		}
@@ -74,7 +83,7 @@ func main() {
 		}
 	}
 	if len(reconfl) > 0 {
-		_,err = fmt.Fprintln(of, "Reconf Latencies:")
+		_,err := fmt.Fprintln(of, "Reconf Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 		}

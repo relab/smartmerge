@@ -12,7 +12,7 @@ while read p; do
 		ssh ljehl@${ADDR[0]}.ux.uis.no 'mygo/src/github.com/relab/smartMerge/server/server -port ${ADDR[1]} &'
 	else
 		echo port: ${ADDR[1]}
-		./server -gcoff -alg dyna -port ${ADDR[1]} &
+		./server -gcoff -port ${ADDR[1]} &
 	fi
 done < addrList
 cd -

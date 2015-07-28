@@ -27,7 +27,9 @@ var (
 	showHelp = flag.Bool("help", false, "show this help message and exit")
 
 	// Mode
-	mode = flag.String("mode", "", "run mode: (user | bench )")
+	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
+	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | cons)")
+	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
 
 	//Config
 	confFile = flag.String("conf", "config", "the config file, a list of host:port addresses.")
@@ -35,15 +37,18 @@ var (
 	nclients = flag.Int("nclients", 1, "the number of clients")
 	initsize = flag.Int("initsize", 1, "the number of servers in the initial configuration")
 
-	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | cons)")
 
+	//Read or Write Bench
 	contW  = flag.Bool("contW", false, "continuously write")
 	contR  = flag.Bool("contR", false, "continuously read")
 	reads  = flag.Int("reads", 0, "number of reads to be performed.")
 	writes = flag.Int("writes", 0, "number of writes to be performed.")
 	size   = flag.Int("size", 16, "number of bytes for value.")
 
-	doelog = flag.Bool("elog", false, "log latencies in user mode.")
+	//Reconf Exp
+	rm = flag.Bool("rm",false , "remove nclients servers concurrently.")
+	add = flag.Bool("add", false, "add nclients servers concurrently")
+	
 )
 
 func Usage() {
@@ -63,6 +68,8 @@ func main() {
 	case "", "user":
 		usermain()
 	case "bench":
+		benchmain()
+	case "exp":
 		expmain()
 	default:
 		fmt.Fprintf(os.Stderr, "Unkown mode specified: %q\n", *mode)
@@ -70,7 +77,7 @@ func main() {
 	}
 }
 
-func expmain() {
+func benchmain() {
 	parseFlags()
 
 	//Turn garbage collection off.

@@ -45,7 +45,7 @@ func NewDynaServerWithCur(cur *pb.Blueprint, curc uint32) *DynaServer {
 	}
 }
 
-func (rs *DynaServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
+func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	//defer rs.PrintState("SetCur")

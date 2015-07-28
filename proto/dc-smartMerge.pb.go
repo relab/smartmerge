@@ -807,7 +807,7 @@ type DynaDiskClient interface {
 	DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
 	DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error)
 	GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error)
-	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
+	DSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
 }
 
 type dynaDiskClient struct {
@@ -854,9 +854,9 @@ func (c *dynaDiskClient) GetOneN(ctx context.Context, in *GetOne, opts ...grpc.C
 	return out, nil
 }
 
-func (c *dynaDiskClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
+func (c *dynaDiskClient) DSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
 	out := new(NewCurReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/SetCur", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DSetCur", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -870,7 +870,7 @@ type DynaDiskServer interface {
 	DWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
 	DWriteNSet(context.Context, *DWriteN) (*DWriteNReply, error)
 	GetOneN(context.Context, *GetOne) (*GetOneReply, error)
-	SetCur(context.Context, *NewCur) (*NewCurReply, error)
+	DSetCur(context.Context, *NewCur) (*NewCurReply, error)
 }
 
 func RegisterDynaDiskServer(s *grpc.Server, srv DynaDiskServer) {
@@ -925,12 +925,12 @@ func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
-func _DynaDisk_SetCur_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _DynaDisk_DSetCur_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
 	in := new(NewCur)
 	if err := codec.Unmarshal(buf, in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DynaDiskServer).SetCur(ctx, in)
+	out, err := srv.(DynaDiskServer).DSetCur(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -958,8 +958,8 @@ var _DynaDisk_serviceDesc = grpc.ServiceDesc{
 			Handler:    _DynaDisk_GetOneN_Handler,
 		},
 		{
-			MethodName: "SetCur",
-			Handler:    _DynaDisk_SetCur_Handler,
+			MethodName: "DSetCur",
+			Handler:    _DynaDisk_DSetCur_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

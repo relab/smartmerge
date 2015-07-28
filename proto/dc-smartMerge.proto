@@ -124,7 +124,7 @@ service DynaDisk {
 	rpc DWriteS(AdvWriteS) returns (AdvWriteSReply) {}
 	rpc DWriteNSet(DWriteN) returns (DWriteNReply) {}
 	rpc GetOneN(GetOne) returns (GetOneReply) {}
-	rpc SetCur(NewCur) returns (NewCurReply) {}
+	rpc DSetCur(NewCur) returns (NewCurReply) {}
 }
 
 message DWriteN {

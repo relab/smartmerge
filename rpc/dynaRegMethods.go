@@ -332,7 +332,7 @@ func (m *Manager) DSetCur(configID uint32, ctx context.Context, blp *pb.Blueprin
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/SetCur", &pb.NewCur{blp, configID}, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/DSetCur", &pb.NewCur{blp, configID}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:

@@ -158,7 +158,6 @@ func NewClient(addrs []string, initB *lat.Blueprint, alg string, id int) (cl RWR
 		fmt.Println("Creating manager returned error: ", err)
 		return
 	}
-	fmt.Println("Manager was created")
 	switch alg {
 	case "", "sm":
 		cl, err = smclient.New(initB, mgr, uint32(id))

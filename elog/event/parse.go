@@ -5,6 +5,8 @@ import (
 	"encoding/gob"
 	"io"
 	"io/ioutil"
+	
+	"github.com/relab/smartMerge/elog"
 )
 
 func Parse(filename string) ([]Event, error) {
@@ -44,4 +46,26 @@ func ExtractThroughput(events []Event) (regular, throughput []Event) {
 	}
 
 	return
+}
+
+func Combine(filename1, filename2 string) (error){
+	events1, err := Parse(filename1)
+	if err != nil {
+		return err
+	}
+	events2, err := Parse(filename2)
+	if err != nil {
+		return err
+	}
+	
+	elog.Enable()
+	defer elog.Flush()
+	for _,e := range events1 {
+		elog.Log(e)
+	}
+	for _,e := range events2 {
+		elog.Log(e)
+	}
+	
+	
 }

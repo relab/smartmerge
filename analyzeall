@@ -1,0 +1,6 @@
+#!/bin/sh
+
+for log in client.pitter22.*.elog 
+do 
+	efmt -file="$log"
+done

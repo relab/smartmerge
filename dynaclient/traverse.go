@@ -68,7 +68,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		if len(next) == 0 {
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
-			next, newCur, err := dc.Confs[i].DWriteS(wst, dc.Blueps[i])
+			next, newCur, err = dc.Confs[i].DWriteS(wst, dc.Blueps[i])
 			cnt++
 			cur = dc.handleNewCur(i, newCur)
 			if i < cur {

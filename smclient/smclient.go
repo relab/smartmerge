@@ -26,7 +26,6 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*SmClient, error)
 		return nil, err
 	}
 
-	fmt.Println("Start initial setcur")
 	err = conf.SetCur(initBlp)
 	if err != nil {
 		fmt.Println("initial SetCur returned error: ", err)

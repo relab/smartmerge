@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"syscall"
@@ -25,6 +26,7 @@ var (
 	//General
 	gcOff    = flag.Bool("gc-off", false, "turn garbage collection off")
 	showHelp = flag.Bool("help", false, "show this help message and exit")
+	allCores       = flag.Bool("all-cores", false, "use all available logical CPUs")
 
 	// Mode
 	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
@@ -62,6 +64,11 @@ func main() {
 
 	if *gcOff {
 		debug.SetGCPercent(-1)
+	}
+
+	if *allCores {
+		cpus := runtime.NumCPU()
+		runtime.GOMAXPROCS(cpus)
 	}
 
 	switch *mode {

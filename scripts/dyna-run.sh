@@ -12,10 +12,10 @@ sleep 1
 cd $SM
 
 echo starting Writers
-(client/client -conf client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off > logfile &)
+(client/client -conf client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores > logfile &)
 
 echo starting Reconfigurers
-client/client -conf client/addrList -alg=dyna -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog
+client/client -conf client/addrList -alg=dyna -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores
 
 sleep 1
 echo stopping Writers

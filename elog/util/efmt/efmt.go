@@ -76,16 +76,28 @@ func main() {
 		}
 	}
 	if len(writel) > 0 {
+		var totalaffected time.Duration 
+		var affected time.Duration 
+		
 		_, err := fmt.Fprintln(of, "Write Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 		}
+		avgWrites := computeAverageDurations(writel)
 		for k, durs := range writel {
-			avg := MeanDuration(durs...)
-			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
+			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
+			if k != 2 {
+				affected += time.Duration(len(durs))
+				totalaffected += time.Duration(len(durs)) * avgWrites[k]
+			}
 		}
+		fmt.Fprintf(of,"Average latency for writes affected by reconfiguration: %v\n", (totalaffected/affected) )
+		fmt.Fprintf(of, "Total overhead is: %v",totalaffected - (affected * avgWrites[2]) )
 	}
+
 	if len(reconfl) > 0 {
+		var total time.Duration
+		var number time.Duration
 		_,err := fmt.Fprintln(of, "Reconf Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
@@ -93,10 +105,14 @@ func main() {
 		for k, durs := range reconfl {
 			avg := MeanDuration(durs...)
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
+			total += avg * time.Duration(len(durs))
+			number += time.Duration(len(durs))
 		}
+		fmt.Fprintf(of, "Average reconfiguration latency: %v", (total/number))
 	}
 }
 
+//Sort read, write and reconf latencies.
 func sortLatencies(events []e.Event) (readl map[uint64][]time.Duration, writel map[uint64][]time.Duration, reconfl map[uint64][]time.Duration) {
 	readl = make(map[uint64][]time.Duration, 0)
 	writel = make(map[uint64][]time.Duration, 0)
@@ -127,7 +143,7 @@ func sortLatencies(events []e.Event) (readl map[uint64][]time.Duration, writel m
 	return
 }
 
-func computeAverageDuration(durs map[uint64][]time.Duration) map[uint64]time.Duration {
+func computeAverageDurations(durs map[uint64][]time.Duration) map[uint64]time.Duration {
 	if durs == nil {
 		return nil
 	}

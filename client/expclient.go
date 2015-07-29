@@ -186,6 +186,8 @@ func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
 
 	bgen.GetBytes(value)
 	cchan := make(chan int, 1)
+	cur := cl.GetCur()
+	
 loop:
 	for {
 		reqsent = time.Now()
@@ -197,6 +199,10 @@ loop:
 			elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
 		case <-stop:
 			break loop
+		}
+		if !cur.Equals(cl.GetCur()) {
+			fmt.Println("new current configuration")
+			cur = cl.GetCur()
 		}
 	}
 	fmt.Println("finished continous write")

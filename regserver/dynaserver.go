@@ -79,7 +79,7 @@ func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRe
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{rs.RState, rs.Cur, next}, nil
+		return &pb.AdvReadReply{State: rs.RState,Cur: rs.Cur, Next: next}, nil
 	}
 
 	return &pb.AdvReadReply{State: rs.RState, Next: next}, nil
@@ -105,7 +105,7 @@ func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 	if wr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteSReply{rs.Cur, next}, nil
+		return &pb.AdvWriteSReply{Cur: rs.Cur,Next: next}, nil
 	}
 
 	return &pb.AdvWriteSReply{Next: next}, nil

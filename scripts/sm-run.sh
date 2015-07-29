@@ -15,7 +15,7 @@ echo starting Writers
 (client/client -conf client/addrList -alg=sm -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off > logfile &)
 
 echo starting Reconfigurers
-client/client -conf client/addrList -alg=sm -mode=exp -rm -nclients=2 -initsize=12 -gc-off -elog
+client/client -conf client/addrList -alg=sm -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog
 
 sleep 1
 echo stopping Writers

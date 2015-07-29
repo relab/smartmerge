@@ -112,6 +112,7 @@ func main() {
 			number += time.Duration(len(durs))
 		}
 		fmt.Fprintf(of, "Average reconfiguration latency: %v", (total/number))
+		fmt.Fprintf(of, "In total: %d reconfigurations", number)
 	}
 }
 

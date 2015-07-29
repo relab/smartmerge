@@ -33,17 +33,15 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 	las := new(lat.Blueprint)
 	rst := new(pb.State)
 	for i := 0; i < len(smc.Confs); i++ {
-		//fmt.Println("Start State Transfer")
 		if i < cur {
 			continue
 		}
 
 		st, newlas, next, newCur, err := smc.Confs[i].AWriteN(prop, smc.Blueps[i])
 		cnt++
-		//fmt.Println("NewCur was: ", newCur)
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
-			//Should logg this for debugging
+			//Should log this for debugging
 			i--
 		}
 

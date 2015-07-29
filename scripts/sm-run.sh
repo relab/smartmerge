@@ -19,7 +19,7 @@ client/client -conf client/addrList -alg=sm -mode=exp -rm -nclients=2 -initsize=
 
 sleep 1
 echo stopping Writers
-killall $SM/client/client 
+killall client/client 
  
 ssh pitter24 "pkill -u ljehl"
 ssh pitter25 "pkill -u ljehl"

@@ -6,6 +6,7 @@ import (
 	//"strconv"
 	"os"
 	"os/signal"
+	"runtime"
 	"runtime/debug"
 	"syscall"
 
@@ -16,6 +17,7 @@ var (
 	port  = flag.Int("port", 10000, "this servers address ip:port.")
 	gcoff = flag.Bool("gcoff", false, "turn garbage collection off.")
 	alg   = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
+	allCores       = flag.Bool("all-cores", false, "use all available logical CPUs")
 )
 
 func main() {
@@ -23,6 +25,11 @@ func main() {
 
 	if *gcoff {
 		debug.SetGCPercent(-1)
+	}
+
+	if *allCores {
+		cpus := runtime.NumCPU()
+		runtime.GOMAXPROCS(cpus)
 	}
 
 	var err error

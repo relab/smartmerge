@@ -1,0 +1,4 @@
+Ideas:
+Probably Dynastore currently performs better, because the servers order Next to the configurations in which it was written.
+
+Now we send the id of the currently used blueprint in AReadS and AWriteS, instead of the ID of the current blueprint. This might cause additional accesses.

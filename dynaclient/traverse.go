@@ -59,6 +59,10 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			fmt.Println("Error from DReadS")
 			return nil, 0, err
 		}
+		
+		if len(next) > 0 {
+			fmt.Println("Read returned non-empty next")
+		}
 
 		prop = dc.handleNext(i, next, prop)
 		if rst.Compare(st) == 1 {
@@ -79,6 +83,11 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 				fmt.Println("Error from DWriteS")
 				return nil, 0, err
 			}
+
+			if len(next) > 0 {
+				fmt.Println("Read returned non-empty next")
+			}
+
 			prop = dc.handleNext(i, next, prop)
 		}
 

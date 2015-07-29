@@ -91,8 +91,11 @@ func main() {
 				totalaffected += time.Duration(len(durs)) * avgWrites[k]
 			}
 		}
-		fmt.Fprintf(of,"Average latency for writes affected by reconfiguration: %v\n", (totalaffected/affected) )
-		fmt.Fprintf(of, "Total overhead is: %v",totalaffected - (affected * avgWrites[2]) )
+		if affected > 0 {
+			fmt.Fprintf(of,"Average latency for writes affected by reconfiguration: %v\n", (totalaffected/affected) )
+			fmt.Fprintf(of, "Total overhead is: %v",totalaffected - (affected * avgWrites[2]) )
+		}
+		
 	}
 
 	if len(reconfl) > 0 {

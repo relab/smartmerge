@@ -16,6 +16,7 @@ service AdvRegister {
 	rpc AWriteN(AdvWriteN) returns (AdvWriteNReply) {}
 	rpc SetCur(NewCur) returns (NewCurReply) {}
 	rpc LAProp(LAProposal) returns (LAReply) {} 
+	rpc SetState(NewState) returns (NewStateReply) {}
 }
 
 
@@ -117,6 +118,17 @@ message LAReply {
 	Blueprint Cur = 1;
 	Blueprint LAState = 2;
 	repeated Blueprint Next = 3;
+}
+
+message NewState {
+	uint32 CurC = 1;
+	Blueprint Cur = 2;
+	State State = 3;
+	Blueprint LAState = 4;
+}
+
+message NewStateReply {
+	Blueprint Cur = 1;
 }
 
 service DynaDisk {

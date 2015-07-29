@@ -57,11 +57,13 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 	}
 
 	if i := len(smc.Confs) - 1; i > cur {
-		smc.Confs[i].AWriteS(rst, smc.Blueps[i])
-		smc.Confs[i].LAProp(smc.Blueps[i], las)
-		smc.Confs[i].SetCur(smc.Blueps[i])
-		cnt = cnt + 3
-		cur = i
+		newCur, err := smc.Confs[i].SetState(las, smc.Blueps[i], rst)
+		cnt++
+		cur = smc.handleNewCur(i, newCur)
+		if newCur == nil && err != nil {
+			//Not sure what to do:
+			fmt.Println("SetState returned error, not sure what to do")
+		}
 	}
 
 	smc.Blueps = smc.Blueps[cur:]

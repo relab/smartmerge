@@ -14,7 +14,7 @@ import (
 //Cur is used to check if some server returned a new current Blueprint.
 //In this case, the call is aborted.
 //If cur == nil, any returned Blueprint results in an abort.
-func (m *Manager) AReadS(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.AdvReadReply, *lat.Blueprint, error) {
+func (m *Manager) AReadS(configID uint32, curC uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.AdvReadReply, *lat.Blueprint, error) {
 	c, found := m.configs[configID]
 	if !found {
 		return nil, nil, ConfigNotFound(configID)
@@ -39,7 +39,7 @@ func (m *Manager) AReadS(configID uint32, cur *lat.Blueprint, ctx context.Contex
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/AReadS", &pb.AdvRead{configID}, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/AReadS", &pb.AdvRead{curC}, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:
@@ -389,4 +389,76 @@ func (m *Manager) SetCurASync(configID uint32, ctx context.Context, blp *pb.Blue
 	}
 
 	return nil
+}
+
+func (m *Manager) SetState(configID uint32, cur *lat.Blueprint, ctx context.Context, arg *pb.NewState, opts ...grpc.CallOption) ([]*pb.NewStateReply, *lat.Blueprint, error) {
+	c, found := m.configs[configID]
+	if !found {
+		return nil, nil, ConfigNotFound(configID)
+	}
+
+	q := c.quorum
+	var (
+		replyChan  = make(chan *pb.NewStateReply, q)
+		stopSignal = make(chan struct{})
+		errSignal  = make(chan bool, q)
+		out        = make([]*pb.NewStateReply, 0, q)
+		errCount   int
+	)
+
+	defer close(stopSignal)
+	for _, mid := range c.machines {
+		ma, found := m.machines[mid]
+		if !found {
+			panic("machine not found")
+		}
+		go func(machine *machine) {
+			repl := new(pb.NewStateReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(ctx, "/proto.AdvRegister/SetState", arg, repl, machine.conn, c.grpcCallOptions...)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.lastErr = err
+					errSignal <- true
+					return
+				}
+				machine.latency = time.Since(start)
+				replyChan <- repl
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	for {
+		select {
+		case r := <-replyChan:
+			if r.Cur != nil {
+				newCur := lat.GetBlueprint(r.Cur)
+				if cur == nil {
+					//Abort if any Cur returned
+					return nil, newCur, nil
+				}
+				if newCur.Compare(cur) == -1 {
+					//Abort only if newCur larger than current.
+					return nil, newCur, nil
+				}
+			}
+
+			out = append(out, r)
+			if len(out) >= q {
+				return out, nil, nil
+			}
+		case <-errSignal:
+			errCount++
+			if errCount > len(c.machines)-q {
+				return nil, nil, errors.New("could not complete request due to too many errors")
+			}
+		}
+	}
+
 }

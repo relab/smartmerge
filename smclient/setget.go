@@ -16,7 +16,7 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 
-		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[i])
+		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[i], smc.Confs[cur].ID())
 		cnt++
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {
@@ -47,7 +47,7 @@ func (smc *SmClient) set(rs *pb.State) int {
 			continue
 		}
 
-		next, newCur, err := smc.Confs[i].AWriteS(rs, smc.Blueps[i])
+		next, newCur, err := smc.Confs[i].AWriteS(rs,smc.Confs[cur].ID(), smc.Blueps[i])
 		cnt++
 		cur = smc.handleNewCur(cur, newCur)
 		if err != nil {

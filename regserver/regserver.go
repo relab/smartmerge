@@ -226,3 +226,26 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	rs.LAState = lat.Merge(rs.LAState, lap.Prop)
 	return &pb.LAReply{Cur: c, LAState: rs.LAState}, nil
 }
+
+func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	if ns == nil {
+		return nil, errors.New("Empty NewState message")
+	}
+	
+	rs.LAState = lat.Merge(rs.LAState, ns.LAState)
+	if rs.RState.Compare(ns.State) == 1 {
+		rs.RState = ns.State
+	}
+	
+	if rs.CurC != ns.CurC && lat.Compare(rs.Cur,ns.Cur) == 1 {
+		rs.Cur = ns.Cur
+		rs.CurC = ns.CurC
+		return &pb.NewStateReply{}, nil
+	}
+	if rs.CurC == ns.CurC {
+		return &pb.NewStateReply{}, nil
+	}
+	return &pb.NewStateReply{rs.Cur}, nil
+}

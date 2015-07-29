@@ -8,8 +8,8 @@ import (
 	//"github.com/relab/smartMerge/regserver"
 )
 
-func (c *Configuration) AReadS(cur *lat.Blueprint) (s *pb.State, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
-	replies, newCur, err := c.mgr.AReadS(c.id, cur, context.Background())
+func (c *Configuration) AReadS(thisBP *lat.Blueprint, curC uint32) (s *pb.State, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
+	replies, newCur, err := c.mgr.AReadS(c.id, curC, thisBP, context.Background())
 	if err != nil || newCur != nil {
 		return
 	}
@@ -26,8 +26,8 @@ func (c *Configuration) AReadS(cur *lat.Blueprint) (s *pb.State, next []*lat.Blu
 	return
 }
 
-func (c *Configuration) AWriteS(s *pb.State, thisBP *lat.Blueprint) (next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
-	replies, newCur, err := c.mgr.AWriteS(c.id, thisBP, context.Background(), &pb.AdvWriteS{s, c.id})
+func (c *Configuration) AWriteS(s *pb.State, curC uint32, thisBP *lat.Blueprint) (next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
+	replies, newCur, err := c.mgr.AWriteS(c.id, thisBP, context.Background(), &pb.AdvWriteS{s, curC})
 	if err != nil || newCur != nil {
 		return
 	}
@@ -75,6 +75,22 @@ func (c *Configuration) AWriteN(nnext *lat.Blueprint, thisBP *lat.Blueprint) (st
 	return
 }
 
+//In This case: NewCur = thisBP
+func (c *Configuration) SetState(las *lat.Blueprint, thisBP *lat.Blueprint, st *pb.State) (newCur *lat.Blueprint, err error) {
+	bp := las.ToMsg()
+	cur := thisBP.ToMsg()
+	replies, newCur, err := c.mgr.SetState(c.id, thisBP, context.Background(), &pb.NewState{CurC: c.id,Cur: cur, LAState: bp, State: st})
+	if err != nil || newCur != nil {
+		return
+	}
+
+	for _, rep := range replies {
+		newCur = CompareCur(newCur, rep)
+	}
+
+	return
+}
+
 type LAStateReport interface {
 	GetLAState() *pb.Blueprint
 }
@@ -102,3 +118,4 @@ func CompareCur(cur *lat.Blueprint, rep CurReport) *lat.Blueprint {
 	}
 	return cur
 }
+

@@ -37,6 +37,7 @@ func expmain() {
 	}
 
 	var wg sync.WaitGroup
+	syncchan := make(chan struct{})
 
 	for i := 0; i < *nclients; i++ {
 		fmt.Println("starting client number: ", i)
@@ -54,27 +55,27 @@ func expmain() {
 				fmt.Println("Not enough processes to remove.")
 				return
 			}
-			go remove(cl, ids, (*clientid)+i, &wg)
+			go remove(cl, ids, syncchan, (*clientid)+i, &wg)
 		case *add:
-			go adds(cl, ids, *initsize + i, &wg)
+			go adds(cl, ids, syncchan, *initsize + i, &wg)
 		}
 	}
+	time.Sleep(2 * time.Second)
+	close(syncchan)
 
 	fmt.Println("waiting for goroutines")
 	wg.Wait()
 	return
 }
 
-func remove(c RWRer,ids []uint32, i int, wg *sync.WaitGroup) {
+func remove(c RWRer,ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()	
 	cur := c.GetCur()
 	target := new(lat.Blueprint)
 	target.RemP(lat.ID(ids[i]))
 	target = target.Merge(cur)
-	
-	ts := time.Now().Truncate(1 * time.Second).Add(2 * time.Second)
-	time.Sleep(ts.Sub(time.Now()))
-	
+		
+	<-sc
 	reqsent := time.Now()
 	cnt, err := c.Reconf(target)
 	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
@@ -85,7 +86,7 @@ func remove(c RWRer,ids []uint32, i int, wg *sync.WaitGroup) {
 	return
 }
 
-func adds(c RWRer,ids []uint32,  i int, wg *sync.WaitGroup) {
+func adds(c RWRer,ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()	
 	cur := c.GetCur()
 	if len(ids)<= i {
@@ -100,8 +101,7 @@ func adds(c RWRer,ids []uint32,  i int, wg *sync.WaitGroup) {
 		fmt.Println("Add did not result in a new configuration.")
 	}
 	
-	ts := time.Now().Truncate(1 * time.Second).Add(2 * time.Second)
-	time.Sleep(ts.Sub(time.Now()))
+	<-sc
 	
 	reqsent := time.Now()
 	cnt, err := c.Reconf(target)

@@ -8,8 +8,9 @@ import (
 	//"github.com/relab/smartMerge/regserver"
 )
 
-func (c *Configuration) DReadS(thisBP *lat.Blueprint) (s *pb.State, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
-	replies, newCur, err := c.mgr.DReadS(c.id, thisBP, context.Background())
+func (c *Configuration) DReadS(thisBP *lat.Blueprint, prop *lat.Blueprint) (s *pb.State, next []*lat.Blueprint, newCur *lat.Blueprint, err error) {
+	mprop := prop.ToMsg()
+	replies, newCur, err := c.mgr.DReadS(c.id, thisBP, &pb.DRead{CurC: c.id, Prop: mprop}, context.Background())
 	if err != nil || newCur != nil {
 		return
 	}

@@ -31,6 +31,7 @@ It has these top-level messages:
 	LAReply
 	NewState
 	NewStateReply
+	DRead
 	DWriteN
 	DWriteNReply
 	GetOne
@@ -442,6 +443,22 @@ func (*NewStateReply) ProtoMessage()    {}
 func (m *NewStateReply) GetCur() *Blueprint {
 	if m != nil {
 		return m.Cur
+	}
+	return nil
+}
+
+type DRead struct {
+	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
+	Prop *Blueprint `protobuf:"bytes,2,opt" json:"Prop,omitempty"`
+}
+
+func (m *DRead) Reset()         { *m = DRead{} }
+func (m *DRead) String() string { return proto1.CompactTextString(m) }
+func (*DRead) ProtoMessage()    {}
+
+func (m *DRead) GetProp() *Blueprint {
+	if m != nil {
+		return m.Prop
 	}
 	return nil
 }
@@ -879,7 +896,7 @@ var _AdvRegister_serviceDesc = grpc.ServiceDesc{
 // Client API for DynaDisk service
 
 type DynaDiskClient interface {
-	DReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error)
+	DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error)
 	DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
 	DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error)
 	GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error)
@@ -894,7 +911,7 @@ func NewDynaDiskClient(cc *grpc.ClientConn) DynaDiskClient {
 	return &dynaDiskClient{cc}
 }
 
-func (c *dynaDiskClient) DReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
+func (c *dynaDiskClient) DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
 	out := new(AdvReadReply)
 	err := grpc.Invoke(ctx, "/proto.DynaDisk/DReadS", in, out, c.cc, opts...)
 	if err != nil {
@@ -942,7 +959,7 @@ func (c *dynaDiskClient) DSetCur(ctx context.Context, in *NewCur, opts ...grpc.C
 // Server API for DynaDisk service
 
 type DynaDiskServer interface {
-	DReadS(context.Context, *AdvRead) (*AdvReadReply, error)
+	DReadS(context.Context, *DRead) (*AdvReadReply, error)
 	DWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
 	DWriteNSet(context.Context, *DWriteN) (*DWriteNReply, error)
 	GetOneN(context.Context, *GetOne) (*GetOneReply, error)
@@ -954,7 +971,7 @@ func RegisterDynaDiskServer(s *grpc.Server, srv DynaDiskServer) {
 }
 
 func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(AdvRead)
+	in := new(DRead)
 	if err := codec.Unmarshal(buf, in); err != nil {
 		return nil, err
 	}

@@ -1,7 +1,7 @@
 package dynaclient
 
 import (
-	"errors"
+	//"errors"
 	"fmt"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
@@ -17,7 +17,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		if i < cur {
 			continue
 		}
-
+		var curprop *lat.Blueprint
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
 			/*			if dc.Blueps[i].Compare(prop) != 1 {
@@ -38,9 +38,11 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 				fmt.Println("Error from GetOneN")
 				return nil, 0, err
 			}
+			
+			curprop = next
 
 			//A possible optimization would combine this WriteN with the ReadS below
-			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
+/*			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
 			//fmt.Println("invoke writeN")
 			cnt++
 			cur = dc.handleNewCur(cur, i, newCur)
@@ -53,12 +55,12 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
 			}
-
+*/
 		}
 
 		//ReadInView:
 		//This already is an optimization. Could be split in reads and readN
-		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i])
+		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i], curprop)
 		//fmt.Println("invoke readS")
 		cnt++
 		cur = dc.handleNewCur(cur, i, newCur)

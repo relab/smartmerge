@@ -112,12 +112,6 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		dc.Confs[cur].DSetCur(dc.Blueps[cur])
 		//fmt.Println("setcur")
 		cnt++
-	} else {
-		fmt.Printf("Cur is %d.",cur)
-		fmt.Println("Blueprint Slice:")
-		for _,bl := range dc.Blueps {
-			fmt.Printf(" %v,", *bl)
-		}
 	}
 		
 		

@@ -67,10 +67,18 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 	return &pb.NewCurReply{false}, nil
 }
 
-func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
+func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
 	//defer rs.PrintState("DReadS")
+
+	if rr.Prop != nil {
+		if len(rs.Next[rr.CurC]) > 0 {
+			rs.Next[rr.CurC] = append(rs.Next[rr.CurC], rr.Prop)
+		} else {
+			rs.Next[rr.CurC] = []*pb.Blueprint{rr.Prop}
+		}
+	}
 
 	var next []*pb.Blueprint
 	if len(rs.Next[rr.CurC]) > 0 {

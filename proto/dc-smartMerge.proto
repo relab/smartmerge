@@ -132,11 +132,16 @@ message NewStateReply {
 }
 
 service DynaDisk {
-	rpc DReadS(AdvRead) returns (AdvReadReply) {} 
+	rpc DReadS(DRead) returns (AdvReadReply) {} 
 	rpc DWriteS(AdvWriteS) returns (AdvWriteSReply) {}
 	rpc DWriteNSet(DWriteN) returns (DWriteNReply) {}
 	rpc GetOneN(GetOne) returns (GetOneReply) {}
 	rpc DSetCur(NewCur) returns (NewCurReply) {}
+}
+
+message DRead {
+	uint32 CurC = 1;
+	Blueprint Prop = 2;
 }
 
 message DWriteN {

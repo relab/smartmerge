@@ -1,8 +1,12 @@
 #!/bin/sh
 
+cd $SM/client
+go build
+cd -
 
 for i in {1..20} 
 do
+	continue
 	./sm-run.sh 2
 done
 cd $SM
@@ -26,6 +30,7 @@ $SM/scripts/analyzeall dyna_remove2
 cd $SM/scripts
 for i in {1..20} 
 do
+	continue
 	./sm-run.sh 5
 done
 cd $SM

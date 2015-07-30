@@ -1,7 +1,7 @@
 package dynaclient
 
 import (
-	//"errors"
+	"errors"
 	"fmt"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
@@ -18,12 +18,18 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			continue
 		}
 
-		if  prop != nil && !prop.Equals(dc.Blueps[i]) {
+		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
+/*			if dc.Blueps[i].Compare(prop) != 1 {
+				fmt.Println("target blueprint is not greater then current blueprint")
+				return nil, cnt, errors.New("target not comparable to current")
+			}
+*/
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
 			//fmt.Println("invoke getone")
 			cnt++
 			cur = dc.handleNewCur(cur, i, newCur)
+			prop = prop.Merge(newCur)
 			if i < cur {
 				continue
 			}
@@ -38,6 +44,7 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			//fmt.Println("invoke writeN")
 			cnt++
 			cur = dc.handleNewCur(cur, i, newCur)
+			prop = prop.Merge(newCur)
 			if i < cur {
 				continue
 			}
@@ -49,12 +56,15 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 
 		}
 
-		//ReadInView: 
+		//ReadInView:
 		//This already is an optimization. Could be split in reads and readN
 		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i])
 		//fmt.Println("invoke readS")
 		cnt++
 		cur = dc.handleNewCur(cur, i, newCur)
+		if prop != nil || len(next) > 0 {
+			prop = prop.Merge(newCur)
+		}
 		if i < cur {
 			continue
 		}
@@ -62,16 +72,35 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			fmt.Println("Error from DReadS")
 			return nil, 0, err
 		}
-		
-		if len(next) > 0 {
-			fmt.Println("Read returned non-empty next")
-		}
 
+/*		for _,nxt := range next {
+			if dc.Blueps[i].Compare(nxt) != 1{
+				fmt.Println("Returned next, that is not greater than this")
+				panic("Next not comparable.")
+			}
+		}
+*/
 		prop = dc.handleNext(i, next, prop)
 		if rst.Compare(st) == 1 {
 			rst = st
 		}
 
+/*
+		if i > 40 {
+			fmt.Println("Did too many loops, there is a problem/race condition.")
+			fmt.Printf("Currently at position %d in slice.\n", i)
+			fmt.Printf("Slice length is %d.\n", len(dc.Blueps))
+			if dc.ID == uint32(1) || dc.ID == uint32(6) {
+				fmt.Println("Blueprints slice is:")
+				for _,bl := range dc.Blueps {
+					fmt.Printf("   %v\n", bl.Rem)
+				}
+				panic("Too many blueprints")
+			}
+
+			return nil, cnt, errors.New("Race condition")
+		}
+*/
 		if len(next) == 0 {
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
@@ -79,6 +108,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			//fmt.Println("invoke writeS")
 			cnt++
 			cur = dc.handleNewCur(cur, i, newCur)
+			if prop != nil || len(next) > 0 {
+				prop = prop.Merge(newCur)
+			}
 			if i < cur {
 				continue
 			}
@@ -86,10 +118,6 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			if err != nil {
 				fmt.Println("Error from DWriteS")
 				return nil, 0, err
-			}
-
-			if len(next) > 0 {
-				fmt.Println("Read returned non-empty next")
 			}
 
 			prop = dc.handleNext(i, next, prop)
@@ -100,6 +128,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			//fmt.Println("invoke writeN")
 			cnt++
 			cur = dc.handleNewCur(cur, i, newCur)
+			if prop != nil {
+				prop = prop.Merge(newCur)
+			}
 			if err != nil {
 				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
@@ -108,21 +139,16 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		}
 	}
 
-	if i :=len(dc.Confs)-1; i > cur {
+	if i := len(dc.Confs) - 1; i > cur {
 		dc.Confs[i].DSetCur(dc.Blueps[i])
 		//fmt.Println("setcur")
 		cnt++
 		cur = i
 	}
-		
-		
 
 	dc.Blueps = dc.Blueps[cur:]
 	dc.Confs = dc.Confs[cur:]
 
-	if cnt > 2 {
-		fmt.Println("Did more than 2 accesses")
-	}
 	if val == nil {
 		return rst.Value, cnt, nil
 	}
@@ -141,6 +167,7 @@ func (dc *DynaClient) handleNewCur(cur int, i int, newCur *lat.Blueprint) int {
 		for ; cur < len(dc.Blueps)-1; cur++ {
 			if dc.Blueps[cur+1].Compare(dc.Blueps[cur]) == 0 {
 				dc.Blueps[cur+1] = dc.Blueps[cur]
+				dc.Confs[cur+1] = dc.Confs[cur]
 			} else {
 				break
 			}

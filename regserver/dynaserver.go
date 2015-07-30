@@ -58,7 +58,7 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if lat.Compare(rs.Cur, nc.Cur) == 0 {
+	if rs.Cur != nil && lat.Compare(rs.Cur, nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
@@ -153,7 +153,7 @@ func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOn
 	if gt.CurC != rs.CurC {
 		c = rs.Cur
 	}
-	
+
 	return &pb.GetOneReply{Cur: c, Next: rs.Next[gt.CurC][0]}, nil
 }
 

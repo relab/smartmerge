@@ -143,6 +143,11 @@ func (m *Manager) connectAll(dialOpts ...grpc.DialOption) error {
 	return nil
 }
 
+type uint32arr []uint32
+func (a uint32arr) Len() int { return len(a) }
+func (a uint32arr) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a uint32arr) Less(i, j int) bool { return a[i] < a[j] }
+
 func (m *Manager) NewConfiguration(ids []uint32, quorumSize int, grpcOptions ...grpc.CallOption) (*Configuration, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -153,6 +158,9 @@ func (m *Manager) NewConfiguration(ids []uint32, quorumSize int, grpcOptions ...
 	if quorumSize > len(ids) || quorumSize < 1 {
 		return nil, fmt.Errorf("illegal quourm size (%d) for configuration size (%d)", quorumSize, len(ids))
 	}
+
+	idsarr := uint32arr(ids)
+	sort.Sort(idsarr)
 
 	h := fnv.New32a()
 	h.Write([]byte(strconv.Itoa(quorumSize)))

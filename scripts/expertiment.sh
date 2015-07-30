@@ -4,6 +4,8 @@ cd $SM/client
 go build
 cd -
 
+cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
+
 for i in {1..20} 
 do
 	continue

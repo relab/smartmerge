@@ -20,9 +20,9 @@ client/client -conf client/addrList -alg=dyna -mode=exp -rm -nclients="$*" -init
 sleep 1
 echo stopping Writers
 ssh pitter21 "cd $SM && killall client/client" 
-scp pitter21:$SM/*.elog .
+#scp pitter21:$SM/*.elog .
 
-ssh pitter21 "cd $SM && rm *.elog"
+#ssh pitter21 "cd $SM && rm *.elog"
  
 ssh pitter24 "pkill -u ljehl"
 ssh pitter25 "pkill -u ljehl"

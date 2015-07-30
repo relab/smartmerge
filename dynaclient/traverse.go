@@ -11,13 +11,8 @@ import (
 
 func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, error) {
 	cnt := 0
-	cur := 0
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Confs); i++ {
-		if i < cur {
-			continue
-		}
-		var curprop *lat.Blueprint
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
 			/*			if dc.Blueps[i].Compare(prop) != 1 {
@@ -28,9 +23,10 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
 			//fmt.Println("invoke getone")
 			cnt++
-			cur = dc.handleNewCur(cur, i, newCur)
-			prop = prop.Merge(newCur)
-			if i < cur {
+			restart := dc.handleNewCur(newCur)
+			if restart {
+				prop = prop.Merge(newCur)
+				i = -1
 				continue
 			}
 
@@ -38,16 +34,14 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 				fmt.Println("Error from GetOneN")
 				return nil, 0, err
 			}
-			
-			curprop = next
 
-			//A possible optimization would combine this WriteN with the ReadS below
-/*			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
+			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
 			//fmt.Println("invoke writeN")
 			cnt++
-			cur = dc.handleNewCur(cur, i, newCur)
-			prop = prop.Merge(newCur)
-			if i < cur {
+			restart = dc.handleNewCur(newCur)
+			if restart {
+				prop = prop.Merge(newCur)
+				i = -1
 				continue
 			}
 
@@ -55,19 +49,16 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
 			}
-*/
 		}
 
 		//ReadInView:
-		//This already is an optimization. Could be split in reads and readN
-		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i], curprop)
+		st, _, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i], nil)
 		//fmt.Println("invoke readS")
 		cnt++
-		cur = dc.handleNewCur(cur, i, newCur)
-		if prop != nil || len(next) > 0 {
+		restart := dc.handleNewCur(newCur)
+		if restart {
 			prop = prop.Merge(newCur)
-		}
-		if i < cur {
+			i = -1
 			continue
 		}
 		if err != nil {
@@ -75,13 +66,21 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			return nil, 0, err
 		}
 
-		/*		for _,nxt := range next {
-					if dc.Blueps[i].Compare(nxt) != 1{
-						fmt.Println("Returned next, that is not greater than this")
-						panic("Next not comparable.")
-					}
-				}
-		*/
+		//Using DWriteS here is a shortcut, but I think it works just fine.
+		next, newCur, err := dc.Confs[i].DWriteS(nil, dc.Blueps[i])
+		//fmt.Println("invoke readN")
+		cnt++
+		restart = dc.handleNewCur(newCur)
+		if restart {
+			prop = prop.Merge(newCur)
+			i = -1
+			continue
+		}
+		if err != nil {
+			fmt.Println("Error from DReadN")
+			return nil, 0, err
+		}
+
 		prop = dc.handleNext(i, next, prop)
 		if rst.Compare(st) == 1 {
 			rst = st
@@ -106,14 +105,29 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		if len(next) == 0 {
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
-			next, newCur, err = dc.Confs[i].DWriteS(wst, dc.Blueps[i])
+			_, newCur, err = dc.Confs[i].DWriteS(wst, dc.Blueps[i])
 			//fmt.Println("invoke writeS")
 			cnt++
-			cur = dc.handleNewCur(cur, i, newCur)
-			if prop != nil || len(next) > 0 {
+			restart = dc.handleNewCur(newCur)
+			if restart {
 				prop = prop.Merge(newCur)
+				i = -1
+				continue
 			}
-			if i < cur {
+
+			if err != nil {
+				fmt.Println("Error from DWriteS")
+				return nil, 0, err
+			}
+
+			//Using DWriteS here is a shortcut, but I think it works just fine.
+			next, newCur, err := dc.Confs[i].DWriteS(nil, dc.Blueps[i])
+			//fmt.Println("invoke readN")
+			cnt++
+			restart = dc.handleNewCur(newCur)
+			if restart {
+				prop = prop.Merge(newCur)
+				i = -1
 				continue
 			}
 
@@ -123,16 +137,20 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			}
 
 			prop = dc.handleNext(i, next, prop)
+
 		}
 
 		if len(next) > 0 {
 			newCur, err = dc.Confs[i].DWriteNSet(next, dc.Blueps[i])
 			//fmt.Println("invoke writeN")
 			cnt++
-			cur = dc.handleNewCur(cur, i, newCur)
-			if prop != nil {
+			restart = dc.handleNewCur(newCur)
+			if restart {
 				prop = prop.Merge(newCur)
+				i = -1
+				continue
 			}
+
 			if err != nil {
 				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
@@ -141,15 +159,15 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		}
 	}
 
-	if i := len(dc.Confs) - 1; i > cur {
+	i := len(dc.Confs)
+	if i > 1  {
 		dc.Confs[i].DSetCur(dc.Blueps[i])
 		//fmt.Println("setcur")
 		cnt++
-		cur = i
 	}
 
-	dc.Blueps = dc.Blueps[cur:]
-	dc.Confs = dc.Confs[cur:]
+	dc.Blueps = dc.Blueps[i:]
+	dc.Confs = dc.Confs[i:]
 
 	if val == nil {
 		return rst.Value, cnt, nil
@@ -157,26 +175,33 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 	return nil, cnt, nil
 }
 
-func (dc *DynaClient) handleNewCur(cur int, i int, newCur *lat.Blueprint) int {
-	if newCur == nil {
-		return cur
+func (dc *DynaClient) handleNewCur(newCur *lat.Blueprint) bool {
+	if newCur.Compare(dc.Blueps[0]) == 1 {
+		return false
 	}
-	if newCur.Compare(dc.Blueps[i]) == 1 {
-		return cur
-	}
-	cur, remove := dc.findorinsert(i, newCur)
-	if remove {
-		for ; cur < len(dc.Blueps)-1; cur++ {
-			if dc.Blueps[cur+1].Compare(dc.Blueps[cur]) == 0 {
-				dc.Blueps[cur+1] = dc.Blueps[cur]
-				dc.Confs[cur+1] = dc.Confs[cur]
-			} else {
-				break
+	found := false
+	cur := 1
+	for ; cur < len(dc.Blueps); cur++ {
+		if newCur.Compare(dc.Blueps[cur]) == 1 {
+			if dc.Blueps[cur].Compare(newCur) == 1 {
+				found = true
 			}
+			break
 		}
 	}
-	return cur
 
+	if found {
+		dc.Blueps = dc.Blueps[cur:cur+1]
+		dc.Confs = dc.Confs[cur:cur+1]
+	} else {
+		cnf, err := dc.mgr.NewConfiguration(newCur.Ids(), majQuorum(newCur))
+		if err != nil {
+			panic("could not get new config")
+		}
+		dc.Blueps = []*lat.Blueprint{newCur}
+		dc.Confs = []*rpc.Configuration{cnf}
+	}
+	return true
 }
 
 func (dc *DynaClient) handleNext(i int, next []*lat.Blueprint, prop *lat.Blueprint) *lat.Blueprint {

@@ -21,8 +21,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		if  prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
+			//fmt.Println("invoke getone")
 			cnt++
-			cur = dc.handleNewCur(i, newCur)
+			cur = dc.handleNewCur(cur, i, newCur)
 			if i < cur {
 				continue
 			}
@@ -34,8 +35,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 
 			//A possible optimization would combine this WriteN with the ReadS below
 			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
+			//fmt.Println("invoke writeN")
 			cnt++
-			cur = dc.handleNewCur(i, newCur)
+			cur = dc.handleNewCur(cur, i, newCur)
 			if i < cur {
 				continue
 			}
@@ -50,8 +52,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		//ReadInView: 
 		//This already is an optimization. Could be split in reads and readN
 		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i])
+		//fmt.Println("invoke readS")
 		cnt++
-		cur = dc.handleNewCur(i, newCur)
+		cur = dc.handleNewCur(cur, i, newCur)
 		if i < cur {
 			continue
 		}
@@ -73,8 +76,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
 			next, newCur, err = dc.Confs[i].DWriteS(wst, dc.Blueps[i])
+			//fmt.Println("invoke writeS")
 			cnt++
-			cur = dc.handleNewCur(i, newCur)
+			cur = dc.handleNewCur(cur, i, newCur)
 			if i < cur {
 				continue
 			}
@@ -93,8 +97,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 
 		if len(next) > 0 {
 			newCur, err = dc.Confs[i].DWriteNSet(next, dc.Blueps[i])
+			//fmt.Println("invoke writeN")
 			cnt++
-			cur = dc.handleNewCur(i, newCur)
+			cur = dc.handleNewCur(cur, i, newCur)
 			if err != nil {
 				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
@@ -103,11 +108,19 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		}
 	}
 
-	if i := len(dc.Confs) - 1; i > cur {
-		dc.Confs[i].DSetCur(dc.Blueps[i])
+	if len(dc.Confs)-1 > cur {
+		dc.Confs[cur].DSetCur(dc.Blueps[cur])
+		//fmt.Println("setcur")
 		cnt++
-		cur = i
+	} else {
+		fmt.Printf("Cur is %d.",cur)
+		fmt.Println("Blueprint Slice:")
+		for _,bl := range dc.Blueps {
+			fmt.Printf(" %v,", *bl)
+		}
 	}
+		
+		
 
 	dc.Blueps = dc.Blueps[cur:]
 	dc.Confs = dc.Confs[cur:]
@@ -118,11 +131,14 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 	return nil, cnt, nil
 }
 
-func (dc *DynaClient) handleNewCur(cur int, newCur *lat.Blueprint) int {
+func (dc *DynaClient) handleNewCur(cur int, i int, newCur *lat.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
-	cur, remove := dc.findorinsert(cur, newCur)
+	if newCur.Compare(dc.Blueps[i]) == 1 {
+		return cur
+	}
+	cur, remove := dc.findorinsert(i, newCur)
 	if remove {
 		for ; cur < len(dc.Blueps)-1; cur++ {
 			if dc.Blueps[cur+1].Compare(dc.Blueps[cur]) == 0 {

@@ -67,6 +67,7 @@ func usermain() {
 			state := string(bytes)
 			fmt.Println("Current value is: ", state)
 			fmt.Printf("Has %d bytes.\n", len(bytes))
+			fmt.Printf("Did %d accesses.\n", cnt)
 		case 2:
 			var str string
 			fmt.Print("Insert string to write: ")
@@ -74,6 +75,7 @@ func usermain() {
 			reqsent := time.Now()
 			cnt := client.Write([]byte(str))
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
+			fmt.Printf("Did %d accesses.\n", cnt)
 		case 3:
 			handleReconf(client, ids)
 		default:
@@ -128,6 +130,7 @@ func handleReconf(c RWRer, ids []uint32) {
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)
 		}
+		fmt.Printf("did %d accesses.\n", cnt)
 		fmt.Println("new blueprint is ", c.GetCur())
 		return
 	case 2:
@@ -163,6 +166,7 @@ func handleReconf(c RWRer, ids []uint32) {
 			fmt.Println("Reconf returned error: ", err)
 		}
 
+		fmt.Printf("did %d accesses.\n", cnt)
 		fmt.Println("new blueprint is ", c.GetCur())
 		return
 	default:

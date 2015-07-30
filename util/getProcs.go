@@ -25,7 +25,7 @@ func GetProcs(confFile string, prnt bool) (addrs []string, ids []uint32) {
 
 	scanner := bufio.NewScanner(fi)
 	if prnt {
-		fmt.Printf("Processes from Config file")
+		fmt.Println("Processes from Config file:")
 	}
 	for scanner.Scan() {
 		s := strings.TrimSpace(scanner.Text())

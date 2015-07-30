@@ -54,7 +54,7 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if rs.CurC == 0 || lat.Compare(nc.Cur, rs.Cur) == 1 {
+	if nc.CurC == 0 || lat.Compare(nc.Cur, rs.Cur) == 1 {
 		return &pb.NewCurReply{false}, nil
 	}
 

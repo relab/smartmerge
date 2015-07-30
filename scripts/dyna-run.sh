@@ -12,14 +12,17 @@ sleep 1
 cd $SM
 
 echo starting Writers
-(client/client -conf client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores > logfile &)
+ssh pitter21 "cd $SM && client/client -conf client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores > logfile & " &
 
 echo starting Reconfigurers
 client/client -conf client/addrList -alg=dyna -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores
 
 sleep 1
 echo stopping Writers
-killall client/client 
+ssh pitter21 "cd $SM && killall client/client" 
+scp pitter21:$SM/*.elog .
+
+ssh pitter21 "cd $SM && rm *.elog"
  
 ssh pitter24 "pkill -u ljehl"
 ssh pitter25 "pkill -u ljehl"

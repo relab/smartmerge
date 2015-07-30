@@ -65,6 +65,7 @@ func expmain() {
 
 	fmt.Println("waiting for goroutines")
 	wg.Wait()
+	time.Sleep(2 * time.Second)
 	return
 }
 

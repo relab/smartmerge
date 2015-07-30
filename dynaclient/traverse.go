@@ -108,10 +108,11 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		}
 	}
 
-	if len(dc.Confs)-1 > cur {
-		dc.Confs[cur].DSetCur(dc.Blueps[cur])
+	if i :=len(dc.Confs)-1; i > cur {
+		dc.Confs[i].DSetCur(dc.Blueps[i])
 		//fmt.Println("setcur")
 		cnt++
+		cur = i
 	}
 		
 		

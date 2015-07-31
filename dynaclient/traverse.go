@@ -15,11 +15,11 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 	for i := 0; i < len(dc.Confs); i++ {
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
-			/*			if dc.Blueps[i].Compare(prop) != 1 {
-							fmt.Println("target blueprint is not greater then current blueprint")
-							return nil, cnt, errors.New("target not comparable to current")
-						}
-			*/
+/*			if dc.Blueps[i].Compare(prop) != 1 {
+				fmt.Println("target blueprint is not greater then current blueprint")
+				return nil, cnt, errors.New("target not comparable to current")
+			}
+*/			
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
 			//fmt.Println("invoke getone")
 			cnt++
@@ -159,8 +159,8 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		}
 	}
 
-	i := len(dc.Confs)
-	if i > 1  {
+	i := len(dc.Confs) -1
+	if i > 0  {
 		dc.Confs[i].DSetCur(dc.Blueps[i])
 		//fmt.Println("setcur")
 		cnt++

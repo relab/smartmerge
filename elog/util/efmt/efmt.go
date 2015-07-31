@@ -86,7 +86,7 @@ func main() {
 		avgWrites := computeAverageDurations(writel)
 		for k, durs := range writel {
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
-			if k != 2 {
+			if k != 4 {
 				affected += time.Duration(len(durs))
 				totalaffected += time.Duration(len(durs)) * avgWrites[k]
 			}

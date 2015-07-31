@@ -14,7 +14,7 @@ import (
 //Cur is used to check if some server returned a new current Blueprint.
 //In this case, the call is aborted.
 //If cur == nil, any returned Blueprint results in an abort.
-func (m *Manager) DReadS(configID uint32, cur *lat.Blueprint, ctx context.Context, opts ...grpc.CallOption) ([]*pb.AdvReadReply, *lat.Blueprint, error) {
+func (m *Manager) DReadS(configID uint32, cur *lat.Blueprint, arg *pb.DRead, ctx context.Context, opts ...grpc.CallOption) ([]*pb.AdvReadReply, *lat.Blueprint, error) {
 	c, found := m.configs[configID]
 	if !found {
 		return nil, nil, ConfigNotFound(configID)
@@ -39,7 +39,7 @@ func (m *Manager) DReadS(configID uint32, cur *lat.Blueprint, ctx context.Contex
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
-				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/DReadS", &pb.AdvRead{configID}, repl, machine.conn, c.grpcCallOptions...)
+				ce <- grpc.Invoke(ctx, "/proto.DynaDisk/DReadS", arg, repl, machine.conn, c.grpcCallOptions...)
 			}()
 			select {
 			case err := <-ce:

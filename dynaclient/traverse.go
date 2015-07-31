@@ -1,7 +1,7 @@
 package dynaclient
 
 import (
-	"errors"
+	//"errors"
 	"fmt"
 
 	lat "github.com/relab/smartMerge/directCombineLattice"
@@ -17,14 +17,14 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		if i < cur {
 			continue
 		}
-
+		var curprop *lat.Blueprint
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
-/*			if dc.Blueps[i].Compare(prop) != 1 {
-				fmt.Println("target blueprint is not greater then current blueprint")
-				return nil, cnt, errors.New("target not comparable to current")
-			}
-*/
+			/*			if dc.Blueps[i].Compare(prop) != 1 {
+							fmt.Println("target blueprint is not greater then current blueprint")
+							return nil, cnt, errors.New("target not comparable to current")
+						}
+			*/
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
 			//fmt.Println("invoke getone")
 			cnt++
@@ -38,9 +38,11 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 				fmt.Println("Error from GetOneN")
 				return nil, 0, err
 			}
+			
+			curprop = next
 
 			//A possible optimization would combine this WriteN with the ReadS below
-			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
+/*			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
 			//fmt.Println("invoke writeN")
 			cnt++
 			cur = dc.handleNewCur(cur, i, newCur)
@@ -53,12 +55,12 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 				fmt.Println("Error from DWriteNSet")
 				return nil, 0, err
 			}
-
+*/
 		}
 
 		//ReadInView:
 		//This already is an optimization. Could be split in reads and readN
-		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i])
+		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i], curprop)
 		//fmt.Println("invoke readS")
 		cnt++
 		cur = dc.handleNewCur(cur, i, newCur)
@@ -73,34 +75,34 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			return nil, 0, err
 		}
 
-/*		for _,nxt := range next {
-			if dc.Blueps[i].Compare(nxt) != 1{
-				fmt.Println("Returned next, that is not greater than this")
-				panic("Next not comparable.")
-			}
-		}
-*/
+		/*		for _,nxt := range next {
+					if dc.Blueps[i].Compare(nxt) != 1{
+						fmt.Println("Returned next, that is not greater than this")
+						panic("Next not comparable.")
+					}
+				}
+		*/
 		prop = dc.handleNext(i, next, prop)
 		if rst.Compare(st) == 1 {
 			rst = st
 		}
 
-/*
-		if i > 40 {
-			fmt.Println("Did too many loops, there is a problem/race condition.")
-			fmt.Printf("Currently at position %d in slice.\n", i)
-			fmt.Printf("Slice length is %d.\n", len(dc.Blueps))
-			if dc.ID == uint32(1) || dc.ID == uint32(6) {
-				fmt.Println("Blueprints slice is:")
-				for _,bl := range dc.Blueps {
-					fmt.Printf("   %v\n", bl.Rem)
+		/*
+			if i > 40 {
+				fmt.Println("Did too many loops, there is a problem/race condition.")
+				fmt.Printf("Currently at position %d in slice.\n", i)
+				fmt.Printf("Slice length is %d.\n", len(dc.Blueps))
+				if dc.ID == uint32(1) || dc.ID == uint32(6) {
+					fmt.Println("Blueprints slice is:")
+					for _,bl := range dc.Blueps {
+						fmt.Printf("   %v\n", bl.Rem)
+					}
+					panic("Too many blueprints")
 				}
-				panic("Too many blueprints")
-			}
 
-			return nil, cnt, errors.New("Race condition")
-		}
-*/
+				return nil, cnt, errors.New("Race condition")
+			}
+		*/
 		if len(next) == 0 {
 			//WriteInView
 			wst := dc.WriteValue(val, rst)

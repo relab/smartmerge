@@ -10,7 +10,7 @@ import (
 
 func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 	prop, cnt = smc.lagree(prop)
-	fmt.Printf("LA returned Blueprint with %d procs and %d removals", len(prop.Add), len(prop.Rem))
+	//fmt.Printf("LA returned Blueprint with %d procs and %d removals.\n", len(prop.Add), len(prop.Rem))
 
 	//Proposed blueprint is already in place, or outdated.
 	if prop.Compare(smc.Blueps[0]) == 1 {
@@ -87,7 +87,7 @@ func (smc *SmClient) lagree(prop *lat.Blueprint) (*lat.Blueprint, int) {
 		la, next, newCur, err := smc.Confs[i].LAProp(smc.Blueps[i], prop)
 		cnt++
 		cur = smc.handleNewCur(cur, newCur)
-		if err != nil &&  {
+		if err != nil && cur <= i {
 			fmt.Println("LA prop returned error: ", err)
 			panic("Error from LAProp")
 		}

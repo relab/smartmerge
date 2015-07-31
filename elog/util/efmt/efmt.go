@@ -15,6 +15,7 @@ func main() {
 	var file = flag.String("file", "", "elog files to parse, separated by comma")
 	//var filter = flag.Bool("filter", true, "filter out throughput samples")
 	var outfile = flag.String("outfile", "", "write results to file")
+	var list = flag.Bool("list", false, "print a list or latencies")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
@@ -62,6 +63,17 @@ func main() {
 		for _,e := range fievents {
 			events = append(events, e)
 		}
+	}
+
+	if *list {
+		fmt.Printf("Type of first event: %v", events[0].Type)
+		for _,evt := range events {
+			_, err := fmt.Fprintf(of, "%d: %d\n", evt.Value, evt.EndTime.Sub(evt.Time))
+			if err != nil {
+				fmt.Println("Error writing to file:", err)
+			}
+		}
+		return
 	}
 
 	readl, writel, reconfl := sortLatencies(events)

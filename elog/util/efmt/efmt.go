@@ -16,6 +16,7 @@ func main() {
 	//var filter = flag.Bool("filter", true, "filter out throughput samples")
 	var outfile = flag.String("outfile", "", "write results to file")
 	var list = flag.Bool("list", false, "print a list or latencies")
+	var debug = flag.Bool("debug", false, "print spike latencies")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
@@ -63,6 +64,16 @@ func main() {
 		for _,e := range fievents {
 			events = append(events, e)
 		}
+	}
+
+	if *debug {
+		fmt.Fprintf(of, "%v\n", events[0])
+		for _, evt := range events {
+			if evt.EndTime.Sub(evt.Time) > 100 * time.Millisecond {
+				fmt.Fprintf(of, "%v\n , Dur: %d", events[0], evt.EndTime.Sub(evt.Time))
+			}
+		}
+		return
 	}
 
 	if *list {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"sort"
 
 	e "github.com/relab/smartMerge/elog/event"
 )
@@ -116,9 +117,11 @@ func main() {
 			}
 		}
 		if affected > 0 {
-			fmt.Fprintf(of,"Average latency for writes affected by reconfiguration: %v\n", (totalaffected/affected) )
-			fmt.Fprintf(of, "Total overhead is: %v",totalaffected - (affected * avgWrites[2]) )
+			fmt.Fprintf(of, "Mean latency for writes with more than 2 acceses is: %v", (totalaffected/affected))
+			fmt.Fprintf(of,"Median latency for writes with more than %d accesses: %v\n", 2, ComputeMedianNotNormal(writel, 2) )
+			fmt.Fprintf(of, "Total overhead is: %v\n",totalaffected - (affected * avgWrites[2]) )
 		}
+		fmt.Fprintf(of, "Median latency for writes with 2 accesses is %v\n", MedianDuration(writel[2]...))
 		
 	}
 
@@ -135,8 +138,9 @@ func main() {
 			total += avg * time.Duration(len(durs))
 			number += time.Duration(len(durs))
 		}
-		fmt.Fprintf(of, "Average reconfiguration latency: %v", (total/number))
-		fmt.Fprintf(of, "In total: %d reconfigurations", number)
+		fmt.Fprintf(of, "Average reconfiguration latency: %v\n", (total/number))
+		fmt.Fprintf(of, "Median reconfiguration latency: %v\n", ComputeMedianNotNormal(reconfl, 0))
+		fmt.Fprintf(of, "In total: %d reconfigurations\n", number)
 	}
 }
 
@@ -180,6 +184,36 @@ func computeAverageDurations(durs map[uint64][]time.Duration) map[uint64]time.Du
 		avgs[k] = MeanDuration(ds...)
 	}
 	return avgs
+}
+
+type durarr []time.Duration
+func (a durarr) Len() int { return len(a) }
+func (a durarr) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a durarr) Less(i, j int) bool { return a[i] < a[j] }
+
+
+func MedianDuration(v ...time.Duration) time.Duration {
+	if len(v) == 0 {
+		return 0
+	}
+	da := durarr(v)
+	sort.Sort(da)
+	return v[len(v)/2]
+}
+
+func ComputeMedianNotNormal(durs map[uint64][]time.Duration, normal uint64) time.Duration {
+	if durs == nil {
+		return time.Duration(0)
+	}
+	allnotNormal := make([]time.Duration,0, 100)
+	for k, ds := range durs {
+		if k != normal {
+			for _,dur := range ds {
+				allnotNormal = append(allnotNormal, dur)
+			}
+		}
+	}
+	return MedianDuration(allnotNormal...)
 }
 
 func MeanDuration(v ...time.Duration) time.Duration {

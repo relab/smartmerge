@@ -8,7 +8,6 @@ cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
 
 for i in {1..20} 
 do
-	continue
 	./sm-run.sh 2
 done
 cd $SM
@@ -20,6 +19,7 @@ $SM/scripts/analyzeall "sm_remove2$*"
 cd ../scripts
 for i in {1..20} 
 do
+	continue
 	./dyna-run.sh 2
 done
 cd $SM
@@ -32,7 +32,6 @@ $SM/scripts/analyzeall "dyna_remove2$*"
 cd $SM/scripts
 for i in {1..20} 
 do
-	continue
 	./sm-run.sh 5
 done
 cd $SM
@@ -44,6 +43,7 @@ $SM/scripts/analyzeall "sm_remove5$*"
 cd ../scripts
 for i in {1..20} 
 do
+	continue
 	./dyna-run.sh 5
 done
 cd $SM

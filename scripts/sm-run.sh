@@ -22,10 +22,8 @@ client -conf client/addrList -alg=sm -mode=exp -rm -nclients="$*" -initsize=12 -
 sleep 5
 echo stopping Writers
 ssh pitter21 "cd $SM && killall client/client"
-#scp pitter21:$SM/*.elog . 
-#ssh pitter21 "cd $SM && rm *.elog"
-mv ~/*.elog $SM/
-mv ~/logfile $SM/
+ssh pitter21 "mv /local/scratch/ljehl/*.elog $SM/"
+mv /local/scratch/ljehl/*.elog $SM/
 
 ssh pitter24 "cd $SM/server && killall server" 
 ssh pitter25 "cd $SM/server && killall server" 

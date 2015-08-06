@@ -32,7 +32,7 @@ var (
 
 	// Mode
 	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
-	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | cons)")
+	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | odyna | cons )")
 	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
 
 	//Config
@@ -182,6 +182,8 @@ func NewClient(addrs []string, initB *lat.Blueprint, alg string, id int) (cl RWR
 		cl, err = smclient.New(initB, mgr, uint32(id))
 	case "dyna":
 		cl, err = dynaclient.New(initB, mgr, uint32(id))
+	case "odyna": 
+		cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
 	case "cons":
 		return nil, nil, errors.New("Consensus based algorithm not implemented yet.")
 	}

@@ -10,7 +10,7 @@ import (
 
 func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 	prop, cnt = smc.lagree(prop)
-	//fmt.Println("LA returned ", prop)
+	//fmt.Printf("LA returned Blueprint with %d procs and %d removals.\n", len(prop.Add), len(prop.Rem))
 
 	//Proposed blueprint is already in place, or outdated.
 	if prop.Compare(smc.Blueps[0]) == 1 {
@@ -40,9 +40,10 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 		st, newlas, next, newCur, err := smc.Confs[i].AWriteN(prop, smc.Blueps[i])
 		cnt++
 		cur = smc.handleNewCur(cur, newCur)
-		if err != nil {
+		if err != nil && cur <= i {
 			//Should log this for debugging
-			i--
+			fmt.Println("AWriteN returned error: ",err)
+			panic("Error from AWriteN")
 		}
 
 		smc.handleNext(i, next)
@@ -60,9 +61,10 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 		newCur, err := smc.Confs[i].SetState(las, smc.Blueps[i], rst)
 		cnt++
 		cur = smc.handleNewCur(i, newCur)
-		if newCur == nil && err != nil {
+		if cur <= i && err != nil {
 			//Not sure what to do:
 			fmt.Println("SetState returned error, not sure what to do")
+			panic("Error from SetState")
 		}
 	}
 
@@ -85,15 +87,16 @@ func (smc *SmClient) lagree(prop *lat.Blueprint) (*lat.Blueprint, int) {
 		la, next, newCur, err := smc.Confs[i].LAProp(smc.Blueps[i], prop)
 		cnt++
 		cur = smc.handleNewCur(cur, newCur)
-		if err != nil {
+		if err != nil && cur <= i {
 			fmt.Println("LA prop returned error: ", err)
-			i--
+			panic("Error from LAProp")
 		}
 
 		if la != nil && !prop.Equals(la) {
 			//fmt.Println("LA prop returned new LA state ", la)
 			prop = la
 			i--
+			continue
 		}
 
 		smc.handleNext(i, next)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -15,6 +16,9 @@ func main() {
 	var file = flag.String("file", "", "elog files to parse, separated by comma")
 	//var filter = flag.Bool("filter", true, "filter out throughput samples")
 	var outfile = flag.String("outfile", "", "write results to file")
+	var list = flag.Bool("list", false, "print a list or latencies")
+	var debug = flag.Bool("debug", false, "print spike latencies")
+	var norm = flag.Int("normal", 2, "number of accesses in normal case.")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
@@ -33,7 +37,7 @@ func main() {
 	if *outfile == "" {
 		of = os.Stderr
 	} else {
-		fl, err := os.OpenFile(*outfile,os.O_APPEND|os.O_WRONLY,0666)
+		fl, err := os.OpenFile(*outfile, os.O_APPEND|os.O_WRONLY, 0666)
 		if err != nil {
 			fmt.Println("Could not open file, create.")
 			fl, err = os.Create(*outfile)
@@ -48,9 +52,9 @@ func main() {
 	}
 
 	infiles := strings.Split(*file, ",")
-	events := make([]e.Event,0,len(infiles))
+	events := make([]e.Event, 0, len(infiles))
 
-	for _,fi := range infiles {
+	for _, fi := range infiles {
 		if fi == "" {
 			continue
 		}
@@ -59,14 +63,36 @@ func main() {
 			fmt.Printf("Error %v  parsing events from %v", err, fi)
 			return
 		}
-		for _,e := range fievents {
+		for _, e := range fievents {
 			events = append(events, e)
 		}
 	}
 
+	if *debug {
+		fmt.Fprintf(of, "%v\n", events[0])
+		for _, evt := range events {
+			if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
+				fmt.Fprintf(of, "%v\n", evt)
+			}
+		}
+		fmt.Fprintf(of, "%v\n", events[len(events)-1])
+		return
+	}
+
+	if *list {
+		fmt.Printf("Type of first event: %v", events[0].Type)
+		for _, evt := range events {
+			_, err := fmt.Fprintf(of, "%d: %d\n", evt.Value, evt.EndTime.Sub(evt.Time))
+			if err != nil {
+				fmt.Println("Error writing to file:", err)
+			}
+		}
+		return
+	}
+
 	readl, writel, reconfl := sortLatencies(events)
 	if len(readl) > 0 {
-		_,err := fmt.Fprintln(of, "Read Latencies:")
+		_, err := fmt.Fprintln(of, "Read Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 		}
@@ -75,10 +101,11 @@ func main() {
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
 		}
 	}
+	normal := uint64(*norm)
 	if len(writel) > 0 {
-		var totalaffected time.Duration 
-		var affected time.Duration 
-		
+		var totalaffected time.Duration
+		var affected time.Duration
+
 		_, err := fmt.Fprintln(of, "Write Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
@@ -86,22 +113,21 @@ func main() {
 		avgWrites := computeAverageDurations(writel)
 		for k, durs := range writel {
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
-			if k != 4 {
+			if k != normal {
 				affected += time.Duration(len(durs))
 				totalaffected += time.Duration(len(durs)) * avgWrites[k]
 			}
 		}
 		if affected > 0 {
-			fmt.Fprintf(of,"Average latency for writes affected by reconfiguration: %v\n", (totalaffected/affected) )
-			fmt.Fprintf(of, "Total overhead is: %v",totalaffected - (affected * avgWrites[2]) )
+			fmt.Fprintf(of, "Mean latency for writes with more than %d acceses is: %v\n", normal, (totalaffected / affected))
+			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*avgWrites[normal]))
 		}
-		
 	}
 
 	if len(reconfl) > 0 {
 		var total time.Duration
 		var number time.Duration
-		_,err := fmt.Fprintln(of, "Reconf Latencies:")
+		_, err := fmt.Fprintln(of, "Reconf Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 		}
@@ -111,8 +137,8 @@ func main() {
 			total += avg * time.Duration(len(durs))
 			number += time.Duration(len(durs))
 		}
-		fmt.Fprintf(of, "Average reconfiguration latency: %v", (total/number))
-		fmt.Fprintf(of, "In total: %d reconfigurations", number)
+		fmt.Fprintf(of, "Average reconfiguration latency: %v\n", (total / number))
+		fmt.Fprintf(of, "In total: %d reconfigurations\n", number)
 	}
 }
 
@@ -122,6 +148,10 @@ func sortLatencies(events []e.Event) (readl map[uint64][]time.Duration, writel m
 	writel = make(map[uint64][]time.Duration, 0)
 	reconfl = make(map[uint64][]time.Duration, 0)
 	for _, evt := range events {
+		if evt.EndTime.Sub(evt.Time) > 100 *time.Millisecond {
+			fmt.Printf("Discarding event %v.\n", evt)
+			continue
+		}
 		switch evt.Type {
 		case e.ClientReadLatency:
 			if readl[evt.Value] == nil {
@@ -156,6 +186,36 @@ func computeAverageDurations(durs map[uint64][]time.Duration) map[uint64]time.Du
 		avgs[k] = MeanDuration(ds...)
 	}
 	return avgs
+}
+
+type durarr []time.Duration
+
+func (a durarr) Len() int           { return len(a) }
+func (a durarr) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a durarr) Less(i, j int) bool { return a[i] < a[j] }
+
+func MedianDuration(v ...time.Duration) time.Duration {
+	if len(v) == 0 {
+		return 0
+	}
+	da := durarr(v)
+	sort.Sort(da)
+	return v[len(v)/2]
+}
+
+func ComputeMedianNotNormal(durs map[uint64][]time.Duration, normal uint64) time.Duration {
+	if durs == nil {
+		return time.Duration(0)
+	}
+	allnotNormal := make([]time.Duration, 0, 100)
+	for k, ds := range durs {
+		if k != normal {
+			for _, dur := range ds {
+				allnotNormal = append(allnotNormal, dur)
+			}
+		}
+	}
+	return MedianDuration(allnotNormal...)
 }
 
 func MeanDuration(v ...time.Duration) time.Duration {

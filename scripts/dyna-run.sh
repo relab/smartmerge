@@ -1,30 +1,29 @@
 #!/bin/sh
-
+ 
 echo starting servers.
-ssh pitter24 "$HOME/mygo/src/github.com/relab/smartMerge/server/dynaservers.sh" &
-ssh pitter25 "$HOME/mygo/src/github.com/relab/smartMerge/server/dynaservers.sh" &
-ssh pitter26 "$HOME/mygo/src/github.com/relab/smartMerge/server/dynaservers.sh" &
+ssh pitter24 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/dynaservers.sh > /dev/null 2>&1 &"
+ssh pitter25 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/dynaservers.sh > /dev/null 2>&1 &"
+ssh pitter26 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/dynaservers.sh > /dev/null 2>&1 &"
 
 export SM=$HOME/mygo/src/github.com/relab/smartMerge
 
-sleep 1
+sleep 3
 
 cd $SM
 
 echo starting Writers
-ssh pitter21 "cd $SM && client/client -conf client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores > logfile & " &
+ssh pitter21 "nohup $SM/client/client -conf $SM/client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores > logfile 2>&1 &"
 
 echo starting Reconfigurers
 client/client -conf client/addrList -alg=dyna -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores
 
-sleep 1
+sleep 2
 echo stopping Writers
-ssh pitter21 "cd $SM && killall client/client" 
-#scp pitter21:$SM/*.elog .
+ssh pitter21 "cd $SM && killall client/client"
+ssh pitter21 "mv /local/scratch/ljehl/*.elog $SM/"
+mv /local/scratch/ljehl/*.elog $SM/
 
-#ssh pitter21 "cd $SM && rm *.elog"
- 
-ssh pitter24 "pkill -u ljehl"
-ssh pitter25 "pkill -u ljehl"
-ssh pitter26 "pkill -u ljehl"
+ssh pitter24 "cd $SM/server && killall server" 
+ssh pitter25 "cd $SM/server && killall server" 
+ssh pitter26 "cd $SM/server && killall server" 
 

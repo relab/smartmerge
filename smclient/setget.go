@@ -19,10 +19,10 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[i], smc.Confs[cur].ID())
 		cnt++
 		cur = smc.handleNewCur(cur, newCur)
-		if err != nil {
+		if err != nil && cur <= i {
 			fmt.Println("error from AReadS: ", err)
 			//No Quorum Available. Retry
-			i--
+			panic("Aread returned error")
 			//return
 		}
 
@@ -50,8 +50,9 @@ func (smc *SmClient) set(rs *pb.State) int {
 		next, newCur, err := smc.Confs[i].AWriteS(rs,smc.Confs[cur].ID(), smc.Blueps[i])
 		cnt++
 		cur = smc.handleNewCur(cur, newCur)
-		if err != nil {
-			i--
+		if err != nil && cur <= i {
+			fmt.Println("AWriteS returned error, ", err)
+			panic("Error from ARead")
 		}
 
 		smc.handleNext(i, next)
@@ -81,7 +82,7 @@ func (smc *SmClient) handleNext(i int, next []*lat.Blueprint) {
 func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 	old := true
 	for ; i < len(smc.Blueps); i++ {
-		switch (smc.Blueps[i]).Compare(blp) {
+		switch smc.Blueps[i].Compare(blp) {
 		case 1:
 			if blp.Compare(smc.Blueps[i]) == 1 {
 				//Are equal

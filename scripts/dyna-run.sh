@@ -7,7 +7,7 @@ ssh pitter26 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/dynaserver
 
 export SM=$HOME/mygo/src/github.com/relab/smartMerge
 
-sleep 1
+sleep 3
 
 cd $SM
 
@@ -17,7 +17,7 @@ ssh pitter21 "nohup $SM/client/client -conf $SM/client/addrList -alg=dyna -mode=
 echo starting Reconfigurers
 client/client -conf client/addrList -alg=dyna -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores
 
-sleep 1
+sleep 2
 echo stopping Writers
 ssh pitter21 "cd $SM && killall client/client"
 ssh pitter21 "mv /local/scratch/ljehl/*.elog $SM/"

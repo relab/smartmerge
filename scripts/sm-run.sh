@@ -14,12 +14,12 @@ sleep 1
 echo starting Writers
 ssh pitter21 "nohup client -conf $SM/client/addrList -alg=sm -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores > /local/scratch/ljehl/writerslog 2>&1 &"
 
-sleep 5
+sleep 3
 
 echo starting Reconfigurers
 client -conf client/addrList -alg=sm -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
 
-sleep 5
+sleep 2
 echo stopping Writers
 ssh pitter21 "cd $SM && killall client/client"
 ssh pitter21 "mv /local/scratch/ljehl/*.elog $SM/"

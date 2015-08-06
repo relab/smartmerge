@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime/pprof"
 	"errors"
 	"flag"
 	"fmt"
@@ -27,6 +28,7 @@ var (
 	gcOff    = flag.Bool("gc-off", false, "turn garbage collection off")
 	showHelp = flag.Bool("help", false, "show this help message and exit")
 	allCores       = flag.Bool("all-cores", false, "use all available logical CPUs")
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
 
 	// Mode
 	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
@@ -69,6 +71,16 @@ func main() {
 	if *allCores {
 		cpus := runtime.NumCPU()
 		runtime.GOMAXPROCS(cpus)
+	}
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			fmt.Println("err")
+			return
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 
 	switch *mode {

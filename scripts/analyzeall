@@ -6,4 +6,10 @@ do
 	Files="$Files,$log"
 done
 #echo $Files
-efmt -file="$Files" -outfile="$*"
+if [ "$2" == "" ]; then  
+	echo Using default value for normal
+	efmt -file="$Files" -outfile="$1"
+else
+	echo Using normal=$2
+	efmt -file="$Files" -outfile="$1" -normal="$2"
+fi

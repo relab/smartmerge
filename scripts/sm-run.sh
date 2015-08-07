@@ -16,14 +16,19 @@ ssh pitter21 "nohup client -conf $SM/client/addrList -alg=sm -mode=bench -contW 
 
 sleep 3
 
+
 echo starting Reconfigurers
-client -conf client/addrList -alg=sm -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
+if ! [ "$*" == "" ]; then
+client -conf $SM/client/addrList -alg=sm -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
+fi
 
 sleep 2
 echo stopping Writers
-ssh pitter21 "cd $SM && killall client/client"
+ssh pitter21 "killall client"
 ssh pitter21 "mv /local/scratch/ljehl/*.elog $SM/"
+ssh pitter21 "mv /local/scratch/ljehl/writerslog $SM/"
 mv /local/scratch/ljehl/*.elog $SM/
+mv /local/scratch/ljehl/reconflog $SM/
 
 ssh pitter24 "cd $SM/server && killall server" 
 ssh pitter25 "cd $SM/server && killall server" 

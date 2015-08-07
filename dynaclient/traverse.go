@@ -20,11 +20,6 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 		var curprop *lat.Blueprint
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
-			/*			if dc.Blueps[i].Compare(prop) != 1 {
-							fmt.Println("target blueprint is not greater then current blueprint")
-							return nil, cnt, errors.New("target not comparable to current")
-						}
-			*/
 			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
 			//fmt.Println("invoke getone")
 			cnt++
@@ -41,25 +36,9 @@ func (dc *DynaClient) Traverse(prop *lat.Blueprint, val []byte) ([]byte, int, er
 			
 			curprop = next
 
-			//A possible optimization would combine this WriteN with the ReadS below
-/*			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
-			//fmt.Println("invoke writeN")
-			cnt++
-			cur = dc.handleNewCur(cur, i, newCur)
-			prop = prop.Merge(newCur)
-			if i < cur {
-				continue
-			}
-
-			if err != nil {
-				fmt.Println("Error from DWriteNSet")
-				return nil, 0, err
-			}
-*/
 		}
 
 		//ReadInView:
-		//This already is an optimization. Could be split in reads and readN
 		st, next, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i], curprop)
 		//fmt.Println("invoke readS")
 		cnt++

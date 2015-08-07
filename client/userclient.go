@@ -50,6 +50,7 @@ func usermain() {
 		fmt.Println("  1: Read")
 		fmt.Println("  2: Write")
 		fmt.Println("  3: Reconfigure")
+		fmt.Println("  4: BenchmarkWrites")
 		fmt.Println("  0: Exit")
 
 		var op int
@@ -78,6 +79,13 @@ func usermain() {
 			fmt.Printf("Did %d accesses.\n", cnt)
 		case 3:
 			handleReconf(client, ids)
+		case 4: 
+			var size, writes int
+			fmt.Println("Enter size:")
+			fmt.Scanln(&size)
+			fmt.Println("Enter writes:")
+			fmt.Scanln(&writes)
+			doWrites(client, size, writes, nil)
 		default:
 			return
 		}

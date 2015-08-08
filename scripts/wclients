@@ -1,0 +1,6 @@
+#!/bin/sh
+
+for i in 1..$2 
+do 
+	nohup client -conf $SM/client/addrList -alg="$1" -mode=bench -contW -size=4000 -id="$i"  -initsize=12 -gc-off  > /local/scratch/ljehl/writerslog$i 2>&1 &
+done

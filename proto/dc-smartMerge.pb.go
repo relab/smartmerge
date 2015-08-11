@@ -36,6 +36,12 @@ It has these top-level messages:
 	DWriteNReply
 	GetOne
 	GetOneReply
+	CV
+	Prepare
+	Promise
+	Propose
+	Learn
+	CNewCur
 */
 package proto
 
@@ -529,6 +535,127 @@ func (m *GetOneReply) GetNext() *Blueprint {
 func (m *GetOneReply) GetCur() *Blueprint {
 	if m != nil {
 		return m.Cur
+	}
+	return nil
+}
+
+type CV struct {
+	Rnd uint32     `protobuf:"varint,1,opt" json:"Rnd,omitempty"`
+	Val *Blueprint `protobuf:"bytes,2,opt" json:"Val,omitempty"`
+}
+
+func (m *CV) Reset()         { *m = CV{} }
+func (m *CV) String() string { return proto1.CompactTextString(m) }
+func (*CV) ProtoMessage()    {}
+
+func (m *CV) GetVal() *Blueprint {
+	if m != nil {
+		return m.Val
+	}
+	return nil
+}
+
+type Prepare struct {
+	CurC uint32 `protobuf:"varint,1,opt" json:"CurC,omitempty"`
+	Rnd  uint32 `protobuf:"varint,2,opt" json:"Rnd,omitempty"`
+}
+
+func (m *Prepare) Reset()         { *m = Prepare{} }
+func (m *Prepare) String() string { return proto1.CompactTextString(m) }
+func (*Prepare) ProtoMessage()    {}
+
+type Promise struct {
+	Cur *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+	Rnd uint32     `protobuf:"varint,2,opt" json:"Rnd,omitempty"`
+	Val *CV        `protobuf:"bytes,3,opt" json:"Val,omitempty"`
+	Dec *Blueprint `protobuf:"bytes,4,opt" json:"Dec,omitempty"`
+}
+
+func (m *Promise) Reset()         { *m = Promise{} }
+func (m *Promise) String() string { return proto1.CompactTextString(m) }
+func (*Promise) ProtoMessage()    {}
+
+func (m *Promise) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *Promise) GetVal() *CV {
+	if m != nil {
+		return m.Val
+	}
+	return nil
+}
+
+func (m *Promise) GetDec() *Blueprint {
+	if m != nil {
+		return m.Dec
+	}
+	return nil
+}
+
+type Propose struct {
+	CurC uint32 `protobuf:"varint,1,opt" json:"CurC,omitempty"`
+	Val  *CV    `protobuf:"bytes,2,opt" json:"Val,omitempty"`
+}
+
+func (m *Propose) Reset()         { *m = Propose{} }
+func (m *Propose) String() string { return proto1.CompactTextString(m) }
+func (*Propose) ProtoMessage()    {}
+
+func (m *Propose) GetVal() *CV {
+	if m != nil {
+		return m.Val
+	}
+	return nil
+}
+
+type Learn struct {
+	Cur     *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+	Dec     *Blueprint `protobuf:"bytes,2,opt" json:"Dec,omitempty"`
+	Learned bool       `protobuf:"varint,3,opt" json:"Learned,omitempty"`
+}
+
+func (m *Learn) Reset()         { *m = Learn{} }
+func (m *Learn) String() string { return proto1.CompactTextString(m) }
+func (*Learn) ProtoMessage()    {}
+
+func (m *Learn) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *Learn) GetDec() *Blueprint {
+	if m != nil {
+		return m.Dec
+	}
+	return nil
+}
+
+type CNewCur struct {
+	Cur   *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+	CurC  uint32     `protobuf:"varint,2,opt" json:"CurC,omitempty"`
+	State *State     `protobuf:"bytes,3,opt" json:"State,omitempty"`
+}
+
+func (m *CNewCur) Reset()         { *m = CNewCur{} }
+func (m *CNewCur) String() string { return proto1.CompactTextString(m) }
+func (*CNewCur) ProtoMessage()    {}
+
+func (m *CNewCur) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *CNewCur) GetState() *State {
+	if m != nil {
+		return m.State
 	}
 	return nil
 }
@@ -1053,6 +1180,171 @@ var _DynaDisk_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DSetCur",
 			Handler:    _DynaDisk_DSetCur_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for ConsDisk service
+
+type ConsDiskClient interface {
+	CPrepare(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error)
+	CAccept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error)
+	CReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error)
+	CWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
+	CSetState(ctx context.Context, in *CNewCur, opts ...grpc.CallOption) (*NewCurReply, error)
+}
+
+type consDiskClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewConsDiskClient(cc *grpc.ClientConn) ConsDiskClient {
+	return &consDiskClient{cc}
+}
+
+func (c *consDiskClient) CPrepare(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error) {
+	out := new(Promise)
+	err := grpc.Invoke(ctx, "/proto.ConsDisk/CPrepare", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consDiskClient) CAccept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error) {
+	out := new(Learn)
+	err := grpc.Invoke(ctx, "/proto.ConsDisk/CAccept", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consDiskClient) CReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
+	out := new(AdvReadReply)
+	err := grpc.Invoke(ctx, "/proto.ConsDisk/CReadS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consDiskClient) CWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error) {
+	out := new(AdvWriteSReply)
+	err := grpc.Invoke(ctx, "/proto.ConsDisk/CWriteS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *consDiskClient) CSetState(ctx context.Context, in *CNewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
+	out := new(NewCurReply)
+	err := grpc.Invoke(ctx, "/proto.ConsDisk/CSetState", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for ConsDisk service
+
+type ConsDiskServer interface {
+	CPrepare(context.Context, *Prepare) (*Promise, error)
+	CAccept(context.Context, *Propose) (*Learn, error)
+	CReadS(context.Context, *DRead) (*AdvReadReply, error)
+	CWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
+	CSetState(context.Context, *CNewCur) (*NewCurReply, error)
+}
+
+func RegisterConsDiskServer(s *grpc.Server, srv ConsDiskServer) {
+	s.RegisterService(&_ConsDisk_serviceDesc, srv)
+}
+
+func _ConsDisk_CPrepare_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Prepare)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ConsDiskServer).CPrepare(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ConsDisk_CAccept_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Propose)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ConsDiskServer).CAccept(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ConsDisk_CReadS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(DRead)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ConsDiskServer).CReadS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ConsDisk_CWriteS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(AdvWriteS)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ConsDiskServer).CWriteS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ConsDisk_CSetState_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(CNewCur)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ConsDiskServer).CSetState(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _ConsDisk_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.ConsDisk",
+	HandlerType: (*ConsDiskServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CPrepare",
+			Handler:    _ConsDisk_CPrepare_Handler,
+		},
+		{
+			MethodName: "CAccept",
+			Handler:    _ConsDisk_CAccept_Handler,
+		},
+		{
+			MethodName: "CReadS",
+			Handler:    _ConsDisk_CReadS_Handler,
+		},
+		{
+			MethodName: "CWriteS",
+			Handler:    _ConsDisk_CWriteS_Handler,
+		},
+		{
+			MethodName: "CSetState",
+			Handler:    _ConsDisk_CSetState_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

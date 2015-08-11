@@ -2,7 +2,6 @@ package main
 
 import (
 	"runtime/pprof"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -20,6 +19,7 @@ import (
 	e "github.com/relab/smartMerge/elog/event"
 	"github.com/relab/smartMerge/rpc"
 	"github.com/relab/smartMerge/smclient"
+	"github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -185,7 +185,7 @@ func NewClient(addrs []string, initB *lat.Blueprint, alg string, id int) (cl RWR
 	case "odyna": 
 		cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
 	case "cons":
-		return nil, nil, errors.New("Consensus based algorithm not implemented yet.")
+		cl, err = consclient.New(initB, mgr, uint32(id))
 	}
 	return
 }

@@ -19,8 +19,6 @@ func (c *Configuration) DReadS(thisBP *lat.Blueprint, prop *lat.Blueprint) (s *p
 		if s.Compare(rep.GetState()) == 1 {
 			s = rep.GetState()
 		}
-	}
-	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 		newCur = CompareCur(newCur, rep)
 	}

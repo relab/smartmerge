@@ -40,7 +40,7 @@ func main() {
 	case "dyna":
 		_, err = regserver.StartDyna(*port)
 	case "cons":
-		fmt.Println("Consensus based variant not implemented yet.")
+		_, err = regserver.StartCons(*port)
 	}
 
 	if err != nil {

@@ -154,3 +154,33 @@ func StartDynaInConf(port int, init *pb.Blueprint, initC uint32) (*DynaServer, e
 
 	return ds, nil
 }
+
+///////////////// Consensus Server ////////////////////
+
+func StartCons(port int) (*ConsServer, error) {
+	return StartConsInConf(port, nil, uint32(0))
+}
+
+func StartConsInConf(port int, init *pb.Blueprint, initC uint32) (*ConsServer, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if haveServer == true {
+		log.Println("Abort start of grpc server, since old server exists.")
+		return nil, errors.New("There already exists an old server.")
+	}
+
+	cs := NewConsServerWithCur(init, initC)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	var opts []grpc.ServerOption
+	grpcServer = grpc.NewServer(opts...)
+	pb.RegisterConsDiskServer(grpcServer, cs)
+	go grpcServer.Serve(lis)
+	haveServer = true
+
+	return cs, nil
+}

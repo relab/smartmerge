@@ -80,7 +80,7 @@ func (c *Configuration) CAccept(thisBP *lat.Blueprint, rnd uint32, val *lat.Blue
 	for _, rep := range replies {
 		newCur = CompareCur(newCur, rep)
 		dec = CheckDec(dec, rep)
-		if rep != nil && !rep.Learned {
+		if rep == nil || !rep.Learned {
 			learned = false
 		}
 	}

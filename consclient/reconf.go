@@ -88,14 +88,13 @@ func (cc *CClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 		}
 		
 		decide:
-		st, _, newCur, err := cc.Confs[i].CReadS(cc.Blueps[i], cc.Confs[cur].ID(), next)
+		st, _, newCur, err := cc.Confs[i].CReadS(cc.Blueps[i], cc.Confs[i].ID(), next)
 		cnt++
 		cur = cc.handleNewCur(cur, newCur)
 		if err != nil && cur <= i {
 			fmt.Println("error from AReadS: ", err)
 			//No Quorum Available. Retry
 			panic("Aread returned error")
-			//return
 		}
 		cc.handleNext(i, next)
 		

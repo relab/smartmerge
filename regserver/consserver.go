@@ -56,7 +56,7 @@ func NewConsServerWithCur(cur *pb.Blueprint, curc uint32) *ConsServer {
 func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewCurReply, error) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
-	defer cs.PrintState("SetCur")
+	//defer cs.PrintState("SetCur")
 	if cs.RState.Compare(nc.State) == 1 {
 		cs.RState = nc.State
 	}
@@ -81,7 +81,7 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewCur
 func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {
 	cs.mu.RLock()
 	defer cs.mu.RUnlock()
-	defer cs.PrintState("CReadS")
+	//defer cs.PrintState("CReadS")
 
 	if rr.Prop != nil {
 		if n, ok := cs.Next[rr.CurC]; ok {
@@ -109,7 +109,7 @@ func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadRepl
 func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
-	defer cs.PrintState("CWriteS")
+	//defer cs.PrintState("CWriteS")
 	if cs.RState.Compare(wr.State) == 1 {
 		cs.RState = wr.State
 	}
@@ -135,7 +135,7 @@ func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 func (cs *ConsServer) CPrepare(ctx context.Context, pre *pb.Prepare) (*pb.Promise, error) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
-	defer cs.PrintState("CPrepare")
+	//defer cs.PrintState("CPrepare")
 
 	var cur *pb.Blueprint
 	if pre.CurC != cs.CurC {
@@ -157,7 +157,7 @@ func (cs *ConsServer) CPrepare(ctx context.Context, pre *pb.Prepare) (*pb.Promis
 func (cs *ConsServer) CAccept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn, err error) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
-	defer cs.PrintState("Accept")
+	//defer cs.PrintState("Accept")
 
 	var cur *pb.Blueprint
 	if pro.CurC != cs.CurC {

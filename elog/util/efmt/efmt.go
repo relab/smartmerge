@@ -70,12 +70,15 @@ func main() {
 
 	if *debug {
 		fmt.Fprintf(of, "%v\n", events[0])
+		cnt := 0
 		for _, evt := range events {
 			if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
 				fmt.Fprintf(of, "%v\n", evt)
+				cnt++
 			}
 		}
 		fmt.Fprintf(of, "%v\n", events[len(events)-1])
+		fmt.Fprintf(of, "%d spike latencies.\n", cnt)
 		return
 	}
 

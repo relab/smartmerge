@@ -18,6 +18,8 @@ sleep 3
 echo starting Reconfigurers
 if ! [ "$*" == "" ]; then
 client -conf $SM/client/addrList -alg=odyna -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
+else
+	sleep 20
 fi
 
 sleep 2

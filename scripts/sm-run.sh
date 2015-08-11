@@ -12,7 +12,7 @@ sleep 1
 
 
 echo starting Writers
-ssh pitter21 "$SM/scripts/wclients sm 5"
+ssh pitter21 "$SM/scripts/wclients sm"
 
 sleep 3
 

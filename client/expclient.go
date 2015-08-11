@@ -12,6 +12,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	_ "net/http/pprof"
+	"net/http"
+	"log"
 
 	"github.com/relab/goxos/kvs/bgen"
 	lat "github.com/relab/smartMerge/directCombineLattice"
@@ -29,6 +32,7 @@ var (
 	showHelp = flag.Bool("help", false, "show this help message and exit")
 	allCores       = flag.Bool("all-cores", false, "use all available logical CPUs")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
+	httpprof = flag.Bool("httpprof", false, "enable profiling via http server")
 
 	// Mode
 	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
@@ -52,7 +56,7 @@ var (
 	//Reconf Exp
 	rm = flag.Bool("rm",false , "remove nclients servers concurrently.")
 	add = flag.Bool("add", false, "add nclients servers concurrently")
-	
+
 )
 
 func Usage() {
@@ -65,6 +69,7 @@ func main() {
 	parseFlags()
 
 	if *gcOff {
+		fmt.Println("Setting garbage collection to -1")
 		debug.SetGCPercent(-1)
 	}
 
@@ -83,6 +88,11 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	if *httpprof {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
 	switch *mode {
 	case "", "user":
 		usermain()
@@ -262,7 +272,9 @@ func doWrites(cl RWRer, size int, writes int, wg *sync.WaitGroup) {
 		elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
 	}
 	fmt.Println("finished writes")
-	wg.Done()
+	if wg != nil {
+		wg.Done()
+	}
 }
 
 func doReads(cl RWRer, reads int, wg *sync.WaitGroup) {

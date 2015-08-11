@@ -10,11 +10,13 @@ export SM=$HOME/mygo/src/github.com/relab/smartMerge
 sleep 3
 
 echo starting Writers
-ssh pitter21 "nohup client -conf $SM/client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores  > /local/scratch/ljehl/writerslog 2>&1 &"
+ssh pitter21 "nohup client -conf $SM/client/addrList -alg=dyna -mode=bench -contW -size=4000 -nclients=22 -id=5 -initsize=12 -gc-off -all-cores > /local/scratch/ljehl/writerslog 2>&1 &"
 
 echo starting Reconfigurers
 if ! [ "$*" == "" ]; then
 client -conf $SM/client/addrList -alg=dyna -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
+else
+	sleep 20
 fi
 
 sleep 2

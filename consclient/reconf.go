@@ -27,23 +27,21 @@ func (cc *CClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 		dec bool
 		backup bool
 		newCur *lat.Blueprint
-		err error
 	)
 	rst := new(pb.State)
 	rnd := cc.ID
-	forloop:
 	for i := 0; i < len(cc.Confs); i++ {
 		if i < cur {
 			continue
 		}
 		
+		ms := 1 * time.Millisecond
 		if cc.Blueps[i].Equals(prop) {
 			next = nil
 			goto decide
 		}
 			
 		
-		ms := 1 * time.Millisecond
 		prepare:
 		rrnd, dec, backup, next, newCur, err = cc.Confs[i].CPrepare(cc.Blueps[i], rnd)
 		cnt++

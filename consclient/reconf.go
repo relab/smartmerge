@@ -21,6 +21,14 @@ func (cc *CClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 
 	cur := 0
 	
+	var (
+		rrnd uint32
+		next *lat.Blueprint
+		dec bool
+		backup bool
+		newCur *lat.Blueprint
+		err error
+	)
 	rst := new(pb.State)
 	rnd := cc.ID
 	forloop:
@@ -30,13 +38,14 @@ func (cc *CClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 		}
 		
 		if cc.Blueps[i].Equals(prop) {
-			break forloop
+			next = nil
+			goto decide
 		}
 			
 		
 		ms := 1 * time.Millisecond
 		prepare:
-		rrnd, dec, backup, next, newCur, err := cc.Confs[i].CPrepare(cc.Blueps[i], rnd)
+		rrnd, dec, backup, next, newCur, err = cc.Confs[i].CPrepare(cc.Blueps[i], rnd)
 		cnt++
 		cur = cc.handleNewCur(cur, newCur)
 		if i < cur {

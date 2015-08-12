@@ -22,7 +22,7 @@ else
 	sleep 20
 fi
 
-sleep 2
+sleep 1
 echo stopping Writers
 ssh pitter21 "killall client"
 ssh pitter21 "mv /local/scratch/ljehl/*.elog $SM/"

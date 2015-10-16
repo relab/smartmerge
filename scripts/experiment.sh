@@ -6,7 +6,7 @@ cd -
 
 cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
 
-for RMS in 0 1 2 5
+for RMS in 1 2 5
 do
 
 cd $SM/scripts
@@ -26,6 +26,8 @@ mv rlog*  "sm_rm$RMS$*/"
 cd "sm_rm$RMS$*"
 $SM/scripts/analyzeall "sm_rm$RMS$*"
 
+done
+exit
 echo DynaStore
 cd ../scripts
 for i in {1..20} 
@@ -59,5 +61,23 @@ mv rlog*  "orgd_rm$RMS$*/"
 cd "orgd_rm$RMS$*"
 echo Analyzing
 $SM/scripts/analyzeall "orgd_rm$RMS$*" 4
+
+echo Consensus Based
+cd ../scripts
+for i in {1..20} 
+do
+	./cons-run.sh "$RMS"
+	mv ../writerslog ../"wlog$i"
+	mv ../reconflog ../"rlog$i"
+done
+cd $SM
+mkdir "cons_rm$RMS$*"
+mv *.elog "cons_rm$RMS$*/" 
+mv wlog*  "cons_rm$RMS$*/" 
+mv rlog*  "cons_rm$RMS$*/" 
+cd "cons_rm$RMS$*"
+echo Analyzing
+$SM/scripts/analyzeall "cons_rm$RMS$*"
+
 
 done

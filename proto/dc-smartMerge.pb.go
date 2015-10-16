@@ -11,14 +11,6 @@ It is generated from these files:
 It has these top-level messages:
 	State
 	Blueprint
-	ReadReply
-	WriteReply
-	ReadRequest
-	WriteRequest
-	WriteNRequest
-	ReadNRequest
-	WriteNReply
-	ReadNReply
 	NewCur
 	NewCurReply
 	AdvRead
@@ -52,9 +44,16 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
+import (
+	"encoding/binary"
+	"hash/fnv"
+	"net"
+	"sort"
+	"sync"
+	"time"
+
+	"google.golang.org/grpc/codes"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto1.Marshal
@@ -77,130 +76,6 @@ type Blueprint struct {
 func (m *Blueprint) Reset()         { *m = Blueprint{} }
 func (m *Blueprint) String() string { return proto1.CompactTextString(m) }
 func (*Blueprint) ProtoMessage()    {}
-
-type ReadReply struct {
-	State *State     `protobuf:"bytes,1,opt" json:"State,omitempty"`
-	Cur   *Blueprint `protobuf:"bytes,2,opt" json:"Cur,omitempty"`
-}
-
-func (m *ReadReply) Reset()         { *m = ReadReply{} }
-func (m *ReadReply) String() string { return proto1.CompactTextString(m) }
-func (*ReadReply) ProtoMessage()    {}
-
-func (m *ReadReply) GetState() *State {
-	if m != nil {
-		return m.State
-	}
-	return nil
-}
-
-func (m *ReadReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-type WriteReply struct {
-	Cur *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-}
-
-func (m *WriteReply) Reset()         { *m = WriteReply{} }
-func (m *WriteReply) String() string { return proto1.CompactTextString(m) }
-func (*WriteReply) ProtoMessage()    {}
-
-func (m *WriteReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-type ReadRequest struct {
-	CurC uint32 `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-}
-
-func (m *ReadRequest) Reset()         { *m = ReadRequest{} }
-func (m *ReadRequest) String() string { return proto1.CompactTextString(m) }
-func (*ReadRequest) ProtoMessage()    {}
-
-type WriteRequest struct {
-	State *State `protobuf:"bytes,1,opt" json:"State,omitempty"`
-	CurC  uint32 `protobuf:"varint,2,opt" json:"CurC,omitempty"`
-}
-
-func (m *WriteRequest) Reset()         { *m = WriteRequest{} }
-func (m *WriteRequest) String() string { return proto1.CompactTextString(m) }
-func (*WriteRequest) ProtoMessage()    {}
-
-func (m *WriteRequest) GetState() *State {
-	if m != nil {
-		return m.State
-	}
-	return nil
-}
-
-type WriteNRequest struct {
-	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Next *Blueprint `protobuf:"bytes,2,opt" json:"Next,omitempty"`
-}
-
-func (m *WriteNRequest) Reset()         { *m = WriteNRequest{} }
-func (m *WriteNRequest) String() string { return proto1.CompactTextString(m) }
-func (*WriteNRequest) ProtoMessage()    {}
-
-func (m *WriteNRequest) GetNext() *Blueprint {
-	if m != nil {
-		return m.Next
-	}
-	return nil
-}
-
-type ReadNRequest struct {
-	CurC uint32 `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-}
-
-func (m *ReadNRequest) Reset()         { *m = ReadNRequest{} }
-func (m *ReadNRequest) String() string { return proto1.CompactTextString(m) }
-func (*ReadNRequest) ProtoMessage()    {}
-
-type WriteNReply struct {
-	Cur *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-}
-
-func (m *WriteNReply) Reset()         { *m = WriteNReply{} }
-func (m *WriteNReply) String() string { return proto1.CompactTextString(m) }
-func (*WriteNReply) ProtoMessage()    {}
-
-func (m *WriteNReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-type ReadNReply struct {
-	Cur  *Blueprint   `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	Next []*Blueprint `protobuf:"bytes,2,rep" json:"Next,omitempty"`
-}
-
-func (m *ReadNReply) Reset()         { *m = ReadNReply{} }
-func (m *ReadNReply) String() string { return proto1.CompactTextString(m) }
-func (*ReadNReply) ProtoMessage()    {}
-
-func (m *ReadNReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-func (m *ReadNReply) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
-	}
-	return nil
-}
 
 type NewCur struct {
 	Cur  *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
@@ -663,170 +538,9 @@ func (m *CNewCur) GetState() *State {
 func init() {
 }
 
-// Client API for Register service
-
-type RegisterClient interface {
-	ReadS(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (*ReadReply, error)
-	WriteS(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteReply, error)
-	ReadN(ctx context.Context, in *ReadNRequest, opts ...grpc.CallOption) (*ReadNReply, error)
-	WriteN(ctx context.Context, in *WriteNRequest, opts ...grpc.CallOption) (*WriteNReply, error)
-	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
-}
-
-type registerClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewRegisterClient(cc *grpc.ClientConn) RegisterClient {
-	return &registerClient{cc}
-}
-
-func (c *registerClient) ReadS(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (*ReadReply, error) {
-	out := new(ReadReply)
-	err := grpc.Invoke(ctx, "/proto.Register/ReadS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerClient) WriteS(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteReply, error) {
-	out := new(WriteReply)
-	err := grpc.Invoke(ctx, "/proto.Register/WriteS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerClient) ReadN(ctx context.Context, in *ReadNRequest, opts ...grpc.CallOption) (*ReadNReply, error) {
-	out := new(ReadNReply)
-	err := grpc.Invoke(ctx, "/proto.Register/ReadN", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerClient) WriteN(ctx context.Context, in *WriteNRequest, opts ...grpc.CallOption) (*WriteNReply, error) {
-	out := new(WriteNReply)
-	err := grpc.Invoke(ctx, "/proto.Register/WriteN", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
-	out := new(NewCurReply)
-	err := grpc.Invoke(ctx, "/proto.Register/SetCur", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for Register service
-
-type RegisterServer interface {
-	ReadS(context.Context, *ReadRequest) (*ReadReply, error)
-	WriteS(context.Context, *WriteRequest) (*WriteReply, error)
-	ReadN(context.Context, *ReadNRequest) (*ReadNReply, error)
-	WriteN(context.Context, *WriteNRequest) (*WriteNReply, error)
-	SetCur(context.Context, *NewCur) (*NewCurReply, error)
-}
-
-func RegisterRegisterServer(s *grpc.Server, srv RegisterServer) {
-	s.RegisterService(&_Register_serviceDesc, srv)
-}
-
-func _Register_ReadS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(ReadRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisterServer).ReadS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Register_WriteS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(WriteRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisterServer).WriteS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Register_ReadN_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(ReadNRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisterServer).ReadN(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Register_WriteN_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(WriteNRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisterServer).WriteN(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Register_SetCur_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(NewCur)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisterServer).SetCur(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-var _Register_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.Register",
-	HandlerType: (*RegisterServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "ReadS",
-			Handler:    _Register_ReadS_Handler,
-		},
-		{
-			MethodName: "WriteS",
-			Handler:    _Register_WriteS_Handler,
-		},
-		{
-			MethodName: "ReadN",
-			Handler:    _Register_ReadN_Handler,
-		},
-		{
-			MethodName: "WriteN",
-			Handler:    _Register_WriteN_Handler,
-		},
-		{
-			MethodName: "SetCur",
-			Handler:    _Register_SetCur_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{},
-}
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
 
 // Client API for AdvRegister service
 
@@ -916,9 +630,9 @@ func RegisterAdvRegisterServer(s *grpc.Server, srv AdvRegisterServer) {
 	s.RegisterService(&_AdvRegister_serviceDesc, srv)
 }
 
-func _AdvRegister_AReadS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _AdvRegister_AReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(AdvRead)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(AdvRegisterServer).AReadS(ctx, in)
@@ -928,9 +642,9 @@ func _AdvRegister_AReadS_Handler(srv interface{}, ctx context.Context, codec grp
 	return out, nil
 }
 
-func _AdvRegister_AWriteS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _AdvRegister_AWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(AdvWriteS)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(AdvRegisterServer).AWriteS(ctx, in)
@@ -940,9 +654,9 @@ func _AdvRegister_AWriteS_Handler(srv interface{}, ctx context.Context, codec gr
 	return out, nil
 }
 
-func _AdvRegister_AWriteN_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _AdvRegister_AWriteN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(AdvWriteN)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(AdvRegisterServer).AWriteN(ctx, in)
@@ -952,9 +666,9 @@ func _AdvRegister_AWriteN_Handler(srv interface{}, ctx context.Context, codec gr
 	return out, nil
 }
 
-func _AdvRegister_SetCur_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _AdvRegister_SetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(NewCur)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(AdvRegisterServer).SetCur(ctx, in)
@@ -964,9 +678,9 @@ func _AdvRegister_SetCur_Handler(srv interface{}, ctx context.Context, codec grp
 	return out, nil
 }
 
-func _AdvRegister_LAProp_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _AdvRegister_LAProp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(LAProposal)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(AdvRegisterServer).LAProp(ctx, in)
@@ -976,9 +690,9 @@ func _AdvRegister_LAProp_Handler(srv interface{}, ctx context.Context, codec grp
 	return out, nil
 }
 
-func _AdvRegister_SetState_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _AdvRegister_SetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(NewState)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(AdvRegisterServer).SetState(ctx, in)
@@ -1097,9 +811,9 @@ func RegisterDynaDiskServer(s *grpc.Server, srv DynaDiskServer) {
 	s.RegisterService(&_DynaDisk_serviceDesc, srv)
 }
 
-func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(DRead)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(DynaDiskServer).DReadS(ctx, in)
@@ -1109,9 +823,9 @@ func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, codec grpc.C
 	return out, nil
 }
 
-func _DynaDisk_DWriteS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _DynaDisk_DWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(AdvWriteS)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(DynaDiskServer).DWriteS(ctx, in)
@@ -1121,9 +835,9 @@ func _DynaDisk_DWriteS_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
-func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(DWriteN)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(DynaDiskServer).DWriteNSet(ctx, in)
@@ -1133,9 +847,9 @@ func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, codec gr
 	return out, nil
 }
 
-func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(GetOne)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(DynaDiskServer).GetOneN(ctx, in)
@@ -1145,9 +859,9 @@ func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
-func _DynaDisk_DSetCur_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _DynaDisk_DSetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(NewCur)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(DynaDiskServer).DSetCur(ctx, in)
@@ -1262,9 +976,9 @@ func RegisterConsDiskServer(s *grpc.Server, srv ConsDiskServer) {
 	s.RegisterService(&_ConsDisk_serviceDesc, srv)
 }
 
-func _ConsDisk_CPrepare_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _ConsDisk_CPrepare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(Prepare)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(ConsDiskServer).CPrepare(ctx, in)
@@ -1274,9 +988,9 @@ func _ConsDisk_CPrepare_Handler(srv interface{}, ctx context.Context, codec grpc
 	return out, nil
 }
 
-func _ConsDisk_CAccept_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _ConsDisk_CAccept_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(Propose)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(ConsDiskServer).CAccept(ctx, in)
@@ -1286,9 +1000,9 @@ func _ConsDisk_CAccept_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
-func _ConsDisk_CReadS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _ConsDisk_CReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(DRead)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(ConsDiskServer).CReadS(ctx, in)
@@ -1298,9 +1012,9 @@ func _ConsDisk_CReadS_Handler(srv interface{}, ctx context.Context, codec grpc.C
 	return out, nil
 }
 
-func _ConsDisk_CWriteS_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _ConsDisk_CWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(AdvWriteS)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(ConsDiskServer).CWriteS(ctx, in)
@@ -1310,9 +1024,9 @@ func _ConsDisk_CWriteS_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
-func _ConsDisk_CSetState_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _ConsDisk_CSetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(CNewCur)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(ConsDiskServer).CSetState(ctx, in)
@@ -1348,4 +1062,2637 @@ var _ConsDisk_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{},
+}
+
+/* Manager quorum functions specific */
+
+// Manager manages a pool of machine configurations on which quorum remote
+// procedure calls can be made.
+type Manager struct {
+	mu       sync.RWMutex
+	ids      []uint32
+	machines map[uint32]*machine
+	configs  map[uint32]*Configuration
+
+	opts managerOptions
+
+	aReadSqf     AReadSQuorumFn
+	aWriteSqf    AWriteSQuorumFn
+	aWriteNqf    AWriteNQuorumFn
+	setCurqf     SetCurQuorumFn
+	lAPropqf     LAPropQuorumFn
+	setStateqf   SetStateQuorumFn
+	dReadSqf     DReadSQuorumFn
+	dWriteSqf    DWriteSQuorumFn
+	dWriteNSetqf DWriteNSetQuorumFn
+	getOneNqf    GetOneNQuorumFn
+	dSetCurqf    DSetCurQuorumFn
+	cPrepareqf   CPrepareQuorumFn
+	cAcceptqf    CAcceptQuorumFn
+	cReadSqf     CReadSQuorumFn
+	cWriteSqf    CWriteSQuorumFn
+	cSetStateqf  CSetStateQuorumFn
+}
+
+func (m *Manager) setDefaultQuorumFuncs() {
+	if m.opts.aReadSqf != nil {
+		m.aReadSqf = m.opts.aReadSqf
+	} else {
+		m.aReadSqf = func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.aWriteSqf != nil {
+		m.aWriteSqf = m.opts.aWriteSqf
+	} else {
+		m.aWriteSqf = func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.aWriteNqf != nil {
+		m.aWriteNqf = m.opts.aWriteNqf
+	} else {
+		m.aWriteNqf = func(c *Configuration, replies []*AdvWriteNReply) (*AdvWriteNReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.setCurqf != nil {
+		m.setCurqf = m.opts.setCurqf
+	} else {
+		m.setCurqf = func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.lAPropqf != nil {
+		m.lAPropqf = m.opts.lAPropqf
+	} else {
+		m.lAPropqf = func(c *Configuration, replies []*LAReply) (*LAReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.setStateqf != nil {
+		m.setStateqf = m.opts.setStateqf
+	} else {
+		m.setStateqf = func(c *Configuration, replies []*NewStateReply) (*NewStateReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.dReadSqf != nil {
+		m.dReadSqf = m.opts.dReadSqf
+	} else {
+		m.dReadSqf = func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.dWriteSqf != nil {
+		m.dWriteSqf = m.opts.dWriteSqf
+	} else {
+		m.dWriteSqf = func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.dWriteNSetqf != nil {
+		m.dWriteNSetqf = m.opts.dWriteNSetqf
+	} else {
+		m.dWriteNSetqf = func(c *Configuration, replies []*DWriteNReply) (*DWriteNReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.getOneNqf != nil {
+		m.getOneNqf = m.opts.getOneNqf
+	} else {
+		m.getOneNqf = func(c *Configuration, replies []*GetOneReply) (*GetOneReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.dSetCurqf != nil {
+		m.dSetCurqf = m.opts.dSetCurqf
+	} else {
+		m.dSetCurqf = func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.cPrepareqf != nil {
+		m.cPrepareqf = m.opts.cPrepareqf
+	} else {
+		m.cPrepareqf = func(c *Configuration, replies []*Promise) (*Promise, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.cAcceptqf != nil {
+		m.cAcceptqf = m.opts.cAcceptqf
+	} else {
+		m.cAcceptqf = func(c *Configuration, replies []*Learn) (*Learn, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.cReadSqf != nil {
+		m.cReadSqf = m.opts.cReadSqf
+	} else {
+		m.cReadSqf = func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.cWriteSqf != nil {
+		m.cWriteSqf = m.opts.cWriteSqf
+	} else {
+		m.cWriteSqf = func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.cSetStateqf != nil {
+		m.cSetStateqf = m.opts.cSetStateqf
+	} else {
+		m.cSetStateqf = func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+}
+
+type managerOptions struct {
+	grpcDialOpts []grpc.DialOption
+
+	aReadSqf     AReadSQuorumFn
+	aWriteSqf    AWriteSQuorumFn
+	aWriteNqf    AWriteNQuorumFn
+	setCurqf     SetCurQuorumFn
+	lAPropqf     LAPropQuorumFn
+	setStateqf   SetStateQuorumFn
+	dReadSqf     DReadSQuorumFn
+	dWriteSqf    DWriteSQuorumFn
+	dWriteNSetqf DWriteNSetQuorumFn
+	getOneNqf    GetOneNQuorumFn
+	dSetCurqf    DSetCurQuorumFn
+	cPrepareqf   CPrepareQuorumFn
+	cAcceptqf    CAcceptQuorumFn
+	cReadSqf     CReadSQuorumFn
+	cWriteSqf    CWriteSQuorumFn
+	cSetStateqf  CSetStateQuorumFn
+}
+
+// WithAReadSQuorumFunc returns a ManagerOption that sets a cumstom
+// AReadSQuorumFunc.
+func WithAReadSQuorumFunc(f AReadSQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.aReadSqf = f
+	}
+}
+
+// WithAWriteSQuorumFunc returns a ManagerOption that sets a cumstom
+// AWriteSQuorumFunc.
+func WithAWriteSQuorumFunc(f AWriteSQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.aWriteSqf = f
+	}
+}
+
+// WithAWriteNQuorumFunc returns a ManagerOption that sets a cumstom
+// AWriteNQuorumFunc.
+func WithAWriteNQuorumFunc(f AWriteNQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.aWriteNqf = f
+	}
+}
+
+// WithSetCurQuorumFunc returns a ManagerOption that sets a cumstom
+// SetCurQuorumFunc.
+func WithSetCurQuorumFunc(f SetCurQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.setCurqf = f
+	}
+}
+
+// WithLAPropQuorumFunc returns a ManagerOption that sets a cumstom
+// LAPropQuorumFunc.
+func WithLAPropQuorumFunc(f LAPropQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.lAPropqf = f
+	}
+}
+
+// WithSetStateQuorumFunc returns a ManagerOption that sets a cumstom
+// SetStateQuorumFunc.
+func WithSetStateQuorumFunc(f SetStateQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.setStateqf = f
+	}
+}
+
+// WithDReadSQuorumFunc returns a ManagerOption that sets a cumstom
+// DReadSQuorumFunc.
+func WithDReadSQuorumFunc(f DReadSQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.dReadSqf = f
+	}
+}
+
+// WithDWriteSQuorumFunc returns a ManagerOption that sets a cumstom
+// DWriteSQuorumFunc.
+func WithDWriteSQuorumFunc(f DWriteSQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.dWriteSqf = f
+	}
+}
+
+// WithDWriteNSetQuorumFunc returns a ManagerOption that sets a cumstom
+// DWriteNSetQuorumFunc.
+func WithDWriteNSetQuorumFunc(f DWriteNSetQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.dWriteNSetqf = f
+	}
+}
+
+// WithGetOneNQuorumFunc returns a ManagerOption that sets a cumstom
+// GetOneNQuorumFunc.
+func WithGetOneNQuorumFunc(f GetOneNQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.getOneNqf = f
+	}
+}
+
+// WithDSetCurQuorumFunc returns a ManagerOption that sets a cumstom
+// DSetCurQuorumFunc.
+func WithDSetCurQuorumFunc(f DSetCurQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.dSetCurqf = f
+	}
+}
+
+// WithCPrepareQuorumFunc returns a ManagerOption that sets a cumstom
+// CPrepareQuorumFunc.
+func WithCPrepareQuorumFunc(f CPrepareQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.cPrepareqf = f
+	}
+}
+
+// WithCAcceptQuorumFunc returns a ManagerOption that sets a cumstom
+// CAcceptQuorumFunc.
+func WithCAcceptQuorumFunc(f CAcceptQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.cAcceptqf = f
+	}
+}
+
+// WithCReadSQuorumFunc returns a ManagerOption that sets a cumstom
+// CReadSQuorumFunc.
+func WithCReadSQuorumFunc(f CReadSQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.cReadSqf = f
+	}
+}
+
+// WithCWriteSQuorumFunc returns a ManagerOption that sets a cumstom
+// CWriteSQuorumFunc.
+func WithCWriteSQuorumFunc(f CWriteSQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.cWriteSqf = f
+	}
+}
+
+// WithCSetStateQuorumFunc returns a ManagerOption that sets a cumstom
+// CSetStateQuorumFunc.
+func WithCSetStateQuorumFunc(f CSetStateQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.cSetStateqf = f
+	}
+}
+
+// AReadSQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type AReadSQuorumFn func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool)
+
+// AWriteSQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type AWriteSQuorumFn func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool)
+
+// AWriteNQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type AWriteNQuorumFn func(c *Configuration, replies []*AdvWriteNReply) (*AdvWriteNReply, bool)
+
+// SetCurQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type SetCurQuorumFn func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool)
+
+// LAPropQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type LAPropQuorumFn func(c *Configuration, replies []*LAReply) (*LAReply, bool)
+
+// SetStateQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type SetStateQuorumFn func(c *Configuration, replies []*NewStateReply) (*NewStateReply, bool)
+
+// DReadSQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type DReadSQuorumFn func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool)
+
+// DWriteSQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type DWriteSQuorumFn func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool)
+
+// DWriteNSetQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type DWriteNSetQuorumFn func(c *Configuration, replies []*DWriteNReply) (*DWriteNReply, bool)
+
+// GetOneNQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type GetOneNQuorumFn func(c *Configuration, replies []*GetOneReply) (*GetOneReply, bool)
+
+// DSetCurQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type DSetCurQuorumFn func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool)
+
+// CPrepareQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type CPrepareQuorumFn func(c *Configuration, replies []*Promise) (*Promise, bool)
+
+// CAcceptQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type CAcceptQuorumFn func(c *Configuration, replies []*Learn) (*Learn, bool)
+
+// CReadSQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type CReadSQuorumFn func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool)
+
+// CWriteSQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type CWriteSQuorumFn func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool)
+
+// CSetStateQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type CSetStateQuorumFn func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool)
+
+/* Gorums Client API */
+
+/* Configuration RPC specific */
+
+// AReadSReply encapsulates the reply from a AReadS RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type AReadSReply struct {
+	MachineIDs []uint32
+	Reply      *AdvReadReply
+}
+
+func (r AReadSReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// AReadSReply invokes a AReadS RPC on configuration c
+// and returns the result as a AReadSReply.
+func (c *Configuration) AReadS(args *AdvRead) (*AReadSReply, error) {
+	return c.mgr.aReadS(c.id, args)
+}
+
+// AWriteSReply encapsulates the reply from a AWriteS RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type AWriteSReply struct {
+	MachineIDs []uint32
+	Reply      *AdvWriteSReply
+}
+
+func (r AWriteSReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// AWriteSReply invokes a AWriteS RPC on configuration c
+// and returns the result as a AWriteSReply.
+func (c *Configuration) AWriteS(args *AdvWriteS) (*AWriteSReply, error) {
+	return c.mgr.aWriteS(c.id, args)
+}
+
+// AWriteNReply encapsulates the reply from a AWriteN RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type AWriteNReply struct {
+	MachineIDs []uint32
+	Reply      *AdvWriteNReply
+}
+
+func (r AWriteNReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// AWriteNReply invokes a AWriteN RPC on configuration c
+// and returns the result as a AWriteNReply.
+func (c *Configuration) AWriteN(args *AdvWriteN) (*AWriteNReply, error) {
+	return c.mgr.aWriteN(c.id, args)
+}
+
+// SetCurReply encapsulates the reply from a SetCur RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type SetCurReply struct {
+	MachineIDs []uint32
+	Reply      *NewCurReply
+}
+
+func (r SetCurReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// SetCurReply invokes a SetCur RPC on configuration c
+// and returns the result as a SetCurReply.
+func (c *Configuration) SetCur(args *NewCur) (*SetCurReply, error) {
+	return c.mgr.setCur(c.id, args)
+}
+
+// LAPropReply encapsulates the reply from a LAProp RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type LAPropReply struct {
+	MachineIDs []uint32
+	Reply      *LAReply
+}
+
+func (r LAPropReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// LAPropReply invokes a LAProp RPC on configuration c
+// and returns the result as a LAPropReply.
+func (c *Configuration) LAProp(args *LAProposal) (*LAPropReply, error) {
+	return c.mgr.lAProp(c.id, args)
+}
+
+// SetStateReply encapsulates the reply from a SetState RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type SetStateReply struct {
+	MachineIDs []uint32
+	Reply      *NewStateReply
+}
+
+func (r SetStateReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// SetStateReply invokes a SetState RPC on configuration c
+// and returns the result as a SetStateReply.
+func (c *Configuration) SetState(args *NewState) (*SetStateReply, error) {
+	return c.mgr.setState(c.id, args)
+}
+
+// DReadSReply encapsulates the reply from a DReadS RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type DReadSReply struct {
+	MachineIDs []uint32
+	Reply      *AdvReadReply
+}
+
+func (r DReadSReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// DReadSReply invokes a DReadS RPC on configuration c
+// and returns the result as a DReadSReply.
+func (c *Configuration) DReadS(args *DRead) (*DReadSReply, error) {
+	return c.mgr.dReadS(c.id, args)
+}
+
+// DWriteSReply encapsulates the reply from a DWriteS RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type DWriteSReply struct {
+	MachineIDs []uint32
+	Reply      *AdvWriteSReply
+}
+
+func (r DWriteSReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// DWriteSReply invokes a DWriteS RPC on configuration c
+// and returns the result as a DWriteSReply.
+func (c *Configuration) DWriteS(args *AdvWriteS) (*DWriteSReply, error) {
+	return c.mgr.dWriteS(c.id, args)
+}
+
+// DWriteNSetReply encapsulates the reply from a DWriteNSet RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type DWriteNSetReply struct {
+	MachineIDs []uint32
+	Reply      *DWriteNReply
+}
+
+func (r DWriteNSetReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// DWriteNSetReply invokes a DWriteNSet RPC on configuration c
+// and returns the result as a DWriteNSetReply.
+func (c *Configuration) DWriteNSet(args *DWriteN) (*DWriteNSetReply, error) {
+	return c.mgr.dWriteNSet(c.id, args)
+}
+
+// GetOneNReply encapsulates the reply from a GetOneN RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type GetOneNReply struct {
+	MachineIDs []uint32
+	Reply      *GetOneReply
+}
+
+func (r GetOneNReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// GetOneNReply invokes a GetOneN RPC on configuration c
+// and returns the result as a GetOneNReply.
+func (c *Configuration) GetOneN(args *GetOne) (*GetOneNReply, error) {
+	return c.mgr.getOneN(c.id, args)
+}
+
+// DSetCurReply encapsulates the reply from a DSetCur RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type DSetCurReply struct {
+	MachineIDs []uint32
+	Reply      *NewCurReply
+}
+
+func (r DSetCurReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// DSetCurReply invokes a DSetCur RPC on configuration c
+// and returns the result as a DSetCurReply.
+func (c *Configuration) DSetCur(args *NewCur) (*DSetCurReply, error) {
+	return c.mgr.dSetCur(c.id, args)
+}
+
+// CPrepareReply encapsulates the reply from a CPrepare RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type CPrepareReply struct {
+	MachineIDs []uint32
+	Reply      *Promise
+}
+
+func (r CPrepareReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// CPrepareReply invokes a CPrepare RPC on configuration c
+// and returns the result as a CPrepareReply.
+func (c *Configuration) CPrepare(args *Prepare) (*CPrepareReply, error) {
+	return c.mgr.cPrepare(c.id, args)
+}
+
+// CAcceptReply encapsulates the reply from a CAccept RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type CAcceptReply struct {
+	MachineIDs []uint32
+	Reply      *Learn
+}
+
+func (r CAcceptReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// CAcceptReply invokes a CAccept RPC on configuration c
+// and returns the result as a CAcceptReply.
+func (c *Configuration) CAccept(args *Propose) (*CAcceptReply, error) {
+	return c.mgr.cAccept(c.id, args)
+}
+
+// CReadSReply encapsulates the reply from a CReadS RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type CReadSReply struct {
+	MachineIDs []uint32
+	Reply      *AdvReadReply
+}
+
+func (r CReadSReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// CReadSReply invokes a CReadS RPC on configuration c
+// and returns the result as a CReadSReply.
+func (c *Configuration) CReadS(args *DRead) (*CReadSReply, error) {
+	return c.mgr.cReadS(c.id, args)
+}
+
+// CWriteSReply encapsulates the reply from a CWriteS RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type CWriteSReply struct {
+	MachineIDs []uint32
+	Reply      *AdvWriteSReply
+}
+
+func (r CWriteSReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// CWriteSReply invokes a CWriteS RPC on configuration c
+// and returns the result as a CWriteSReply.
+func (c *Configuration) CWriteS(args *AdvWriteS) (*CWriteSReply, error) {
+	return c.mgr.cWriteS(c.id, args)
+}
+
+// CSetStateReply encapsulates the reply from a CSetState RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type CSetStateReply struct {
+	MachineIDs []uint32
+	Reply      *NewCurReply
+}
+
+func (r CSetStateReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// CSetStateReply invokes a CSetState RPC on configuration c
+// and returns the result as a CSetStateReply.
+func (c *Configuration) CSetState(args *CNewCur) (*CSetStateReply, error) {
+	return c.mgr.cSetState(c.id, args)
+}
+
+/* Manager RPC specific */
+
+type aReadSReply struct {
+	mid   uint32
+	reply *AdvReadReply
+	err   error
+}
+
+func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan aReadSReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*AdvReadReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(AdvReadReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.AdvRegister/AReadS",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- aReadSReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &AReadSReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.aReadSqf(c, replyValues); ok {
+				return &AReadSReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type aWriteSReply struct {
+	mid   uint32
+	reply *AdvWriteSReply
+	err   error
+}
+
+func (m *Manager) aWriteS(configID uint32, args *AdvWriteS) (*AWriteSReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan aWriteSReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(AdvWriteSReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.AdvRegister/AWriteS",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- aWriteSReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &AWriteSReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.aWriteSqf(c, replyValues); ok {
+				return &AWriteSReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type aWriteNReply struct {
+	mid   uint32
+	reply *AdvWriteNReply
+	err   error
+}
+
+func (m *Manager) aWriteN(configID uint32, args *AdvWriteN) (*AWriteNReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan aWriteNReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*AdvWriteNReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(AdvWriteNReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.AdvRegister/AWriteN",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- aWriteNReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &AWriteNReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.aWriteNqf(c, replyValues); ok {
+				return &AWriteNReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type setCurReply struct {
+	mid   uint32
+	reply *NewCurReply
+	err   error
+}
+
+func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan setCurReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*NewCurReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(NewCurReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.AdvRegister/SetCur",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- setCurReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &SetCurReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.setCurqf(c, replyValues); ok {
+				return &SetCurReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type lAPropReply struct {
+	mid   uint32
+	reply *LAReply
+	err   error
+}
+
+func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan lAPropReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*LAReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(LAReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.AdvRegister/LAProp",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- lAPropReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &LAPropReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.lAPropqf(c, replyValues); ok {
+				return &LAPropReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type setStateReply struct {
+	mid   uint32
+	reply *NewStateReply
+	err   error
+}
+
+func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan setStateReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*NewStateReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(NewStateReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.AdvRegister/SetState",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- setStateReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &SetStateReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.setStateqf(c, replyValues); ok {
+				return &SetStateReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type dReadSReply struct {
+	mid   uint32
+	reply *AdvReadReply
+	err   error
+}
+
+func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan dReadSReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*AdvReadReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(AdvReadReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.DynaDisk/DReadS",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- dReadSReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &DReadSReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.dReadSqf(c, replyValues); ok {
+				return &DReadSReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type dWriteSReply struct {
+	mid   uint32
+	reply *AdvWriteSReply
+	err   error
+}
+
+func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan dWriteSReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(AdvWriteSReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.DynaDisk/DWriteS",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- dWriteSReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &DWriteSReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.dWriteSqf(c, replyValues); ok {
+				return &DWriteSReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type dWriteNSetReply struct {
+	mid   uint32
+	reply *DWriteNReply
+	err   error
+}
+
+func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan dWriteNSetReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*DWriteNReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(DWriteNReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.DynaDisk/DWriteNSet",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- dWriteNSetReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &DWriteNSetReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.dWriteNSetqf(c, replyValues); ok {
+				return &DWriteNSetReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type getOneNReply struct {
+	mid   uint32
+	reply *GetOneReply
+	err   error
+}
+
+func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan getOneNReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*GetOneReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(GetOneReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.DynaDisk/GetOneN",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- getOneNReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &GetOneNReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.getOneNqf(c, replyValues); ok {
+				return &GetOneNReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type dSetCurReply struct {
+	mid   uint32
+	reply *NewCurReply
+	err   error
+}
+
+func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan dSetCurReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*NewCurReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(NewCurReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.DynaDisk/DSetCur",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- dSetCurReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &DSetCurReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.dSetCurqf(c, replyValues); ok {
+				return &DSetCurReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type cPrepareReply struct {
+	mid   uint32
+	reply *Promise
+	err   error
+}
+
+func (m *Manager) cPrepare(configID uint32, args *Prepare) (*CPrepareReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan cPrepareReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*Promise, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(Promise)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.ConsDisk/CPrepare",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- cPrepareReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &CPrepareReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.cPrepareqf(c, replyValues); ok {
+				return &CPrepareReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type cAcceptReply struct {
+	mid   uint32
+	reply *Learn
+	err   error
+}
+
+func (m *Manager) cAccept(configID uint32, args *Propose) (*CAcceptReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan cAcceptReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*Learn, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(Learn)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.ConsDisk/CAccept",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- cAcceptReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &CAcceptReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.cAcceptqf(c, replyValues); ok {
+				return &CAcceptReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type cReadSReply struct {
+	mid   uint32
+	reply *AdvReadReply
+	err   error
+}
+
+func (m *Manager) cReadS(configID uint32, args *DRead) (*CReadSReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan cReadSReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*AdvReadReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(AdvReadReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.ConsDisk/CReadS",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- cReadSReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &CReadSReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.cReadSqf(c, replyValues); ok {
+				return &CReadSReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type cWriteSReply struct {
+	mid   uint32
+	reply *AdvWriteSReply
+	err   error
+}
+
+func (m *Manager) cWriteS(configID uint32, args *AdvWriteS) (*CWriteSReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan cWriteSReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(AdvWriteSReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.ConsDisk/CWriteS",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- cWriteSReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &CWriteSReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.cWriteSqf(c, replyValues); ok {
+				return &CWriteSReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type cSetStateReply struct {
+	mid   uint32
+	reply *NewCurReply
+	err   error
+}
+
+func (m *Manager) cSetState(configID uint32, args *CNewCur) (*CSetStateReply, error) {
+	c, err := m.getConfig(configID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		replyChan   = make(chan cSetStateReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*NewCurReply, 0, c.quorum)
+		mids        = make([]uint32, 0, c.quorum)
+		ctx, cancel = context.WithCancel(context.Background())
+		errCount    int
+	)
+
+	for _, mid := range c.machines {
+		ma, err := m.getMachine(mid)
+		if err != nil {
+			return nil, err
+		}
+		go func(machine *machine) {
+			reply := new(NewCurReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				ce <- grpc.Invoke(
+					ctx,
+					"/proto.ConsDisk/CSetState",
+					args,
+					reply,
+					machine.conn,
+				)
+			}()
+			select {
+			case err := <-ce:
+				if err != nil {
+					machine.setLastErr(err)
+				} else {
+					machine.setLatency(time.Since(start))
+				}
+				replyChan <- cSetStateReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}(ma)
+	}
+
+	defer func() {
+		close(stopSignal)
+		cancel()
+	}()
+	for {
+	select_:
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				if grpc.Code(r.err) == codes.Aborted {
+					return &CSetStateReply{
+						MachineIDs: []uint32{r.mid},
+						Reply:      r.reply,
+					}, AbortRPCError(grpc.ErrorDesc(r.err))
+				}
+				errCount++
+				if errCount > len(c.machines)-c.Quorum() {
+					return nil, IncompleteRPCError{
+						errCount, len(replyValues),
+					}
+				}
+				break select_
+			}
+
+			replyValues = append(replyValues, r.reply)
+			mids = append(mids, r.mid)
+			if pickedReply, ok := m.cSetStateqf(c, replyValues); ok {
+				return &CSetStateReply{
+					mids,
+					pickedReply,
+				}, nil
+			}
+		case <-time.After(c.timeout):
+			return nil, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+		if errCount+len(replyValues) == c.Size() {
+			return nil, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+/* config.go */
+
+// A Configuration represents a static set of machines on which quorum remote
+// procedure calls may be invoked.
+type Configuration struct {
+	id       uint32
+	machines []uint32
+	mgr      *Manager
+	quorum   int
+	timeout  time.Duration
+}
+
+// ID reports the unique identifier for the configuration.
+func (c *Configuration) ID() uint32 {
+	return c.id
+}
+
+// Machines returns a slice containing the ids of all the machines in the
+// configuration.
+func (c *Configuration) Machines() []uint32 { return c.machines }
+
+// Quorum returns the quourm size for the configuration.
+func (c *Configuration) Quorum() int {
+	return c.quorum
+}
+
+// Size returns the number of machines in the configuration.
+func (c *Configuration) Size() int {
+	return len(c.machines)
+}
+
+func (c *Configuration) String() string {
+	return fmt.Sprintf("Configuration %d", c.id)
+}
+
+// Equal retuns a boolean reporting whether a and b represents the same
+// configuration.
+func Equal(a, b *Configuration) bool { return a.id == b.id }
+
+/* errors.go */
+
+// A MachineNotFoundError reports that a specified machine could not be found.
+type MachineNotFoundError uint32
+
+func (e MachineNotFoundError) Error() string {
+	return fmt.Sprintf("machine not found: %d", e)
+}
+
+// A ConfigNotFoundError reports that a specified configuration could not be
+// found.
+type ConfigNotFoundError uint32
+
+func (e ConfigNotFoundError) Error() string {
+	return fmt.Sprintf("configuration not found: %d", e)
+}
+
+// An IncompleteRPCError reports that a quorum RPC call failed.
+type IncompleteRPCError struct {
+	ErrCount, RepliesCount int
+}
+
+func (e IncompleteRPCError) Error() string {
+	return fmt.Sprintf(
+		"incomplete rpc (errors: %d, replies: %d)",
+		e.ErrCount, e.RepliesCount,
+	)
+}
+
+// An TimeoutRPCError reports that a quorum RPC call timed out.
+type TimeoutRPCError struct {
+	Waited                 time.Duration
+	ErrCount, RepliesCount int
+}
+
+func (e TimeoutRPCError) Error() string {
+	return fmt.Sprintf(
+		"rpc timed out: waited %v (errors: %d, replies: %d)",
+		e.Waited, e.ErrCount, e.RepliesCount,
+	)
+}
+
+// An AbortRPCError reports that a single machine signaled to abort the quorum
+// RPC call.
+type AbortRPCError string
+
+func (e AbortRPCError) Error() string {
+	return "single rpc reply signaled abort: " + string(e)
+}
+
+// An IllegalConfigError reports that a specified configuration could not be
+// created.
+type IllegalConfigError string
+
+func (e IllegalConfigError) Error() string {
+	return "illegal configuration: " + string(e)
+}
+
+// A ManagerCreationError reports that a Manager could not be created.
+type ManagerCreationError string
+
+func (e ManagerCreationError) Error() string {
+	return "could not create manager: " + string(e)
+}
+
+/* lat.go */
+
+type latencyTuple struct {
+	machineID  uint32
+	reqLatency time.Duration
+}
+
+type latencySlice []latencyTuple
+
+func (p latencySlice) Len() int           { return len(p) }
+func (p latencySlice) Less(i, j int) bool { return p[i].reqLatency < (p[j].reqLatency) }
+func (p latencySlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+func (p latencySlice) Sort() { sort.Sort(p) }
+
+func sortLatencies(lats map[uint32]latencyTuple) latencySlice {
+	ls := make(latencySlice, len(lats))
+	i := 0
+	for _, lat := range lats {
+		ls[i] = lat
+		i++
+	}
+	ls.Sort()
+	return ls
+}
+
+/* loc.go */
+
+var defaultLocMapper = func(ip net.IP) string {
+	if ip.IsLoopback() {
+		return "localhost"
+	}
+	return "unknown"
+}
+
+/* machine.go */
+
+type machine struct {
+	// Only assigned at creation.
+	id   uint32
+	addr string
+	conn *grpc.ClientConn
+
+	sync.Mutex
+	lastErr error
+	latency time.Duration
+}
+
+func (m *machine) connState() grpc.ConnectivityState {
+	return m.conn.State()
+}
+
+func (m *machine) String() string {
+	m.Lock()
+	defer m.Unlock()
+	return fmt.Sprintf(
+		"machine %d | addr: %s | latency: %v | connstate: %v",
+		m.id,
+		m.addr,
+		m.latency,
+		m.conn.State,
+	)
+}
+
+func (m *machine) setLastErr(err error) {
+	m.Lock()
+	defer m.Unlock()
+	m.lastErr = err
+}
+
+func (m *machine) getLastErr() error {
+	m.Lock()
+	defer m.Unlock()
+	return m.lastErr
+}
+
+func (m *machine) setLatency(lat time.Duration) {
+	m.Lock()
+	defer m.Unlock()
+	m.latency = lat
+}
+
+func (m *machine) getLatency() time.Duration {
+	m.Lock()
+	defer m.Unlock()
+	return m.latency
+}
+
+type byID []machine
+
+func (p byID) Len() int           { return len(p) }
+func (p byID) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p byID) Less(i, j int) bool { return p[i].id < p[j].id }
+
+type byLatency []machine
+
+func (p byLatency) Len() int           { return len(p) }
+func (p byLatency) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p byLatency) Less(i, j int) bool { return p[i].latency < p[j].latency }
+
+/* mgr.go */
+
+// NewManager attempts to connect to the given machines, and returns a new
+// Manager containing those machines if successful.
+func NewManager(machines []string, opts ...ManagerOption) (*Manager, error) {
+	if len(machines) == 0 {
+		return nil, ManagerCreationError("no machines provided")
+	}
+
+	m := new(Manager)
+	m.machines = make(map[uint32]*machine)
+	m.configs = make(map[uint32]*Configuration)
+
+	for _, opt := range opts {
+		opt(&m.opts)
+	}
+
+	m.setDefaultQuorumFuncs()
+
+	for _, mn := range machines {
+		err := m.createMachine(mn)
+		if err != nil {
+			return nil, ManagerCreationError(err.Error())
+		}
+	}
+
+	return m, nil
+}
+
+// IDs returns the identifier of each available machine.
+func (m *Manager) IDs() []uint32 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	ids := make([]uint32, len(m.ids))
+	copy(ids, m.ids)
+	return ids
+}
+
+// Machines returns a string representation of each available machine as a
+// slice.
+func (m *Manager) Machines() []string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	ma := make([]string, len(m.ids))
+	for i, id := range m.ids {
+		ma[i] = m.machines[id].String()
+	}
+	return ma
+}
+
+// Size returns the number of machines in the Manager.
+func (m *Manager) Size() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.ids)
+}
+
+func (m *Manager) createMachine(mn string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	h := fnv.New32a()
+	h.Write([]byte(mn))
+	id := h.Sum32()
+	if _, machineExists := m.machines[id]; machineExists {
+		return fmt.Errorf("create machine %s error: machine already exists", mn)
+	}
+
+	ma := &machine{
+		id:      id,
+		addr:    mn,
+		latency: time.Second * 30,
+	}
+
+	err := m.connect(ma)
+	if err != nil {
+		return fmt.Errorf("create machine %s error: %v", mn, err)
+	}
+
+	m.ids = append(m.ids, id)
+	m.machines[id] = ma
+
+	return nil
+}
+
+func (m *Manager) connect(ma *machine) error {
+	conn, err := grpc.Dial(ma.addr, m.opts.grpcDialOpts...)
+	if err != nil {
+		return fmt.Errorf("dialing node failed: %v", err)
+	}
+	ma.conn = conn
+	return nil
+}
+
+// NewConfiguration returns a new configuration given a set of machine ids and
+// a quorum size. Any given gRPC call options will be used for every RPC
+// invocation on the configuration.
+func (m *Manager) NewConfiguration(ids []uint32, quorumSize int, timeout time.Duration) (*Configuration, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if len(ids) == 0 {
+		return nil, IllegalConfigError("need at least one machine")
+	}
+	if quorumSize > len(ids) || quorumSize < 1 {
+		return nil, IllegalConfigError("invalid quourm size")
+	}
+	if timeout <= 0 {
+		return nil, IllegalConfigError("timeout must be positive")
+	}
+
+	h := fnv.New32a()
+	binary.Write(h, binary.LittleEndian, quorumSize)
+	binary.Write(h, binary.LittleEndian, timeout)
+	for _, id := range ids {
+		_, found := m.machines[id]
+		if !found {
+			return nil, MachineNotFoundError(id)
+		}
+		binary.Write(h, binary.LittleEndian, id)
+	}
+	cid := h.Sum32()
+	c, found := m.configs[cid]
+	if found {
+		return c, nil
+	}
+	c = &Configuration{
+		id:       cid,
+		machines: ids,
+		mgr:      m,
+		quorum:   quorumSize,
+		timeout:  timeout,
+	}
+	m.configs[cid] = c
+
+	return c, nil
+}
+
+// AddMachine attempts to dial to the provide machine address. The machine is
+// added to the Manager's pool of machines if a connection was made.
+func (m *Manager) AddMachine(addr string) error {
+	return m.createMachine(addr)
+}
+
+func (m *Manager) getConfig(cid uint32) (*Configuration, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	c, found := m.configs[cid]
+	if !found {
+		return nil, ConfigNotFoundError(cid)
+	}
+	return c, nil
+}
+
+func (m *Manager) getMachine(mid uint32) (*machine, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	ma, found := m.machines[mid]
+	if !found {
+		return nil, MachineNotFoundError(mid)
+	}
+	return ma, nil
+}
+
+/* opts.go */
+
+// ManagerOption provides a way to set different options on a new Manager.
+type ManagerOption func(*managerOptions)
+
+// WithGrpcDialOptions returns a ManagerOption that sets any gRPC dial options
+// the Manager should use when initially connecting to each machine in its
+// pool.
+func WithGrpcDialOptions(opts ...grpc.DialOption) ManagerOption {
+	return func(o *managerOptions) {
+		o.grpcDialOpts = opts
+	}
 }

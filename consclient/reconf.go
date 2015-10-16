@@ -36,7 +36,7 @@ func (cc *CClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 		}
 		
 		ms := 1 * time.Millisecond
-		if cc.Blueps[i].Equals(prop) {
+		if prop.Compare(cc.Blueps[i]) == 1 {
 			next = nil
 			goto decide
 		}

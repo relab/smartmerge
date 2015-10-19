@@ -38,6 +38,8 @@ It has these top-level messages:
 package proto
 
 import proto1 "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 import (
 	context "golang.org/x/net/context"
@@ -57,11 +59,13 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto1.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 type State struct {
-	Value     []byte `protobuf:"bytes,1,opt,proto3" json:"Value,omitempty"`
-	Timestamp int32  `protobuf:"varint,2,opt" json:"Timestamp,omitempty"`
-	Writer    uint32 `protobuf:"varint,3,opt" json:"Writer,omitempty"`
+	Value     []byte `protobuf:"bytes,1,opt,name=Value,proto3" json:"Value,omitempty"`
+	Timestamp int32  `protobuf:"varint,2,opt,name=Timestamp" json:"Timestamp,omitempty"`
+	Writer    uint32 `protobuf:"varint,3,opt,name=Writer" json:"Writer,omitempty"`
 }
 
 func (m *State) Reset()         { *m = State{} }
@@ -69,8 +73,8 @@ func (m *State) String() string { return proto1.CompactTextString(m) }
 func (*State) ProtoMessage()    {}
 
 type Blueprint struct {
-	Add []uint32 `protobuf:"varint,1,rep" json:"Add,omitempty"`
-	Rem []uint32 `protobuf:"varint,2,rep" json:"Rem,omitempty"`
+	Add []uint32 `protobuf:"varint,1,rep,name=Add" json:"Add,omitempty"`
+	Rem []uint32 `protobuf:"varint,2,rep,name=Rem" json:"Rem,omitempty"`
 }
 
 func (m *Blueprint) Reset()         { *m = Blueprint{} }
@@ -78,8 +82,8 @@ func (m *Blueprint) String() string { return proto1.CompactTextString(m) }
 func (*Blueprint) ProtoMessage()    {}
 
 type NewCur struct {
-	Cur  *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	CurC uint32     `protobuf:"varint,2,opt" json:"CurC,omitempty"`
+	Cur  *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	CurC uint32     `protobuf:"varint,2,opt,name=CurC" json:"CurC,omitempty"`
 }
 
 func (m *NewCur) Reset()         { *m = NewCur{} }
@@ -94,7 +98,7 @@ func (m *NewCur) GetCur() *Blueprint {
 }
 
 type NewCurReply struct {
-	New bool `protobuf:"varint,1,opt" json:"New,omitempty"`
+	New bool `protobuf:"varint,1,opt,name=New" json:"New,omitempty"`
 }
 
 func (m *NewCurReply) Reset()         { *m = NewCurReply{} }
@@ -102,7 +106,7 @@ func (m *NewCurReply) String() string { return proto1.CompactTextString(m) }
 func (*NewCurReply) ProtoMessage()    {}
 
 type AdvRead struct {
-	CurC uint32 `protobuf:"varint,1,opt" json:"CurC,omitempty"`
+	CurC uint32 `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
 }
 
 func (m *AdvRead) Reset()         { *m = AdvRead{} }
@@ -110,9 +114,9 @@ func (m *AdvRead) String() string { return proto1.CompactTextString(m) }
 func (*AdvRead) ProtoMessage()    {}
 
 type AdvReadReply struct {
-	State *State       `protobuf:"bytes,1,opt" json:"State,omitempty"`
-	Cur   *Blueprint   `protobuf:"bytes,2,opt" json:"Cur,omitempty"`
-	Next  []*Blueprint `protobuf:"bytes,3,rep" json:"Next,omitempty"`
+	State *State       `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
+	Cur   *Blueprint   `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+	Next  []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
 }
 
 func (m *AdvReadReply) Reset()         { *m = AdvReadReply{} }
@@ -141,8 +145,8 @@ func (m *AdvReadReply) GetNext() []*Blueprint {
 }
 
 type AdvWriteS struct {
-	State *State `protobuf:"bytes,1,opt" json:"State,omitempty"`
-	CurC  uint32 `protobuf:"varint,2,opt" json:"CurC,omitempty"`
+	State *State `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
+	CurC  uint32 `protobuf:"varint,2,opt,name=CurC" json:"CurC,omitempty"`
 }
 
 func (m *AdvWriteS) Reset()         { *m = AdvWriteS{} }
@@ -157,8 +161,8 @@ func (m *AdvWriteS) GetState() *State {
 }
 
 type AdvWriteSReply struct {
-	Cur  *Blueprint   `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	Next []*Blueprint `protobuf:"bytes,2,rep" json:"Next,omitempty"`
+	Cur  *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
 }
 
 func (m *AdvWriteSReply) Reset()         { *m = AdvWriteSReply{} }
@@ -180,8 +184,8 @@ func (m *AdvWriteSReply) GetNext() []*Blueprint {
 }
 
 type AdvWriteN struct {
-	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Next *Blueprint `protobuf:"bytes,2,opt" json:"Next,omitempty"`
+	CurC uint32     `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Next *Blueprint `protobuf:"bytes,2,opt,name=Next" json:"Next,omitempty"`
 }
 
 func (m *AdvWriteN) Reset()         { *m = AdvWriteN{} }
@@ -196,10 +200,10 @@ func (m *AdvWriteN) GetNext() *Blueprint {
 }
 
 type AdvWriteNReply struct {
-	Cur     *Blueprint   `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	State   *State       `protobuf:"bytes,2,opt" json:"State,omitempty"`
-	Next    []*Blueprint `protobuf:"bytes,3,rep" json:"Next,omitempty"`
-	LAState *Blueprint   `protobuf:"bytes,4,opt" json:"LAState,omitempty"`
+	Cur     *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	State   *State       `protobuf:"bytes,2,opt,name=State" json:"State,omitempty"`
+	Next    []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
+	LAState *Blueprint   `protobuf:"bytes,4,opt,name=LAState" json:"LAState,omitempty"`
 }
 
 func (m *AdvWriteNReply) Reset()         { *m = AdvWriteNReply{} }
@@ -235,8 +239,8 @@ func (m *AdvWriteNReply) GetLAState() *Blueprint {
 }
 
 type LAProposal struct {
-	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Prop *Blueprint `protobuf:"bytes,2,opt" json:"Prop,omitempty"`
+	CurC uint32     `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Prop *Blueprint `protobuf:"bytes,2,opt,name=Prop" json:"Prop,omitempty"`
 }
 
 func (m *LAProposal) Reset()         { *m = LAProposal{} }
@@ -251,9 +255,9 @@ func (m *LAProposal) GetProp() *Blueprint {
 }
 
 type LAReply struct {
-	Cur     *Blueprint   `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	LAState *Blueprint   `protobuf:"bytes,2,opt" json:"LAState,omitempty"`
-	Next    []*Blueprint `protobuf:"bytes,3,rep" json:"Next,omitempty"`
+	Cur     *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	LAState *Blueprint   `protobuf:"bytes,2,opt,name=LAState" json:"LAState,omitempty"`
+	Next    []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
 }
 
 func (m *LAReply) Reset()         { *m = LAReply{} }
@@ -282,10 +286,10 @@ func (m *LAReply) GetNext() []*Blueprint {
 }
 
 type NewState struct {
-	CurC    uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Cur     *Blueprint `protobuf:"bytes,2,opt" json:"Cur,omitempty"`
-	State   *State     `protobuf:"bytes,3,opt" json:"State,omitempty"`
-	LAState *Blueprint `protobuf:"bytes,4,opt" json:"LAState,omitempty"`
+	CurC    uint32     `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Cur     *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+	State   *State     `protobuf:"bytes,3,opt,name=State" json:"State,omitempty"`
+	LAState *Blueprint `protobuf:"bytes,4,opt,name=LAState" json:"LAState,omitempty"`
 }
 
 func (m *NewState) Reset()         { *m = NewState{} }
@@ -314,7 +318,7 @@ func (m *NewState) GetLAState() *Blueprint {
 }
 
 type NewStateReply struct {
-	Cur *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+	Cur *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
 }
 
 func (m *NewStateReply) Reset()         { *m = NewStateReply{} }
@@ -329,8 +333,8 @@ func (m *NewStateReply) GetCur() *Blueprint {
 }
 
 type DRead struct {
-	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Prop *Blueprint `protobuf:"bytes,2,opt" json:"Prop,omitempty"`
+	CurC uint32     `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Prop *Blueprint `protobuf:"bytes,2,opt,name=Prop" json:"Prop,omitempty"`
 }
 
 func (m *DRead) Reset()         { *m = DRead{} }
@@ -345,8 +349,8 @@ func (m *DRead) GetProp() *Blueprint {
 }
 
 type DWriteN struct {
-	CurC uint32       `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Next []*Blueprint `protobuf:"bytes,2,rep" json:"Next,omitempty"`
+	CurC uint32       `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
 }
 
 func (m *DWriteN) Reset()         { *m = DWriteN{} }
@@ -361,7 +365,7 @@ func (m *DWriteN) GetNext() []*Blueprint {
 }
 
 type DWriteNReply struct {
-	Cur *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
+	Cur *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
 }
 
 func (m *DWriteNReply) Reset()         { *m = DWriteNReply{} }
@@ -376,8 +380,8 @@ func (m *DWriteNReply) GetCur() *Blueprint {
 }
 
 type GetOne struct {
-	CurC uint32     `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Next *Blueprint `protobuf:"bytes,2,opt" json:"Next,omitempty"`
+	CurC uint32     `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Next *Blueprint `protobuf:"bytes,2,opt,name=Next" json:"Next,omitempty"`
 }
 
 func (m *GetOne) Reset()         { *m = GetOne{} }
@@ -392,8 +396,8 @@ func (m *GetOne) GetNext() *Blueprint {
 }
 
 type GetOneReply struct {
-	Next *Blueprint `protobuf:"bytes,1,opt" json:"Next,omitempty"`
-	Cur  *Blueprint `protobuf:"bytes,2,opt" json:"Cur,omitempty"`
+	Next *Blueprint `protobuf:"bytes,1,opt,name=Next" json:"Next,omitempty"`
+	Cur  *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
 }
 
 func (m *GetOneReply) Reset()         { *m = GetOneReply{} }
@@ -415,8 +419,8 @@ func (m *GetOneReply) GetCur() *Blueprint {
 }
 
 type CV struct {
-	Rnd uint32     `protobuf:"varint,1,opt" json:"Rnd,omitempty"`
-	Val *Blueprint `protobuf:"bytes,2,opt" json:"Val,omitempty"`
+	Rnd uint32     `protobuf:"varint,1,opt,name=Rnd" json:"Rnd,omitempty"`
+	Val *Blueprint `protobuf:"bytes,2,opt,name=Val" json:"Val,omitempty"`
 }
 
 func (m *CV) Reset()         { *m = CV{} }
@@ -431,8 +435,8 @@ func (m *CV) GetVal() *Blueprint {
 }
 
 type Prepare struct {
-	CurC uint32 `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Rnd  uint32 `protobuf:"varint,2,opt" json:"Rnd,omitempty"`
+	CurC uint32 `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Rnd  uint32 `protobuf:"varint,2,opt,name=Rnd" json:"Rnd,omitempty"`
 }
 
 func (m *Prepare) Reset()         { *m = Prepare{} }
@@ -440,10 +444,10 @@ func (m *Prepare) String() string { return proto1.CompactTextString(m) }
 func (*Prepare) ProtoMessage()    {}
 
 type Promise struct {
-	Cur *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	Rnd uint32     `protobuf:"varint,2,opt" json:"Rnd,omitempty"`
-	Val *CV        `protobuf:"bytes,3,opt" json:"Val,omitempty"`
-	Dec *Blueprint `protobuf:"bytes,4,opt" json:"Dec,omitempty"`
+	Cur *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Rnd uint32     `protobuf:"varint,2,opt,name=Rnd" json:"Rnd,omitempty"`
+	Val *CV        `protobuf:"bytes,3,opt,name=Val" json:"Val,omitempty"`
+	Dec *Blueprint `protobuf:"bytes,4,opt,name=Dec" json:"Dec,omitempty"`
 }
 
 func (m *Promise) Reset()         { *m = Promise{} }
@@ -472,8 +476,8 @@ func (m *Promise) GetDec() *Blueprint {
 }
 
 type Propose struct {
-	CurC uint32 `protobuf:"varint,1,opt" json:"CurC,omitempty"`
-	Val  *CV    `protobuf:"bytes,2,opt" json:"Val,omitempty"`
+	CurC uint32 `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Val  *CV    `protobuf:"bytes,2,opt,name=Val" json:"Val,omitempty"`
 }
 
 func (m *Propose) Reset()         { *m = Propose{} }
@@ -488,9 +492,9 @@ func (m *Propose) GetVal() *CV {
 }
 
 type Learn struct {
-	Cur     *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	Dec     *Blueprint `protobuf:"bytes,2,opt" json:"Dec,omitempty"`
-	Learned bool       `protobuf:"varint,3,opt" json:"Learned,omitempty"`
+	Cur     *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Dec     *Blueprint `protobuf:"bytes,2,opt,name=Dec" json:"Dec,omitempty"`
+	Learned bool       `protobuf:"varint,3,opt,name=Learned" json:"Learned,omitempty"`
 }
 
 func (m *Learn) Reset()         { *m = Learn{} }
@@ -512,9 +516,9 @@ func (m *Learn) GetDec() *Blueprint {
 }
 
 type CNewCur struct {
-	Cur   *Blueprint `protobuf:"bytes,1,opt" json:"Cur,omitempty"`
-	CurC  uint32     `protobuf:"varint,2,opt" json:"CurC,omitempty"`
-	State *State     `protobuf:"bytes,3,opt" json:"State,omitempty"`
+	Cur   *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	CurC  uint32     `protobuf:"varint,2,opt,name=CurC" json:"CurC,omitempty"`
+	State *State     `protobuf:"bytes,3,opt,name=State" json:"State,omitempty"`
 }
 
 func (m *CNewCur) Reset()         { *m = CNewCur{} }
@@ -533,9 +537,6 @@ func (m *CNewCur) GetState() *State {
 		return m.State
 	}
 	return nil
-}
-
-func init() {
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -3613,6 +3614,12 @@ func (m *Manager) connect(ma *machine) error {
 	return nil
 }
 
+type byId []uint32
+
+func (a byId) Len() int           { return len(a) }
+func (a byId) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byId) Less(i, j int) bool { return a[i] < a[j] }
+
 // NewConfiguration returns a new configuration given a set of machine ids and
 // a quorum size. Any given gRPC call options will be used for every RPC
 // invocation on the configuration.
@@ -3629,6 +3636,9 @@ func (m *Manager) NewConfiguration(ids []uint32, quorumSize int, timeout time.Du
 	if timeout <= 0 {
 		return nil, IllegalConfigError("timeout must be positive")
 	}
+
+	// Machine ids are sorted to ensure a globally consistent configuration id.
+	sort.Sort(byId(ids))
 
 	h := fnv.New32a()
 	binary.Write(h, binary.LittleEndian, quorumSize)

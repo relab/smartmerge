@@ -4,52 +4,51 @@ import (
 	"errors"
 	"fmt"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 )
 
-func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
+func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	prop, cnt = smc.lagree(prop)
 	//fmt.Printf("LA returned Blueprint with %d procs and %d removals.\n", len(prop.Add), len(prop.Rem))
 
 	//Proposed blueprint is already in place, or outdated.
+	if prop.LearnedCompare(smc.Blueps[0]) == 0 {
+		return cnt, nil
+	}
+
 	if prop.Compare(smc.Blueps[0]) == 1 {
 		return cnt, nil
 	}
 
-	if prop.Compare(smc.Blueps[0]) == 0 {
-		panic("Lattice agreement returned an uncomparable blueprint")
-	}
-
-	if prop.Compare(smc.Blueps[len(smc.Blueps)-1]) == 1 {
+	if prop.LearnedCompare(smc.Blueps[len(smc.Blueps)-1]) == 1 {
 		prop = smc.Blueps[len(smc.Blueps)-1]
 	}
 
-	if len(prop.Ids()) == 0 {
+	if len(prop.Add) == 0 {
 		return cnt, errors.New("Abort before proposing unacceptable configuration.")
 	}
 
 	cur := 0
-	las := new(lat.Blueprint)
+	las := new(pb.Blueprint)
 	rst := new(pb.State)
 	for i := 0; i < len(smc.Confs); i++ {
 		if i < cur {
 			continue
 		}
 
-		st, newlas, next, newCur, err := smc.Confs[i].AWriteN(prop, smc.Blueps[i])
+		writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()),prop})
 		cnt++
-		cur = smc.handleNewCur(cur, newCur)
+		cur = smc.handleNewCur(cur, writeN.Reply.GetCur())
 		if err != nil && cur <= i {
 			//Should log this for debugging
 			fmt.Println("AWriteN returned error: ",err)
 			panic("Error from AWriteN")
 		}
 
-		smc.handleNext(i, next)
-		las = las.Merge(newlas)
-		if rst.Compare(st) == 1 {
-			rst = st
+		smc.handleNext(i, writeN.Reply.GetNext())
+		las = las.Merge(writeN.Reply.GetLAState())
+		if rst.Compare(writeN.Reply.GetState()) == 1 {
+			rst = writeN.Reply.GetState()
 		}
 
 		prop = smc.Blueps[len(smc.Blueps)-1]
@@ -58,9 +57,9 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 	}
 
 	if i := len(smc.Confs) - 1; i > cur {
-		newCur, err := smc.Confs[i].SetState(las, smc.Blueps[i], rst)
+		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
 		cnt++
-		cur = smc.handleNewCur(i, newCur)
+		cur = smc.handleNewCur(i, setS.Reply.GetCur())
 		if cur <= i && err != nil {
 			//Not sure what to do:
 			fmt.Println("SetState returned error, not sure what to do")
@@ -74,7 +73,7 @@ func (smc *SmClient) Reconf(prop *lat.Blueprint) (cnt int, err error) {
 	return cnt, nil
 }
 
-func (smc *SmClient) lagree(prop *lat.Blueprint) (*lat.Blueprint, int) {
+func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 	cnt := 0
 	cur := 0
 	prop = prop.Merge(smc.Blueps[0])
@@ -84,14 +83,15 @@ func (smc *SmClient) lagree(prop *lat.Blueprint) (*lat.Blueprint, int) {
 			continue
 		}
 
-		la, next, newCur, err := smc.Confs[i].LAProp(smc.Blueps[i], prop)
+		laProp, err := smc.Confs[i].LAProp(&pb.LAProposal{uint32(smc.Blueps[i].Len()), prop})
 		cnt++
-		cur = smc.handleNewCur(cur, newCur)
+		cur = smc.handleNewCur(cur, laProp.Reply.GetCur())
 		if err != nil && cur <= i {
 			fmt.Println("LA prop returned error: ", err)
 			panic("Error from LAProp")
 		}
 
+		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.Equals(la) {
 			//fmt.Println("LA prop returned new LA state ", la)
 			prop = la
@@ -99,7 +99,7 @@ func (smc *SmClient) lagree(prop *lat.Blueprint) (*lat.Blueprint, int) {
 			continue
 		}
 
-		smc.handleNext(i, next)
+		smc.handleNext(i, laProp.Reply.GetNext())
 	}
 	if cur > 0 {
 		smc.Blueps = smc.Blueps[cur:]

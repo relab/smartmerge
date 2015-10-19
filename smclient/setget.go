@@ -2,10 +2,10 @@ package smclient
 
 import (
 	"fmt"
+	"time"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
-	"github.com/relab/smartMerge/rpc"
+	//"github.com/relab/smartMerge/rpc"
 )
 
 func (smc *SmClient) get() (rs *pb.State, cnt int) {
@@ -16,9 +16,9 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 
-		st, next, newCur, err := smc.Confs[i].AReadS(smc.Blueps[i], smc.Confs[cur].ID())
+		read, err := smc.Confs[i].AReadS(&pb.AdvRead{uint32(smc.Blueps[i].Len())})
 		cnt++
-		cur = smc.handleNewCur(cur, newCur)
+		cur = smc.handleNewCur(cur, read.Reply.GetCur())
 		if err != nil && cur <= i {
 			fmt.Println("error from AReadS: ", err)
 			//No Quorum Available. Retry
@@ -26,10 +26,10 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 			//return
 		}
 
-		smc.handleNext(i, next)
+		smc.handleNext(i, read.Reply.GetNext())
 
-		if rs.Compare(st) == 1 {
-			rs = st
+		if rs.Compare(read.Reply.GetState()) == 1 {
+			rs = read.Reply.GetState()
 		}
 	}
 	if cur > 0 {
@@ -47,15 +47,15 @@ func (smc *SmClient) set(rs *pb.State) int {
 			continue
 		}
 
-		next, newCur, err := smc.Confs[i].AWriteS(rs,smc.Confs[cur].ID(), smc.Blueps[i])
+		write, err := smc.Confs[i].AWriteS(&pb.AdvWriteS{rs,uint32(smc.Blueps[i].Len())})
 		cnt++
-		cur = smc.handleNewCur(cur, newCur)
+		cur = smc.handleNewCur(cur, write.Reply.GetCur())
 		if err != nil && cur <= i {
 			fmt.Println("AWriteS returned error, ", err)
 			panic("Error from ARead")
 		}
 
-		smc.handleNext(i, next)
+		smc.handleNext(i, write.Reply.GetNext())
 	}
 	if cur > 0 {
 		smc.Blueps = smc.Blueps[cur:]
@@ -64,14 +64,14 @@ func (smc *SmClient) set(rs *pb.State) int {
 	return cnt
 }
 
-func (smc *SmClient) handleNewCur(cur int, newCur *lat.Blueprint) int {
+func (smc *SmClient) handleNewCur(cur int, newCur *pb.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
 	return smc.findorinsert(cur, newCur)
 }
 
-func (smc *SmClient) handleNext(i int, next []*lat.Blueprint) {
+func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {
 	for _, nxt := range next {
 		if nxt != nil {
 			i = smc.findorinsert(i, nxt)
@@ -79,16 +79,13 @@ func (smc *SmClient) handleNext(i int, next []*lat.Blueprint) {
 	}
 }
 
-func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
+func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint) int {
 	old := true
 	for ; i < len(smc.Blueps); i++ {
-		switch smc.Blueps[i].Compare(blp) {
+		switch smc.Blueps[i].LearnedCompare(blp) {
+		case 0:
+			return i
 		case 1:
-			if blp.Compare(smc.Blueps[i]) == 1 {
-				//Are equal
-				//fmt.Println("Blueprints equal, return")
-				return i
-			}
 			old = false
 			continue
 		case -1:
@@ -97,8 +94,6 @@ func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 			}
 			smc.insert(i, blp)
 			return i
-		case 0:
-			panic("blueprint not comparable")
 		}
 	}
 	//fmt.Println("Inserting new highest blueprint")
@@ -106,32 +101,22 @@ func (smc *SmClient) findorinsert(i int, blp *lat.Blueprint) int {
 	return i
 }
 
-func (smc *SmClient) insert(i int, blp *lat.Blueprint) {
-	cnf, err := smc.mgr.NewConfiguration(blp.Ids(), majQuorum(blp))
+func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
+	cnf, err := smc.mgr.NewConfiguration(blp.Add, majQuorum(blp),2 * time.Second)
 	if err != nil {
 		panic("could not get new config")
 	}
 
-	if i >= len(smc.Blueps) {
-		smc.Blueps = append(smc.Blueps, blp)
-		smc.Confs = append(smc.Confs, cnf)
-		return
+	smc.Blueps = append(smc.Blueps, blp)
+	smc.Confs = append(smc.Confs, cnf)
+
+	for j:= len(smc.Blueps)-1; j>i; j-- {
+		smc.Blueps[j] = smc.Blueps[j-1]
+		smc.Confs[j] = smc.Confs[j-1]
+	} 
+
+	if len(smc.Blueps) != i + 1 {
+		smc.Blueps[i] = blp
+		smc.Confs[i] = cnf
 	}
-
-	blps := make([]*lat.Blueprint, len(smc.Blueps)+1)
-	cnfs := make([]*rpc.Configuration, len(smc.Confs)+1)
-
-	copy(blps, smc.Blueps[:i])
-	copy(cnfs, smc.Confs[:i])
-
-	blps[i] = blp
-	cnfs[i] = cnf
-
-	for ; i < len(smc.Blueps); i++ {
-		blps[i+1] = smc.Blueps[i]
-		cnfs[i+1] = smc.Confs[i]
-	}
-
-	smc.Blueps = blps
-	smc.Confs = cnfs
 }

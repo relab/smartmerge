@@ -3,44 +3,40 @@ package dynaclient
 import (
 	//"errors"
 	"fmt"
+	"time"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
-	"github.com/relab/smartMerge/rpc"
 )
 
-func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int, error) {
+func (dc *DynaClient) OrgTraverse(prop *pb.Blueprint, val []byte) ([]byte, int, error) {
 	cnt := 0
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Confs); i++ {
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
-			//Update Snapshot
-/*			if dc.Blueps[i].Compare(prop) != 1 {
-				fmt.Println("target blueprint is not greater then current blueprint")
-				return nil, cnt, errors.New("target not comparable to current")
-			}
-*/			
-			next, newCur, err := dc.Confs[i].GetOneN(dc.Blueps[i], prop)
+	
+			getOne, err := dc.Confs[i].GetOneN(&pb.GetOne{uint32(dc.Blueps[i].Len()), prop})
 			//fmt.Println("invoke getone")
 			cnt++
-			restart := dc.abortonNewCur(newCur)
-			if restart {
-				prop = prop.Merge(newCur)
+			isnew := dc.abortonNewCur(getOne.Reply.GetCur())
+			if isnew {
+				prop = prop.Merge(getOne.Reply.GetCur())
 				i = -1
 				continue
 			}
-
+			
 			if err != nil {
 				fmt.Println("Error from GetOneN")
 				return nil, 0, err
 			}
+			
+			curprop := getOne.Reply.GetNext()
 
-			newCur, err = dc.Confs[i].DWriteNSet([]*lat.Blueprint{next}, dc.Blueps[i])
+			writeN, err := dc.Confs[i].DWriteNSet(&pb.DWriteN{uint32(dc.Blueps[i].Len()),[]*pb.Blueprint{curprop}})
 			//fmt.Println("invoke writeN")
 			cnt++
-			restart = dc.abortonNewCur(newCur)
-			if restart {
-				prop = prop.Merge(newCur)
+			isnew = dc.abortonNewCur(writeN.Reply.GetCur())
+			if isnew {
+				prop = prop.Merge(writeN.Reply.GetCur())
 				i = -1
 				continue
 			}
@@ -52,12 +48,12 @@ func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int,
 		}
 
 		//ReadInView:
-		st, _, newCur, err := dc.Confs[i].DReadS(dc.Blueps[i], nil)
+		read, err := dc.Confs[i].DReadS(&pb.DRead{uint32(dc.Blueps[i].Len()), nil})
 		//fmt.Println("invoke readS")
 		cnt++
-		restart := dc.abortonNewCur(newCur)
+		restart := dc.abortonNewCur(read.Reply.GetCur())
 		if restart {
-			prop = prop.Merge(newCur)
+			prop = prop.Merge(read.Reply.GetCur())
 			i = -1
 			continue
 		}
@@ -66,13 +62,13 @@ func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int,
 			return nil, 0, err
 		}
 
-		//Using DWriteS here is a shortcut, but I think it works just fine.
-		next, newCur, err := dc.Confs[i].DWriteS(nil, dc.Blueps[i])
+		//Using DWriteS instead of readN is a shortcut, but works just fine.
+		readN, err := dc.Confs[i].DWriteS(&pb.AdvWriteS{nil, uint32(dc.Blueps[i].Len())})
 		//fmt.Println("invoke readN")
 		cnt++
-		restart = dc.abortonNewCur(newCur)
+		restart = dc.abortonNewCur(readN.Reply.GetCur())
 		if restart {
-			prop = prop.Merge(newCur)
+			prop = prop.Merge(read.Reply.GetCur())
 			i = -1
 			continue
 		}
@@ -81,20 +77,21 @@ func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int,
 			return nil, 0, err
 		}
 
+		next := read.Reply.GetNext()
 		prop = dc.handleNext(i, next, prop)
-		if rst.Compare(st) == 1 {
-			rst = st
+		if rst.Compare(read.Reply.GetState()) == 1 {
+			rst = read.Reply.GetState()
 		}
 
 		if len(next) == 0 {
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
-			_, newCur, err = dc.Confs[i].DWriteS(wst, dc.Blueps[i])
+			write, err := dc.Confs[i].DWriteS(&pb.AdvWriteS{wst, uint32(dc.Blueps[i].Len())})
 			//fmt.Println("invoke writeS")
 			cnt++
-			restart = dc.abortonNewCur(newCur)
+			restart = dc.abortonNewCur(write.Reply.GetCur())
 			if restart {
-				prop = prop.Merge(newCur)
+				prop = prop.Merge(write.Reply.GetCur())
 				i = -1
 				continue
 			}
@@ -105,12 +102,12 @@ func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int,
 			}
 
 			//Using DWriteS here is a shortcut, but I think it works just fine.
-			next, newCur, err := dc.Confs[i].DWriteS(nil, dc.Blueps[i])
+			readN, err = dc.Confs[i].DWriteS(&pb.AdvWriteS{nil, uint32(dc.Blueps[i].Len())})
 			//fmt.Println("invoke readN")
 			cnt++
-			restart = dc.abortonNewCur(newCur)
+			restart = dc.abortonNewCur(readN.Reply.GetCur())
 			if restart {
-				prop = prop.Merge(newCur)
+				prop = prop.Merge(readN.Reply.GetCur())
 				i = -1
 				continue
 			}
@@ -120,17 +117,18 @@ func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int,
 				return nil, 0, err
 			}
 
+			next = readN.Reply.GetNext()
 			prop = dc.handleNext(i, next, prop)
 
 		}
 
 		if len(next) > 0 {
-			newCur, err = dc.Confs[i].DWriteNSet(next, dc.Blueps[i])
+			writeN, err := dc.Confs[i].DWriteNSet(&pb.DWriteN{uint32(dc.Blueps[i].Len()),next})
 			//fmt.Println("invoke writeN")
 			cnt++
-			restart = dc.abortonNewCur(newCur)
+			restart = dc.abortonNewCur(writeN.Reply.GetCur())
 			if restart {
-				prop = prop.Merge(newCur)
+				prop = prop.Merge(writeN.Reply.GetCur())
 				i = -1
 				continue
 			}
@@ -143,15 +141,15 @@ func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int,
 		}
 	}
 
-	i := len(dc.Confs) -1
-	if i > 0  {
-		dc.Confs[i].DSetCur(dc.Blueps[i])
+	
+	if i := len(dc.Confs) -1; i > 0  {
+		dc.Confs[i].DSetCur(&pb.NewCur{dc.Blueps[i], uint32(dc.Blueps[i].Len())})
 		//fmt.Println("setcur")
 		cnt++
+	
+		dc.Blueps = dc.Blueps[i:]
+		dc.Confs = dc.Confs[i:]
 	}
-
-	dc.Blueps = dc.Blueps[i:]
-	dc.Confs = dc.Confs[i:]
 
 	if val == nil {
 		return rst.Value, cnt, nil
@@ -159,31 +157,20 @@ func (dc *DynaClient) OrgTraverse(prop *lat.Blueprint, val []byte) ([]byte, int,
 	return nil, cnt, nil
 }
 
-func (dc *DynaClient) abortonNewCur(newCur *lat.Blueprint) bool {
-	if newCur.Compare(dc.Blueps[0]) == 1 {
+func (dc *DynaClient) abortonNewCur(newCur *pb.Blueprint) bool {
+	switch newCur.Compare(dc.Blueps[0]) {
+	case 1: 
 		return false
-	}
-	found := false
-	cur := 1
-	for ; cur < len(dc.Blueps); cur++ {
-		if newCur.Compare(dc.Blueps[cur]) == 1 {
-			if dc.Blueps[cur].Compare(newCur) == 1 {
-				found = true
-			}
-			break
-		}
-	}
-
-	if found {
-		dc.Blueps = dc.Blueps[cur:cur+1]
-		dc.Confs = dc.Confs[cur:cur+1]
-	} else {
-		cnf, err := dc.mgr.NewConfiguration(newCur.Ids(), majQuorum(newCur))
+	case -1:
+		cnf, err := dc.mgr.NewConfiguration(newCur.Add, majQuorum(newCur), 2* time.Second)
 		if err != nil {
 			panic("could not get new config")
 		}
-		dc.Blueps = []*lat.Blueprint{newCur}
-		dc.Confs = []*rpc.Configuration{cnf}
+		dc.Blueps = []*pb.Blueprint{newCur}
+		dc.Confs = []*pb.Configuration{cnf}
+		return true
+	case 0:
+		panic("Old and new current blueprint are not comparable.")
 	}
-	return true
+	return false
 }

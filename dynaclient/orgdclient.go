@@ -3,15 +3,14 @@ package dynaclient
 import (
 	"fmt"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
-	"github.com/relab/smartMerge/rpc"
+	pb "github.com/relab/smartMerge/proto"
 )
 
 type OrgDynaClient struct {
 	DynaClient
 }
 
-func NewOrg(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*OrgDynaClient, error) {
+func NewOrg(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*OrgDynaClient, error) {
 	dc, err := New(initBlp, mgr, id)
 	if err != nil {
 		return nil, err
@@ -36,12 +35,12 @@ func (dc *OrgDynaClient) Write(val []byte) int {
 	return cnt
 }
 
-func (dc *OrgDynaClient) Reconf(bp *lat.Blueprint) (int, error) {
+func (dc *OrgDynaClient) Reconf(bp *pb.Blueprint) (int, error) {
 	_, cnt, err := dc.OrgTraverse(bp, nil)
 	return cnt, err
 }
 
-func (dc *OrgDynaClient) GetCur() *lat.Blueprint {
+func (dc *OrgDynaClient) GetCur() *pb.Blueprint {
 	if len(dc.Blueps) == 0 {
 		return nil
 	}

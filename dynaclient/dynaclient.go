@@ -3,37 +3,36 @@ package dynaclient
 import (
 	"errors"
 	"fmt"
+	"time"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
-	//pb "github.com/relab/smartMerge/proto"
-	"github.com/relab/smartMerge/rpc"
+	pb "github.com/relab/smartMerge/proto"
 )
 
-func majQuorum(bp *lat.Blueprint) int {
+func majQuorum(bp *pb.Blueprint) int {
 	return len(bp.Add)/2 + 1
 }
 
 type DynaClient struct {
-	Blueps []*lat.Blueprint
-	Confs  []*rpc.Configuration
-	mgr    *rpc.Manager
+	Blueps []*pb.Blueprint
+	Confs  []*pb.Configuration
+	mgr    *pb.Manager
 	ID     uint32
 }
 
-func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*DynaClient, error) {
-	conf, err := mgr.NewConfiguration(initBlp.Ids(), majQuorum(initBlp))
+func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*DynaClient, error) {
+	conf, err := mgr.NewConfiguration(initBlp.Add, majQuorum(initBlp), 2* time.Second)
 	if err != nil {
 		return nil, err
 	}
 
-	err = conf.DSetCur(initBlp)
+	_, err = conf.DSetCur(&pb.NewCur{initBlp, uint32(initBlp.Len())})
 	if err != nil {
 		fmt.Println("initial SetCur returned error: ", err)
 		return nil, errors.New("Initial SetCur failed.")
 	}
 	return &DynaClient{
-		Blueps: []*lat.Blueprint{initBlp},
-		Confs:  []*rpc.Configuration{conf},
+		Blueps: []*pb.Blueprint{initBlp},
+		Confs:  []*pb.Configuration{conf},
 		mgr:    mgr,
 		ID:     id,
 	}, nil
@@ -41,7 +40,16 @@ func New(initBlp *lat.Blueprint, mgr *rpc.Manager, id uint32) (*DynaClient, erro
 
 //Atomic read
 func (dc *DynaClient) Read() (val []byte, cnt int) {
-	val, cnt, err := dc.Traverse(nil, nil)
+	val, cnt, err := dc.Traverse(nil, nil, false)
+	if err != nil {
+		fmt.Println("Traverse returned error: ", err)
+	}
+	return val, cnt
+}
+
+//Regular read
+func (dc *DynaClient) RRead() (val []byte, cnt int) {
+	val, cnt, err := dc.Traverse(nil, nil, true)
 	if err != nil {
 		fmt.Println("Traverse returned error: ", err)
 	}
@@ -49,19 +57,19 @@ func (dc *DynaClient) Read() (val []byte, cnt int) {
 }
 
 func (dc *DynaClient) Write(val []byte) int {
-	_, cnt, err := dc.Traverse(nil, val)
+	_, cnt, err := dc.Traverse(nil, val, false)
 	if err != nil {
 		fmt.Println("Traverse returned error: ", err)
 	}
 	return cnt
 }
 
-func (dc *DynaClient) Reconf(bp *lat.Blueprint) (int, error) {
-	_, cnt, err := dc.Traverse(bp, nil)
+func (dc *DynaClient) Reconf(bp *pb.Blueprint) (int, error) {
+	_, cnt, err := dc.Traverse(bp, nil, false)
 	return cnt, err
 }
 
-func (dc *DynaClient) GetCur() *lat.Blueprint {
+func (dc *DynaClient) GetCur() *pb.Blueprint {
 	if len(dc.Blueps) == 0 {
 		return nil
 	}

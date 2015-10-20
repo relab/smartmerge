@@ -139,14 +139,17 @@ func (cs *ConsServer) CPrepare(ctx context.Context, pre *pb.Prepare) (*pb.Promis
 
 	var cur *pb.Blueprint
 	if pre.CurC != cs.CurC {
+		// Configuration outdated
 		cur = cs.Cur
 	}
 
 	if cs.Next[pre.CurC] != nil {
+		// Something was decided already
 		return &pb.Promise{Cur: cur, Dec: cs.Next[pre.CurC]}, nil
 	}
 
 	if rnd, ok := cs.Rnd[pre.CurC]; !ok || pre.Rnd > rnd  {
+		// A Prepare in a new and higher round.
 		cs.Rnd[pre.CurC] = pre.Rnd 
 		return &pb.Promise{Cur: cur, Val: cs.Val[pre.CurC]}, nil
 	}
@@ -161,14 +164,17 @@ func (cs *ConsServer) CAccept(ctx context.Context, pro *pb.Propose) (lrn *pb.Lea
 
 	var cur *pb.Blueprint
 	if pro.CurC != cs.CurC {
+		// Configuration outdated.
 		cur = cs.Cur
 	}
 
 	if cs.Next[pro.CurC] != nil {
+		// This instance is decided already
 		return &pb.Learn{Cur: cur, Dec: cs.Next[pro.CurC]}, nil
 	}
 
 	if cs.Rnd[pro.CurC] > pro.Val.Rnd {
+		// Accept in old round.
 		return &pb.Learn{Cur: cur, Learned: false}, nil
 	}
 	

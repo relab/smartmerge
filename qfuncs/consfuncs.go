@@ -6,7 +6,7 @@ import (
 
 )
 
-var CReadSQF = DReadSQF
+var CReadSQF = AReadSQF
 var CWriteSQF = AWriteSQF
 var CSetStateQF = SetCurQF
 

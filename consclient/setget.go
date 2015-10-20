@@ -2,10 +2,9 @@ package consclient
 
 import (
 	"fmt"
+	"time"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
-	"github.com/relab/smartMerge/rpc"
 )
 
 func (cc *CClient) get() (rs *pb.State, cnt int) {
@@ -16,20 +15,22 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 
-		st, next, newCur, err := cc.Confs[i].CReadS(cc.Blueps[i], cc.Confs[cur].ID(), nil)
+		read, err := cc.Confs[i].CReadS(&pb.DRead{uint32(cc.Blueps[i].Len()), nil})
 		cnt++
-		cur = cc.handleNewCur(cur, newCur)
+		cur = cc.handleNewCur(cur, read.Reply.GetCur())
 		if err != nil && cur <= i {
-			fmt.Println("error from AReadS: ", err)
+			fmt.Println("error from CReadS: ", err)
 			//No Quorum Available. Retry
-			panic("Aread returned error")
+			panic("Cread returned error")
 			//return
 		}
 
-		cc.handleNext(i, next)
-
-		if rs.Compare(st) == 1 {
-			rs = st
+		for _, next := range read.Reply.GetNext() {
+			cc.handleNext(i, next)
+		}
+		
+		if rs.Compare(read.Reply.GetState()) == 1 {
+			rs = read.Reply.GetState()
 		}
 	}
 	if cur > 0 {
@@ -47,15 +48,19 @@ func (cc *CClient) set(rs *pb.State) int {
 			continue
 		}
 
-		next, newCur, err := cc.Confs[i].CWriteS(rs,cc.Blueps[i], cc.Confs[cur].ID())
+		write, err := cc.Confs[i].CWriteS(&pb.AdvWriteS{rs,uint32(cc.Blueps[i].Len())})
 		cnt++
-		cur = cc.handleNewCur(cur, newCur)
+		cur = cc.handleNewCur(cur, write.Reply.GetCur())
 		if err != nil && cur <= i {
 			fmt.Println("CWriteS returned error, ", err)
 			panic("Error from CRead")
 		}
 
-		cc.handleNext(i, next)
+		// This should never be more than one iteration. How to fix that?
+		for _, next := range write.Reply.GetNext() {
+			cc.handleNext(i, next)
+		}
+		
 	}
 	if cur > 0 {
 		cc.Blueps = cc.Blueps[cur:]
@@ -64,29 +69,26 @@ func (cc *CClient) set(rs *pb.State) int {
 	return cnt
 }
 
-func (cc *CClient) handleNewCur(cur int, newCur *lat.Blueprint) int {
+func (cc *CClient) handleNewCur(cur int, newCur *pb.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
 	return cc.findorinsert(cur, newCur)
 }
 
-func (cc *CClient) handleNext(i int, next *lat.Blueprint) {
+func (cc *CClient) handleNext(i int, next *pb.Blueprint) {
 	if next != nil {
 		i = cc.findorinsert(i, next)
 	}
 }
 
-func (cc *CClient) findorinsert(i int, blp *lat.Blueprint) int {
+func (cc *CClient) findorinsert(i int, blp *pb.Blueprint) int {
 	old := true
 	for ; i < len(cc.Blueps); i++ {
-		switch cc.Blueps[i].Compare(blp) {
+		switch cc.Blueps[i].LearnedCompare(blp) {
+		case 0:
+			return i
 		case 1:
-			if blp.Compare(cc.Blueps[i]) == 1 {
-				//Are equal
-				//fmt.Println("Blueprints equal, return")
-				return i
-			}
 			old = false
 			continue
 		case -1:
@@ -95,8 +97,6 @@ func (cc *CClient) findorinsert(i int, blp *lat.Blueprint) int {
 			}
 			cc.insert(i, blp)
 			return i
-		case 0:
-			panic("blueprint not comparable")
 		}
 	}
 	//fmt.Println("Inserting new highest blueprint")
@@ -104,32 +104,22 @@ func (cc *CClient) findorinsert(i int, blp *lat.Blueprint) int {
 	return i
 }
 
-func (cc *CClient) insert(i int, blp *lat.Blueprint) {
-	cnf, err := cc.mgr.NewConfiguration(blp.Ids(), majQuorum(blp))
+func (cc *CClient) insert(i int, blp *pb.Blueprint) {
+	cnf, err := cc.mgr.NewConfiguration(blp.Add, majQuorum(blp),2 * time.Second)
 	if err != nil {
 		panic("could not get new config")
 	}
 
-	if i >= len(cc.Blueps) {
-		cc.Blueps = append(cc.Blueps, blp)
-		cc.Confs = append(cc.Confs, cnf)
-		return
+	cc.Blueps = append(cc.Blueps, blp)
+	cc.Confs = append(cc.Confs, cnf)
+
+	for j:= len(cc.Blueps)-1; j>i; j-- {
+		cc.Blueps[j] = cc.Blueps[j-1]
+		cc.Confs[j] = cc.Confs[j-1]
+	} 
+
+	if len(cc.Blueps) != i + 1 {
+		cc.Blueps[i] = blp
+		cc.Confs[i] = cnf
 	}
-
-	blps := make([]*lat.Blueprint, len(cc.Blueps)+1)
-	cnfs := make([]*rpc.Configuration, len(cc.Confs)+1)
-
-	copy(blps, cc.Blueps[:i])
-	copy(cnfs, cc.Confs[:i])
-
-	blps[i] = blp
-	cnfs[i] = cnf
-
-	for ; i < len(cc.Blueps); i++ {
-		blps[i+1] = cc.Blueps[i]
-		cnfs[i+1] = cc.Confs[i]
-	}
-
-	cc.Blueps = blps
-	cc.Confs = cnfs
 }

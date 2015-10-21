@@ -6,13 +6,10 @@ import (
 	"os"
 	"time"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
-	"github.com/relab/smartMerge/rpc"
-	//"github.com/relab/smartMerge/smclient"
-	//"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	"github.com/relab/smartMerge/util"
+	pb "github.com/relab/smartMerge/proto"
 )
 
 func usermain() {
@@ -25,13 +22,8 @@ func usermain() {
 		return
 	}
 
-	iadd := make(map[lat.ID]bool, *initsize)
 
-	for i := 0; i < *initsize; i++ {
-		iadd[lat.ID(ids[i])] = true
-	}
-
-	initBlp := lat.Blueprint{Add: iadd, Rem: nil}
+	initBlp := pb.Blueprint{Add: ids[:*initsize], Rem: nil}
 
 	client, mgr, err := NewClient(addrs, &initBlp, *alg, *clientid)
 	defer PrintErrors(mgr)
@@ -49,8 +41,9 @@ func usermain() {
 		fmt.Println("Choose operation:")
 		fmt.Println("  1: Read")
 		fmt.Println("  2: Write")
-		fmt.Println("  3: Reconfigure")
-		fmt.Println("  4: BenchmarkWrites")
+		fmt.Println("  3: Regular Read")
+		fmt.Println("  4: Reconfigure")
+		fmt.Println("  5: BenchmarkWrites")
 		fmt.Println("  0: Exit")
 
 		var op int
@@ -78,8 +71,16 @@ func usermain() {
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			fmt.Printf("Did %d accesses.\n", cnt)
 		case 3:
+			reqsent := time.Now()
+			bytes, cnt := client.RRead()
+			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
+			state := string(bytes)
+			fmt.Println("Current value is: ", state)
+			fmt.Printf("Has %d bytes.\n", len(bytes))
+			fmt.Printf("Did %d accesses.\n", cnt)
+		case 4:
 			handleReconf(client, ids)
-		case 4: 
+		case 5: 
 			var size, writes int
 			fmt.Println("Enter size:")
 			fmt.Scanln(&size)
@@ -115,22 +116,22 @@ func handleReconf(c RWRer, ids []uint32) {
 			fmt.Println(err)
 			return
 		}
-		lid := lat.ID(id)
-		if _, ok := cur.Rem[lid]; ok {
-			return
+		for _, rid := range cur.Rem {
+			if rid == id {
+				fmt.Println("Id:", id, " was already removed.")
+				return
+			}
 		}
-		if _, ok := cur.Add[lid]; ok {
-			return
+		for _, aid := range cur.Add {
+			if aid == id {
+				fmt.Println("Id:", id, " was already added.")
+				return
+			}
 		}
 
-		target := new(lat.Blueprint)
-		for k, _ := range cur.Add {
-			target.AddP(k)
-		}
-		for k, _ := range cur.Rem {
-			target.RemP(k)
-		}
-		target.AddP(lid)
+		target := new(pb.Blueprint)
+		target.Add = []uint32{id}
+		
 		fmt.Println("Starting reconfiguration with target ", target)
 		reqsent := time.Now()
 		cnt, err := c.Reconf(target)
@@ -143,7 +144,7 @@ func handleReconf(c RWRer, ids []uint32) {
 		return
 	case 2:
 		fmt.Println("Ids in the current configuration:")
-		for id := range cur.Add {
+		for _, id := range cur.Add {
 			fmt.Println(id)
 		}
 		fmt.Println("Type the id to be removed.")
@@ -154,16 +155,25 @@ func handleReconf(c RWRer, ids []uint32) {
 			return
 		}
 
-		lid := lat.ID(id)
-		if _, ok := cur.Rem[lid]; ok {
+		for _, rid := range cur.Rem {
+			if rid == id {
+				fmt.Println("Id:", id, " was already removed.")
+				return
+			}
+		}
+		found := false
+		for _, aid := range cur.Add {
+			if aid == id {
+				found = true
+			}
+		}
+		if !found {
+			fmt.Println("Id:", id, " was not added yet.")
 			return
 		}
-		if _, ok := cur.Add[lid]; !ok {
-			return
-		}
-
-		target := new(lat.Blueprint)
-		target.RemP(lid)
+		
+		target := new(pb.Blueprint)
+		target.Rem = []uint32{id}
 		target = target.Merge(cur)
 
 		reqsent := time.Now()
@@ -183,7 +193,7 @@ func handleReconf(c RWRer, ids []uint32) {
 
 }
 
-func PrintErrors(mgr *rpc.Manager) {
+func PrintErrors(mgr *pb.Manager) {
 	errs := mgr.GetErrors()
 	founderrs := false
 	for id, e := range errs {

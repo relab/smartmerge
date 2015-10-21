@@ -16,14 +16,15 @@ import (
 	"log"
 
 	"github.com/relab/goxos/kvs/bgen"
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
-	"github.com/relab/smartMerge/rpc"
 	"github.com/relab/smartMerge/smclient"
 	"github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/util"
+	qf "github.com/relab/smartMerge/qfuncs"
+	pb "github.com/relab/smartMerge/proto"
+	grpc "google.golang.org/grpc"
 )
 
 var (
@@ -123,13 +124,7 @@ func benchmain() {
 		return
 	}
 
-	iadd := make(map[lat.ID]bool, *initsize)
-
-	for i := 0; i < *initsize; i++ {
-		iadd[lat.ID(ids[i])] = true
-	}
-
-	initBlp := &lat.Blueprint{Add: iadd, Rem: nil}
+	initBlp := &pb.Blueprint{Add: ids[:*initsize], Rem: nil}
 
 	var wg sync.WaitGroup
 
@@ -181,14 +176,35 @@ func benchmain() {
 	return
 }
 
-func NewClient(addrs []string, initB *lat.Blueprint, alg string, id int) (cl RWRer, mgr *rpc.Manager, err error) {
-	mgr, err = rpc.NewManager(addrs)
+func NewClient(addrs []string, initB *pb.Blueprint, alg string, id int) (cl RWRer, mgr *pb.Manager, err error) {
+	mgr, err = pb.NewManager(addrs, pb.WithGrpcDialOptions(
+		grpc.WithBlock(),
+		grpc.WithTimeout(50*time.Millisecond),
+		grpc.WithInsecure()),
+		pb.WithAReadSQuorumFunc(qf.AReadSQF),
+		pb.WithAWriteSQuorumFunc(qf.AWriteSQF),
+		pb.WithAWriteNQuorumFunc(qf.AWriteNQF),
+		pb.WithSetCurQuorumFunc(qf.SetCurQF),
+		pb.WithLAPropQuorumFunc(qf.LAPropQF),
+		pb.WithSetStateQuorumFunc(qf.SetStateQF),
+		pb.WithDReadSQuorumFunc(qf.DReadSQF),
+		pb.WithDWriteSQuorumFunc(qf.DWriteSQF),
+		pb.WithDWriteNSetQuorumFunc(qf.DWriteNSetQF),
+		pb.WithDSetCurQuorumFunc(qf.DSetCurQF),
+		pb.WithGetOneNQuorumFunc(qf.GetOneNQF),
+		pb.WithCReadSQuorumFunc(qf.CReadSQF),
+		pb.WithCWriteSQuorumFunc(qf.CWriteSQF),
+		pb.WithCPrepareQuorumFunc(qf.CPrepareQF),
+		pb.WithCAcceptQuorumFunc(qf.CAcceptQF),
+		pb.WithCSetStateQuorumFunc(qf.CSetStateQF),
+	)
 	if err != nil {
 		fmt.Println("Creating manager returned error: ", err)
 		return
 	}
 	switch alg {
 	case "", "sm":
+		
 		cl, err = smclient.New(initB, mgr, uint32(id))
 	case "dyna":
 		cl, err = dynaclient.New(initB, mgr, uint32(id))
@@ -313,8 +329,9 @@ func handleSignal(signal os.Signal) bool {
 }
 
 type RWRer interface {
+	RRead() ([]byte,int)
 	Read() ([]byte, int)
 	Write(val []byte) int
-	Reconf(prop *lat.Blueprint) (int, error)
-	GetCur() *lat.Blueprint
+	Reconf(prop *pb.Blueprint) (int, error)
+	GetCur() *pb.Blueprint
 }

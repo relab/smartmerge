@@ -7,7 +7,7 @@ import (
 	"time"
 	"sync"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
+	pb "github.com/relab/smartMerge/proto"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	"github.com/relab/smartMerge/util"
@@ -23,13 +23,7 @@ func expmain() {
 		return
 	}
 
-	iadd := make(map[lat.ID]bool, *initsize)
-
-	for i := 0; i < *initsize; i++ {
-		iadd[lat.ID(ids[i])] = true
-	}
-
-	initBlp := &lat.Blueprint{Add: iadd, Rem: nil}
+	initBlp := &pb.Blueprint{Add: ids[:*initsize], Rem: nil}
 
 	if *doelog {
 		elog.Enable()
@@ -72,8 +66,8 @@ func expmain() {
 func remove(c RWRer,ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()	
 	cur := c.GetCur()
-	target := new(lat.Blueprint)
-	target.RemP(lat.ID(ids[i]))
+	target := new(pb.Blueprint)
+	target.Rem = []uint32{ids[i]}
 	target = target.Merge(cur)
 		
 	<-sc
@@ -94,8 +88,8 @@ func adds(c RWRer,ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 		fmt.Printf("Configuration file does not hold %d processes.", i+1)
 		return
 	}
-	target := new(lat.Blueprint)
-	target.AddP(lat.ID(ids[i]))
+	target := new(pb.Blueprint)
+	target.Add = []uint32{ids[i]}
 	target = target.Merge(cur)
 	
 	if target.Equals(cur) {

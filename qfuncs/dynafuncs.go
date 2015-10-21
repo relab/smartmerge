@@ -36,7 +36,7 @@ var DReadSQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvRea
 	return lastrep, true	
 }
 
-var DWriteSQF = func(c *pr.Configuration, replies []*pr.AdvWriteNReply) (*pr.AdvWriteNReply, bool) {
+var DWriteSQF = func(c *pr.Configuration, replies []*pr.AdvWriteSReply) (*pr.AdvWriteSReply, bool) {
 	
 	// Stop RPC if new current configuration reported. 
 	lastrep := replies[len(replies)-1]
@@ -49,18 +49,7 @@ var DWriteSQF = func(c *pr.Configuration, replies []*pr.AdvWriteNReply) (*pr.Adv
 	if len(replies) < c.MaxQuorum() {
 		return nil, false
 	}
-	
-	lastrep = new(pr.AdvWriteNReply)
-	for i, rep := range replies {
-		if i == len(replies)-1 {
-			break
-		}
-		if lastrep.GetState().Compare(rep.GetState()) == 1 {
-			lastrep.State = rep.GetState()
-		}
-		lastrep.LAState = lastrep.GetLAState().Merge(rep.GetLAState())
-	}
-	
+		
 	next := make([]*pr.Blueprint,0,1)
 	for _, rep := range replies {
 		next = DGetBlueprintSlice(next, rep)

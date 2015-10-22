@@ -174,11 +174,10 @@ func GetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {
 }
 
 func addLearned(bls []*pr.Blueprint, bp *pr.Blueprint) []*pr.Blueprint {
-	place := -1
+	place := 0
 	
 	findplacefor:
 	for _, blpr := range bls {
-		place += 1
 		switch blpr.LearnedCompare(bp) {
 		case 0:
 			//New blueprint already present
@@ -186,6 +185,7 @@ func addLearned(bls []*pr.Blueprint, bp *pr.Blueprint) []*pr.Blueprint {
 		case -1:
 			break findplacefor
 		default:
+			place += 1
 			continue
 		}
 	}

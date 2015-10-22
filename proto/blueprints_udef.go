@@ -90,6 +90,10 @@ func (bp *Blueprint) Equals(blpr *Blueprint) bool {
 }
 
 func (bp *Blueprint) Len() int {
+	if bp == nil {
+		return 0
+	}
+	
 	return len(bp.Add) + (2 * len(bp.Rem))
 }
 

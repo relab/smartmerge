@@ -151,7 +151,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRep
 	if rr.CurC < rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{rs.RState, rs.Cur, nil}, nil
+		return &pb.AdvReadReply{nil, rs.Cur, nil}, nil
 	}
 
 	return &pb.AdvReadReply{State: rs.RState, Next: rs.Next}, nil
@@ -165,14 +165,14 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 		rs.RState = wr.State
 	}
 
-	if wr.CurC == 0 {
-		return &pb.AdvWriteSReply{}, nil
-	}
+	// if wr.CurC == 0 {
+// 		return &pb.AdvWriteSReply{}, nil
+// 	}
 
 	if wr.CurC < rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteSReply{rs.Cur, rs.Next}, nil
+		return &pb.AdvWriteSReply{rs.Cur, nil}, nil
 	}
 
 	return &pb.AdvWriteSReply{Next: rs.Next}, nil

@@ -18,13 +18,13 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 
 		read, err := smc.Confs[i].AReadS(&pb.AdvRead{uint32(smc.Blueps[i].Len())})
 		cnt++
-		cur = smc.handleNewCur(cur, read.Reply.GetCur())
-		if err != nil && cur <= i {
+		if err != nil {
 			fmt.Println("error from AReadS: ", err)
 			//No Quorum Available. Retry
 			panic("Aread returned error")
 			//return
 		}
+		cur = smc.handleNewCur(cur, read.Reply.GetCur())
 
 		smc.handleNext(i, read.Reply.GetNext())
 
@@ -49,12 +49,12 @@ func (smc *SmClient) set(rs *pb.State) int {
 
 		write, err := smc.Confs[i].AWriteS(&pb.AdvWriteS{rs,uint32(smc.Blueps[i].Len())})
 		cnt++
-		cur = smc.handleNewCur(cur, write.Reply.GetCur())
-		if err != nil && cur <= i {
+		if err != nil {
 			fmt.Println("AWriteS returned error, ", err)
 			panic("Error from ARead")
 		}
 
+		cur = smc.handleNewCur(cur, write.Reply.GetCur())
 		smc.handleNext(i, write.Reply.GetNext())
 	}
 	if cur > 0 {

@@ -38,13 +38,13 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 
 		writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()),prop})
 		cnt++
-		cur = smc.handleNewCur(cur, writeN.Reply.GetCur())
-		if err != nil && cur <= i {
+		if err != nil {
 			//Should log this for debugging
 			fmt.Println("AWriteN returned error: ",err)
 			panic("Error from AWriteN")
 		}
 
+		cur = smc.handleNewCur(cur, writeN.Reply.GetCur())
 		smc.handleNext(i, writeN.Reply.GetNext())
 		las = las.Merge(writeN.Reply.GetLAState())
 		if rst.Compare(writeN.Reply.GetState()) == 1 {
@@ -59,12 +59,13 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	if i := len(smc.Confs) - 1; i > cur {
 		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
 		cnt++
-		cur = smc.handleNewCur(i, setS.Reply.GetCur())
-		if cur <= i && err != nil {
+		if err != nil {
 			//Not sure what to do:
 			fmt.Println("SetState returned error, not sure what to do")
 			panic("Error from SetState")
 		}
+		
+		cur = smc.handleNewCur(i, setS.Reply.GetCur())
 	}
 
 	smc.Blueps = smc.Blueps[cur:]
@@ -85,12 +86,12 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 
 		laProp, err := smc.Confs[i].LAProp(&pb.LAProposal{uint32(smc.Blueps[i].Len()), prop})
 		cnt++
-		cur = smc.handleNewCur(cur, laProp.Reply.GetCur())
-		if err != nil && cur <= i {
+		if err != nil {
 			fmt.Println("LA prop returned error: ", err)
 			panic("Error from LAProp")
 		}
 
+		cur = smc.handleNewCur(cur, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.Equals(la) {
 			//fmt.Println("LA prop returned new LA state ", la)

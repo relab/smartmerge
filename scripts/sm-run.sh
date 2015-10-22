@@ -1,14 +1,16 @@
 #!/bin/sh
 
-echo starting servers.
-#ssh pitter30 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
-#ssh pitter31 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
-#ssh pitter32 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
-ssh pitter30 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > $SM/pi30servlog 2>&1 &"
-ssh pitter31 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > $SM/pi31servlog 2>&1 &"
-ssh pitter32 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > $SM/pi32servlog 2>&1 &"
-
 export SM=$HOME/mygo/src/github.com/relab/smartMerge
+
+echo starting servers.
+for Pi in 9 10 11 12 13 14 15 17 18 19
+do
+	ssh pitter"$Pi" "nohup $SM/server/server -gcoff -all-cores -port 13000 > $SM/pi'$Pi'servlog 2>&1 &"
+done
+
+#ssh pitter24 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
+#ssh pitter25 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
+#ssh pitter26 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
 
 sleep 1
 
@@ -16,27 +18,37 @@ sleep 1
 
 echo starting Writers
 #ssh pitter21 "$SM/scripts/wclients sm"
-ssh pitter28 "nohup client -conf $SM/client/addrList -alg=sm -mode=bench -contW -size=4000 -nclients=5 -id=5 -initsize=12 -gc-off -all-cores > /local/scratch/ljehl/writerslog 2>&1 &"
+for Pi in {30..34}
+do
+ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=10 -gc-off -all-cores > /local/scratch/ljehl/pi'$Pi'writerslog1 2>&1 &"
+
+#ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=7 -gc-off -all-cores > /local/scratch/ljehl/pi'$Pi'writerslog2 2>&1 &"
+done
 
 sleep 3
 
 
-echo starting Reconfigurers
 if ! [ "$*" == "" ]; then
-client -conf $SM/client/addrList -alg=sm -mode=exp -rm -nclients="$*" -initsize=12 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
+	echo starting Reconfigurers
+	client -conf $SM/scripts/newList -alg=sm -mode=exp -rm -nclients="$*" -initsize=10 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
 else
-	sleep 20
+	echo no reconfiguration, waiting 10 seconds
+	sleep 10
 fi
 
 sleep 1
 echo stopping Writers
-ssh pitter28 "killall client"
-ssh pitter28 "mv /local/scratch/ljehl/*.elog $SM/"
-ssh pitter28 "mv /local/scratch/ljehl/writerslog* $SM/"
+
+for Pi in {30..34}
+do
+ssh pitter"$Pi" "killall client"
+ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/"
+ssh pitter"$Pi" "mv /local/scratch/ljehl/*writerslog* $SM/"
+done
 mv /local/scratch/ljehl/*.elog $SM/
 mv /local/scratch/ljehl/reconflog $SM/
 
-ssh pitter30 "cd $SM/server && killall server" 
-ssh pitter31 "cd $SM/server && killall server" 
-ssh pitter32 "cd $SM/server && killall server" 
-
+for Pi in 9 10 11 12 13 14 15 17 18 19
+do
+	ssh pitter"$Pi" "cd $SM/server && killall server" 
+done

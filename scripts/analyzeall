@@ -9,6 +9,7 @@ done
 if [ "$2" == "" ]; then  
 	echo Using default value for normal
 	efmt -file="$Files" -outfile="$1"
+	efmt -file="$Files" -outfile="$1" -debug
 else
 	echo Using normal=$2
 	efmt -file="$Files" -outfile="$1" -normal="$2"

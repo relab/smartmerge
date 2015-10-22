@@ -1,9 +1,14 @@
 #!/bin/sh
 
 echo starting servers.
-ssh pitter24 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
-ssh pitter25 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
-ssh pitter26 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
+for Pi in {9..15}
+do
+	ssh pitter"$Pi" "nohup $SM/server/server -gcoff -all-cores -port 13000 > $SM/pi'$Pi'servlog 2>&1 &"
+done
+
+#ssh pitter24 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
+#ssh pitter25 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
+#ssh pitter26 "nohup $HOME/mygo/src/github.com/relab/smartMerge/server/servers.sh > /dev/null 2>&1 &"
 
 export SM=$HOME/mygo/src/github.com/relab/smartMerge
 

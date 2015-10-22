@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
-	//"github.com/relab/smartMerge/rpc"
 )
 
 func (smc *SmClient) get() (rs *pb.State, cnt int) {
@@ -18,8 +18,9 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 
 		read, err := smc.Confs[i].AReadS(&pb.AdvRead{uint32(smc.Blueps[i].Len())})
 		cnt++
+		if glog.V(6) { glog.Infoln("AReadS returned.")}
 		if err != nil {
-			fmt.Println("error from AReadS: ", err)
+			glog.Errorln("error from AReadS: ", err)
 			//No Quorum Available. Retry
 			panic("Aread returned error")
 			//return
@@ -51,7 +52,7 @@ func (smc *SmClient) set(rs *pb.State) int {
 		cnt++
 		if err != nil {
 			fmt.Println("AWriteS returned error, ", err)
-			panic("Error from ARead")
+			panic("Error from AWriteS")
 		}
 
 		cur = smc.handleNewCur(cur, write.Reply.GetCur())
@@ -68,10 +69,17 @@ func (smc *SmClient) handleNewCur(cur int, newCur *pb.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
+	if glog.V(3) {
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), smc.Blueps[cur].Len())
+	}
 	return smc.findorinsert(cur, newCur)
 }
 
 func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {
+	if len(next) == 0 {
+		return
+	}  
+	glog.V(3).Infof("Found %d next configurations.", len(next))
 	for _, nxt := range next {
 		if nxt != nil {
 			i = smc.findorinsert(i, nxt)
@@ -107,6 +115,8 @@ func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
 		panic("could not get new config")
 	}
 
+	glog.V(3).Infoln("Inserting new configuration at place ", i)
+	
 	smc.Blueps = append(smc.Blueps, blp)
 	smc.Confs = append(smc.Confs, cnf)
 

@@ -192,7 +192,7 @@ func addLearned(bls []*pr.Blueprint, bp *pr.Blueprint) []*pr.Blueprint {
 	
 	bls = append(bls, nil)
 	
-	for i := len(bls); i >= place; i-- {
+	for i := len(bls)-1; i > place; i-- {
 		bls[i] = bls[i-1]
 	}
 	bls[place] = bp

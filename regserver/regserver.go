@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 )
@@ -51,66 +50,66 @@ func NewRegServerWithCur(cur *pb.Blueprint, curc uint32) *RegServer {
 	}
 }
 
-func (rs *RegServer) ReadS(ctx context.Context, rr *pb.ReadRequest) (*pb.ReadReply, error) {
-	rs.mu.RLock()
-	defer rs.mu.RUnlock()
-
-	if rr.CurC != rs.CurC {
-		//Not sure if we should return an empty state in this case.
-		//Returning it is safer. The other faster.
-		return &pb.ReadReply{rs.RState, rs.Cur}, nil
-	}
-
-	return &pb.ReadReply{State: rs.RState}, nil
-}
-
-func (rs *RegServer) ReadN(ctx context.Context, rr *pb.ReadNRequest) (*pb.ReadNReply, error) {
-	rs.mu.RLock()
-	defer rs.mu.RUnlock()
-
-	if rr.CurC != rs.CurC {
-		//Not sure if we should return an empty Next in this case.
-		//Returning it is safer. The other faster.
-		return &pb.ReadNReply{rs.Cur, rs.Next}, nil
-	}
-
-	return &pb.ReadNReply{Next: rs.Next}, nil
-}
-
-func (rs *RegServer) WriteS(ctx context.Context, wr *pb.WriteRequest) (*pb.WriteReply, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
-	if rs.RState.Compare(wr.State) == 1 {
-		rs.RState = wr.State
-	}
-
-	if wr.CurC != rs.CurC {
-		return &pb.WriteReply{rs.Cur}, nil
-	}
-
-	return &pb.WriteReply{}, nil
-}
-
-func (rs *RegServer) WriteN(ctx context.Context, wr *pb.WriteNRequest) (*pb.WriteNReply, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
-	found := false
-	for _, bp := range rs.Next {
-		if lat.Equals(bp, (wr.Next)) {
-			found = true
-			break
-		}
-	}
-	if !found {
-		rs.Next = append(rs.Next, wr.Next)
-	}
-
-	if wr.CurC != rs.CurC {
-		return &pb.WriteNReply{rs.Cur}, nil
-	}
-
-	return &pb.WriteNReply{}, nil
-}
+// func (rs *RegServer) ReadS(ctx context.Context, rr *pb.ReadRequest) (*pb.ReadReply, error) {
+// 	rs.mu.RLock()
+// 	defer rs.mu.RUnlock()
+//
+// 	if rr.CurC < rs.CurC {
+// 		//Not sure if we should return an empty state in this case.
+// 		//Returning it is safer. The other faster.
+// 		return &pb.ReadReply{rs.RState, rs.Cur}, nil
+// 	}
+//
+// 	return &pb.ReadReply{State: rs.RState}, nil
+// }
+//
+// func (rs *RegServer) ReadN(ctx context.Context, rr *pb.ReadNRequest) (*pb.ReadNReply, error) {
+// 	rs.mu.RLock()
+// 	defer rs.mu.RUnlock()
+//
+// 	if rr.CurC < rs.CurC {
+// 		//Not sure if we should return an empty Next in this case.
+// 		//Returning it is safer. The other faster.
+// 		return &pb.ReadNReply{rs.Cur, rs.Next}, nil
+// 	}
+//
+// 	return &pb.ReadNReply{Next: rs.Next}, nil
+// }
+//
+// func (rs *RegServer) WriteS(ctx context.Context, wr *pb.WriteRequest) (*pb.WriteReply, error) {
+// 	rs.mu.Lock()
+// 	defer rs.mu.Unlock()
+// 	if rs.RState.Compare(wr.State) == 1 {
+// 		rs.RState = wr.State
+// 	}
+//
+// 	if wr.CurC < rs.CurC {
+// 		return &pb.WriteReply{rs.Cur}, nil
+// 	}
+//
+// 	return &pb.WriteReply{}, nil
+// }
+//
+// func (rs *RegServer) WriteN(ctx context.Context, wr *pb.WriteNRequest) (*pb.WriteNReply, error) {
+// 	rs.mu.Lock()
+// 	defer rs.mu.Unlock()
+// 	found := false
+// 	for _, bp := range rs.Next {
+// 		if lat.Equals(bp, (wr.Next)) {
+// 			found = true
+// 			break
+// 		}
+// 	}
+// 	if !found {
+// 		rs.Next = append(rs.Next, wr.Next)
+// 	}
+//
+// 	if wr.CurC < rs.CurC {
+// 		return &pb.WriteNReply{rs.Cur}, nil
+// 	}
+//
+// 	return &pb.WriteNReply{}, nil
+// }
 
 func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	rs.mu.Lock()
@@ -121,11 +120,12 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if lat.Compare(nc.Cur, rs.Cur) == 1 {
+	if nc.Cur.LearnedCompare(rs.Cur) == 1 {
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if lat.Compare(rs.Cur, nc.Cur) == 0 {
+	// This could be removed. Not sure this is necessary.
+	if rs.Cur.Compare(nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
@@ -134,7 +134,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 
 	newNext := make([]*pb.Blueprint, 0, len(rs.Next))
 	for _, blp := range rs.Next {
-		if lat.Compare(blp, rs.Cur) == -1 {
+		if blp.Compare(rs.Cur) == -1 {
 			newNext = append(newNext, blp)
 		}
 	}
@@ -148,10 +148,10 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRep
 	defer rs.mu.RUnlock()
 	//defer rs.PrintState("readS")
 
-	if rr.CurC != rs.CurC {
+	if rr.CurC < rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{rs.RState, rs.Cur, rs.Next}, nil
+		return &pb.AdvReadReply{rs.RState, rs.Cur, nil}, nil
 	}
 
 	return &pb.AdvReadReply{State: rs.RState, Next: rs.Next}, nil
@@ -169,7 +169,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 		return &pb.AdvWriteSReply{}, nil
 	}
 
-	if wr.CurC != rs.CurC {
+	if wr.CurC < rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
 		return &pb.AdvWriteSReply{rs.Cur, rs.Next}, nil
@@ -185,7 +185,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 	found := false
 
 	for _, bp := range rs.Next {
-		if lat.Equals(bp, (wr.Next)) {
+		if bp.Equals(wr.Next) {
 			found = true
 			break
 		}
@@ -194,7 +194,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 		rs.Next = append(rs.Next, wr.Next)
 	}
 
-	if wr.CurC != rs.CurC {
+	if wr.CurC < rs.CurC {
 		//Not sure if we should return an empty Next/State in this case.
 		//Returning it is safer. The other faster.
 		return &pb.AdvWriteNReply{Cur: rs.Cur, State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
@@ -212,18 +212,18 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	}
 
 	c := new(pb.Blueprint)
-	if lap.CurC != rs.CurC {
+	if lap.CurC < rs.CurC {
 		c = rs.Cur
 	}
 
-	if lat.Compare(rs.LAState, lap.Prop) == 1 {
+	if rs.LAState.Compare(lap.Prop) == 1 {
 		//Accept
 		rs.LAState = lap.Prop
 		return &pb.LAReply{Cur: c, Next: rs.Next}, nil
 	}
 
 	//Not Accepted, try again.
-	rs.LAState = lat.Merge(rs.LAState, lap.Prop)
+	rs.LAState = rs.LAState.Merge(lap.Prop)
 	return &pb.LAReply{Cur: c, LAState: rs.LAState}, nil
 }
 
@@ -234,12 +234,12 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 		return nil, errors.New("Empty NewState message")
 	}
 	
-	rs.LAState = lat.Merge(rs.LAState, ns.LAState)
+	rs.LAState = rs.LAState.Merge(ns.LAState)
 	if rs.RState.Compare(ns.State) == 1 {
 		rs.RState = ns.State
 	}
 	
-	if rs.CurC != ns.CurC && lat.Compare(rs.Cur,ns.Cur) == 1 {
+	if rs.CurC < ns.CurC && rs.Cur.Compare(ns.Cur) == 1 {
 		rs.Cur = ns.Cur
 		rs.CurC = ns.CurC
 		return &pb.NewStateReply{}, nil

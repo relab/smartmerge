@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 )
@@ -65,11 +64,11 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewCur
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if nc.CurC == 0 || lat.Compare(nc.Cur, cs.Cur) == 1 {
+	if nc.CurC == 0 || nc.Cur.Compare(cs.Cur) == 1 {
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if cs.Cur != nil && lat.Compare(cs.Cur, nc.Cur) == 0 {
+	if cs.Cur != nil && cs.Cur.Compare(nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
@@ -85,7 +84,7 @@ func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadRepl
 
 	if rr.Prop != nil {
 		if n, ok := cs.Next[rr.CurC]; ok {
-			if n != nil && !lat.Equals(n, rr.Prop) {
+			if n != nil && !n.Equals(rr.Prop) {
 				return nil, errors.New("Tried to overwrite Next.")
 			}
 		} else {
@@ -97,7 +96,7 @@ func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadRepl
 	if cs.Next[rr.CurC] != nil {
 		next = []*pb.Blueprint{cs.Next[rr.CurC]}
 	}
-	if rr.CurC != cs.CurC {
+	if rr.CurC < cs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
 		return &pb.AdvReadReply{State: cs.RState,Cur: cs.Cur, Next: next}, nil
@@ -123,7 +122,7 @@ func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 		next = []*pb.Blueprint{cs.Next[wr.CurC]}
 	}
 	
-	if wr.CurC != cs.CurC {
+	if wr.CurC < cs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
 		return &pb.AdvWriteSReply{Cur: cs.Cur,Next: next}, nil
@@ -138,7 +137,7 @@ func (cs *ConsServer) CPrepare(ctx context.Context, pre *pb.Prepare) (*pb.Promis
 	//defer cs.PrintState("CPrepare")
 
 	var cur *pb.Blueprint
-	if pre.CurC != cs.CurC {
+	if pre.CurC < cs.CurC {
 		// Configuration outdated
 		cur = cs.Cur
 	}
@@ -163,7 +162,7 @@ func (cs *ConsServer) CAccept(ctx context.Context, pro *pb.Propose) (lrn *pb.Lea
 	//defer cs.PrintState("Accept")
 
 	var cur *pb.Blueprint
-	if pro.CurC != cs.CurC {
+	if pro.CurC < cs.CurC {
 		// Configuration outdated.
 		cur = cs.Cur
 	}

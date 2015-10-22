@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	lat "github.com/relab/smartMerge/directCombineLattice"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 )
@@ -54,11 +53,11 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if nc.CurC == 0 || lat.Compare(nc.Cur, rs.Cur) == 1 {
+	if nc.CurC == 0 || nc.Cur.Compare(rs.Cur) == 1 {
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if rs.Cur != nil && lat.Compare(rs.Cur, nc.Cur) == 0 {
+	if rs.Cur != nil && rs.Cur.Compare(nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
@@ -134,7 +133,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 	outerLoop:
 	for _, newBp := range wr.Next {
 		for _, bp := range rs.Next[wr.CurC] {
-			if lat.Equals(bp, newBp) {
+			if bp.Equals(newBp) {
 				continue outerLoop
 			}
 		}

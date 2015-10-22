@@ -4,19 +4,23 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
 )
 
 func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
+	if glog.V(2) { glog.Infoln("Starting reconfiguration")}
 	prop, cnt = smc.lagree(prop)
 	//fmt.Printf("LA returned Blueprint with %d procs and %d removals.\n", len(prop.Add), len(prop.Rem))
 
 	//Proposed blueprint is already in place, or outdated.
 	if prop.LearnedCompare(smc.Blueps[0]) == 0 {
+		glog.V(3).Infoln("Proposal is already in place.")
 		return cnt, nil
 	}
 
 	if prop.Compare(smc.Blueps[0]) == 1 {
+		glog.V(3).Infoln("Proposal already outdated.")
 		return cnt, nil
 	}
 
@@ -25,6 +29,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	}
 
 	if len(prop.Add) == 0 {
+		glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
 		return cnt, errors.New("Abort before proposing unacceptable configuration.")
 	}
 
@@ -37,10 +42,11 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		}
 
 		writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()),prop})
+		if glog.V(3) { glog.Infoln("AWriteN returned")}
 		cnt++
 		if err != nil {
 			//Should log this for debugging
-			fmt.Println("AWriteN returned error: ",err)
+			glog.Errorln("AWriteN returned error: ",err)
 			panic("Error from AWriteN")
 		}
 
@@ -58,10 +64,11 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 
 	if i := len(smc.Confs) - 1; i > cur {
 		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
+		if glog.V(3) {glog.Infoln("Set State in Configuration with length: ", smc.Blueps[i].Len())}
 		cnt++
 		if err != nil {
 			//Not sure what to do:
-			fmt.Println("SetState returned error, not sure what to do")
+			glog.Errorln("SetState returned error, not sure what to do")
 			panic("Error from SetState")
 		}
 		
@@ -87,14 +94,14 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 		laProp, err := smc.Confs[i].LAProp(&pb.LAProposal{uint32(smc.Blueps[i].Len()), prop})
 		cnt++
 		if err != nil {
-			fmt.Println("LA prop returned error: ", err)
+			glog.Errorln("LA prop returned error: ", err)
 			panic("Error from LAProp")
 		}
-
+		
 		cur = smc.handleNewCur(cur, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.Equals(la) {
-			//fmt.Println("LA prop returned new LA state ", la)
+			if glog.V(3) { glog.Infoln("LAProp returned new state, try again.")}
 			prop = la
 			i--
 			continue

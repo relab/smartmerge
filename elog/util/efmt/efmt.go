@@ -123,7 +123,12 @@ func main() {
 		}
 		if affected > 0 {
 			fmt.Fprintf(of, "Mean latency for writes with more than %d acceses is: %v\n", normal, (totalaffected / affected))
-			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*avgWrites[normal]))
+			nwavg := 3300 * time.Microsecond
+			if normal == 4 {
+				nwavg = 5700 * time.Microsecond
+			}
+					
+			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
 		}
 	}
 

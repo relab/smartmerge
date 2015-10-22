@@ -6,7 +6,7 @@ cd -
 
 cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
 
-for RMS in 1 2 5
+for RMS in 0 1 2 5
 do
 
 cd $SM/scripts
@@ -26,8 +26,6 @@ mv rlog*  "sm_rm$RMS$*/"
 cd "sm_rm$RMS$*"
 $SM/scripts/analyzeall "sm_rm$RMS$*"
 
-done
-exit
 echo DynaStore
 cd ../scripts
 for i in {1..20} 

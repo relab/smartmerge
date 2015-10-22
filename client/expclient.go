@@ -179,7 +179,7 @@ func benchmain() {
 func NewClient(addrs []string, initB *pb.Blueprint, alg string, id int) (cl RWRer, mgr *pb.Manager, err error) {
 	mgr, err = pb.NewManager(addrs, pb.WithGrpcDialOptions(
 		grpc.WithBlock(),
-		grpc.WithTimeout(500*time.Millisecond),
+		grpc.WithTimeout(1000*time.Millisecond),
 		grpc.WithInsecure()),
 		pb.WithAReadSQuorumFunc(qf.AReadSQF),
 		pb.WithAWriteSQuorumFunc(qf.AWriteSQF),

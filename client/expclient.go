@@ -126,8 +126,8 @@ func benchmain() {
 		return
 	}
 
-	initBlp = new(pb.Blueprint)
-	if *initsize > 100 {
+	initBlp := new(pb.Blueprint)
+	if *initsize >= 100 {
 		initBlp.Add = ids
 	} else {
 		initBlp.Add = ids[:*initsize]

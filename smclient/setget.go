@@ -1,8 +1,6 @@
 package smclient
 
 import (
-	"time"
-
 	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
 )

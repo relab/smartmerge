@@ -3,8 +3,9 @@
 export SM=$HOME/mygo/src/github.com/relab/smartMerge
 
 echo starting servers.
-for Pi in 9 10 11 12 13 14 15 17
-do
+for Pi in 9 10 11 12 13 14 15
+do	
+	echo starting server on pitter$Pi
 	ssh pitter"$Pi" "nohup $SM/server/server -all-cores -port 13000 -v=5 -logtostderr > $SM/pi'$Pi'servlog 2>&1 &"
 done
 
@@ -20,7 +21,8 @@ echo starting Writers
 #ssh pitter21 "$SM/scripts/wclients sm"
 for Pi in {30..34}
 do
-ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=100 -all-cores -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'writerslog1 2>&1 &"
+echo starting client on pitter$Pi
+ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=100 -all-cores -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'writerslog1 2>&1 &"
 
 #ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=7 -gc-off -all-cores > /local/scratch/ljehl/pi'$Pi'writerslog2 2>&1 &"
 done

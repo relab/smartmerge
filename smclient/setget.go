@@ -1,7 +1,6 @@
 package smclient
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/golang/glog"
@@ -18,7 +17,9 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 
 		read, err := smc.Confs[i].AReadS(&pb.AdvRead{uint32(smc.Blueps[i].Len())})
 		cnt++
-		if glog.V(6) { glog.Infoln("AReadS returned.")}
+		if glog.V(6) {
+			glog.Infoln("AReadS returned.")
+		}
 		if err != nil {
 			glog.Errorln("error from AReadS: ", err)
 			//No Quorum Available. Retry
@@ -48,10 +49,13 @@ func (smc *SmClient) set(rs *pb.State) int {
 			continue
 		}
 
-		write, err := smc.Confs[i].AWriteS(&pb.AdvWriteS{rs,uint32(smc.Blueps[i].Len())})
+		write, err := smc.Confs[i].AWriteS(&pb.AdvWriteS{rs, uint32(smc.Blueps[i].Len())})
 		cnt++
+		if glog.V(6) {
+			glog.Infoln("AWriteS returned.")
+		}
 		if err != nil {
-			fmt.Println("AWriteS returned error, ", err)
+			glog.Errorln("AWriteS returned error, ", err)
 			panic("Error from AWriteS")
 		}
 
@@ -78,7 +82,7 @@ func (smc *SmClient) handleNewCur(cur int, newCur *pb.Blueprint) int {
 func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {
 	if len(next) == 0 {
 		return
-	}  
+	}
 	glog.V(3).Infof("Found %d next configurations.", len(next))
 	for _, nxt := range next {
 		if nxt != nil {
@@ -110,22 +114,22 @@ func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint) int {
 }
 
 func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
-	cnf, err := smc.mgr.NewConfiguration(blp.Add, majQuorum(blp),2 * time.Second)
+	cnf, err := smc.mgr.NewConfiguration(blp.Add, majQuorum(blp), 2*time.Second)
 	if err != nil {
 		panic("could not get new config")
 	}
 
 	glog.V(3).Infoln("Inserting new configuration at place ", i)
-	
+
 	smc.Blueps = append(smc.Blueps, blp)
 	smc.Confs = append(smc.Confs, cnf)
 
-	for j:= len(smc.Blueps)-1; j>i; j-- {
+	for j := len(smc.Blueps) - 1; j > i; j-- {
 		smc.Blueps[j] = smc.Blueps[j-1]
 		smc.Confs[j] = smc.Confs[j-1]
-	} 
+	}
 
-	if len(smc.Blueps) != i + 1 {
+	if len(smc.Blueps) != i+1 {
 		smc.Blueps[i] = blp
 		smc.Confs[i] = cnf
 	}

@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"log"
 
+	"github.com/golang/glog"
 	"github.com/relab/goxos/kvs/bgen"
 	"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
@@ -68,6 +69,7 @@ func Usage() {
 
 func main() {
 	parseFlags()
+	defer glog.Flush()	
 
 	if *gcOff {
 		fmt.Println("Setting garbage collection to -1")

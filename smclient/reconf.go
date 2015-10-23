@@ -2,14 +2,15 @@ package smclient
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
 )
 
 func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
-	if glog.V(2) { glog.Infoln("Starting reconfiguration")}
+	if glog.V(2) {
+		glog.Infoln("Starting reconfiguration")
+	}
 	prop, cnt = smc.lagree(prop)
 	//fmt.Printf("LA returned Blueprint with %d procs and %d removals.\n", len(prop.Add), len(prop.Rem))
 
@@ -41,12 +42,14 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			continue
 		}
 
-		writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()),prop})
-		if glog.V(3) { glog.Infoln("AWriteN returned")}
+		writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()), prop})
+		if glog.V(3) {
+			glog.Infoln("AWriteN returned")
+		}
 		cnt++
 		if err != nil {
 			//Should log this for debugging
-			glog.Errorln("AWriteN returned error: ",err)
+			glog.Errorln("AWriteN returned error: ", err)
 			panic("Error from AWriteN")
 		}
 
@@ -64,14 +67,16 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 
 	if i := len(smc.Confs) - 1; i > cur {
 		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
-		if glog.V(3) {glog.Infoln("Set State in Configuration with length: ", smc.Blueps[i].Len())}
+		if glog.V(3) {
+			glog.Infoln("Set State in Configuration with length: ", smc.Blueps[i].Len())
+		}
 		cnt++
 		if err != nil {
 			//Not sure what to do:
 			glog.Errorln("SetState returned error, not sure what to do")
 			panic("Error from SetState")
 		}
-		
+
 		cur = smc.handleNewCur(i, setS.Reply.GetCur())
 	}
 
@@ -97,11 +102,13 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 			glog.Errorln("LA prop returned error: ", err)
 			panic("Error from LAProp")
 		}
-		
+
 		cur = smc.handleNewCur(cur, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.Equals(la) {
-			if glog.V(3) { glog.Infoln("LAProp returned new state, try again.")}
+			if glog.V(3) {
+				glog.Infoln("LAProp returned new state, try again.")
+			}
 			prop = la
 			i--
 			continue

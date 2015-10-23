@@ -20,7 +20,7 @@ echo starting Writers
 #ssh pitter21 "$SM/scripts/wclients sm"
 for Pi in {30..34}
 do
-ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=10 -gc-off -all-cores > /local/scratch/ljehl/pi'$Pi'writerslog1 2>&1 &"
+ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=10 -gc-off -all-cores -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'writerslog1 2>&1 &"
 
 #ssh pitter"$Pi" "nohup client -conf $SM/scripts/newList -alg=sm -mode=bench -contW -size=4000 -nclients=1 -id=5 -initsize=7 -gc-off -all-cores > /local/scratch/ljehl/pi'$Pi'writerslog2 2>&1 &"
 done
@@ -30,7 +30,7 @@ sleep 3
 
 if ! [ "$*" == "" ]; then
 	echo starting Reconfigurers
-	client -conf $SM/scripts/newList -alg=sm -mode=exp -rm -nclients="$*" -initsize=10 -gc-off -elog -all-cores > /local/scratch/ljehl/reconflog 2>&1
+	client -conf $SM/scripts/newList -alg=sm -mode=exp -rm -nclients="$*" -initsize=10 -gc-off -elog -all-cores -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
 else
 	echo no reconfiguration, waiting 10 seconds
 	sleep 10

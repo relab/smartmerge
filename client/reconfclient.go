@@ -23,10 +23,11 @@ func expmain() {
 		return
 	}
 
+	initBlp = new(pb.Blueprint)
 	if *initsize > 100 {
-		initBlp := &pb.Blueprint{Add: ids, Rem: nil}
+		initBlp.Add = ids
 	} else {
-		initBlp := &pb.Blueprint{Add: ids[:*initsize], Rem: nil}
+		initBlp.Add = ids[:*initsize]
 	}
 
 	if *doelog {

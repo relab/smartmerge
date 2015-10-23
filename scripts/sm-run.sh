@@ -43,7 +43,7 @@ for Pi in {30..34}
 do
 ssh pitter"$Pi" "killall client"
 ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/"
-ssh pitter"$Pi" "mv /local/scratch/ljehl/*writerslog* $SM/"
+ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/"
 done
 mv /local/scratch/ljehl/*.elog $SM/
 mv /local/scratch/ljehl/reconflog $SM/

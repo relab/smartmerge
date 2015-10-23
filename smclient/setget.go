@@ -112,7 +112,7 @@ func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint) int {
 }
 
 func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
-	cnf, err := smc.mgr.NewConfiguration(blp.Add, majQuorum(blp), 2*time.Second)
+	cnf, err := smc.mgr.NewConfiguration(blp.Add, majQuorum(blp), ConfTimeout)
 	if err != nil {
 		panic("could not get new config")
 	}

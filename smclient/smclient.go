@@ -9,6 +9,9 @@ import (
 	pb "github.com/relab/smartMerge/proto"
 )
 
+
+var ConfTimeout = 10 * tiime.Second
+
 func majQuorum(bp *pb.Blueprint) int {
 	return len(bp.Add)/2 + 1
 }
@@ -21,7 +24,7 @@ type SmClient struct {
 }
 
 func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*SmClient, error) {
-	conf, err := mgr.NewConfiguration(initBlp.Add, majQuorum(initBlp), 2*time.Second)
+	conf, err := mgr.NewConfiguration(initBlp.Add, majQuorum(initBlp), ConfTimeout)
 	if err != nil {
 		return nil, err
 	}

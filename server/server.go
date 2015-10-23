@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"runtime/debug"
 	"syscall"
+	
+	"github.com/golang/glog"
 
 	"github.com/relab/smartMerge/regserver"
 )
@@ -22,6 +24,7 @@ var (
 
 func main() {
 	flag.Parse()
+	defer glog.Flush()
 
 	if *gcoff {
 		debug.SetGCPercent(-1)

@@ -21,9 +21,8 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 			glog.Infoln("AReadS returned.")
 		}
 		if err != nil {
-			glog.Errorln("error from AReadS: ", err)
+			glog.Fatalln("error from AReadS: ", err)
 			//No Quorum Available. Retry
-			panic("Aread returned error")
 			//return
 		}
 		cur = smc.handleNewCur(cur, read.Reply.GetCur())
@@ -55,8 +54,7 @@ func (smc *SmClient) set(rs *pb.State) int {
 			glog.Infoln("AWriteS returned.")
 		}
 		if err != nil {
-			glog.Errorln("AWriteS returned error, ", err)
-			panic("Error from AWriteS")
+			glog.Fatalln("AWriteS returned error, ", err)
 		}
 
 		cur = smc.handleNewCur(cur, write.Reply.GetCur())

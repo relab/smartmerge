@@ -49,7 +49,7 @@ func (smc *SmClient) set(rs *pb.State) int {
 		write, err := smc.Confs[i].AWriteS(&pb.AdvWriteS{rs, uint32(smc.Blueps[i].Len())})
 		cnt++
 		if glog.V(6) {
-			glog.Infoln("AWriteS returned.")
+			glog.Infoln("AWriteS returned, with replies from ", write.MachineIDs)
 		}
 		if err != nil {
 			glog.Fatalln("AWriteS returned error, ", err)

@@ -3,6 +3,7 @@ package qfuncs
 import (
 
 	pr "github.com/relab/smartMerge/proto"
+	"github.com/golang/glog"
 
 )
 
@@ -11,11 +12,13 @@ var AReadSQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvRea
 	// Stop RPC if new current configuration reported. 
 	lastrep := replies[len(replies)-1]
 	if lastrep.GetCur() != nil {
+		if glog.V(3) { glog.Infoln("ReadS reported new Cur.")}
 		return lastrep, true
 	}
 	
 	// Return false, if not enough replies yet.
 	if len(replies) < c.ReadQuorum() {
+		if glog.V(6) { glog.Infoln("Not enough ReadSReplies yet.")}
 		return nil, false
 	}
 	
@@ -42,12 +45,14 @@ var AWriteSQF = func(c *pr.Configuration, replies []*pr.AdvWriteSReply) (*pr.Adv
 	// Stop RPC if new current configuration reported. 
 	lastrep := replies[len(replies)-1]
 	if lastrep.GetCur() != nil {
+		if glog.V(3) { glog.Infoln("WriteS reported new Cur.")}
 		return lastrep, true
 	}
 	
 	// Return false, if not enough replies yet. 
 	// This rpc is both reading and writing.
 	if len(replies) < c.MaxQuorum() {
+		if glog.V(6) { glog.Infoln("Not enough WriteSReplies yet.")}
 		return nil, false
 	}
 	
@@ -67,6 +72,7 @@ var AWriteNQF = func(c *pr.Configuration, replies []*pr.AdvWriteNReply) (*pr.Adv
 	// Stop RPC if new current configuration reported. 
 	lastrep := replies[len(replies)-1]
 	if lastrep.GetCur() != nil {
+		if glog.V(3) { glog.Infoln("WriteN reported new Cur.")}
 		return lastrep, true
 	}
 	
@@ -117,6 +123,7 @@ var LAPropQF = func(c *pr.Configuration, replies []*pr.LAReply) (*pr.LAReply, bo
 	// Stop RPC if new current configuration reported. 
 	lastrep := replies[len(replies)-1]
 	if lastrep.GetCur() != nil {
+		if glog.V(3) { glog.Infoln("LAProp reported new Cur.")}
 		return lastrep, true
 	}
 	

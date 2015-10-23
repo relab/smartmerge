@@ -18,12 +18,16 @@ func expmain() {
 	addrs, ids := util.GetProcs(*confFile, true)
 
 	//Build initial blueprint.
-	if *initsize > len(ids) {
+	if *initsize > len(ids) && *initsize < 100 {
 		fmt.Fprintln(os.Stderr, "Not enough servers to fulfill initsize.")
 		return
 	}
 
-	initBlp := &pb.Blueprint{Add: ids[:*initsize], Rem: nil}
+	if *initsize > 100 {
+		initBlp := &pb.Blueprint{Add: ids, Rem: nil}
+	} else {
+		initBlp := &pb.Blueprint{Add: ids[:*initsize], Rem: nil}
+	}
 
 	if *doelog {
 		elog.Enable()

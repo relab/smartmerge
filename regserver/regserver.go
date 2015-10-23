@@ -248,6 +248,7 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 	}
 	
 	if rs.CurC < ns.CurC && rs.Cur.Compare(ns.Cur) == 1 {
+		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
 		rs.Cur = ns.Cur
 		rs.CurC = ns.CurC
 		return &pb.NewStateReply{}, nil

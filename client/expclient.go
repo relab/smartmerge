@@ -141,7 +141,7 @@ func benchmain() {
 	stop := make(chan struct{}, *nclients)
 
 	for i := 0; i < *nclients; i++ {
-		fmt.Println("starting client number: ", i)
+		fmt.Printf("starting client number:  %d at time %v\n", i, time.Now())
 		cl, mgr, err := NewClient(addrs, initBlp, *alg, (*clientid)+i)
 		if err != nil {
 			fmt.Println("Error creating client: ", err)

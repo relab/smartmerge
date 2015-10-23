@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-
+	
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
+	"github.com/golang/glog"
 )
 
 type RegServer struct {
@@ -112,6 +113,7 @@ func NewRegServerWithCur(cur *pb.Blueprint, curc uint32) *RegServer {
 // }
 
 func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
+	glog.V(5).Infoln("Handling Set Cur")
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	//defer rs.PrintState("SetCur")
@@ -129,6 +131,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
+	glog.V(3).Infoln("New Current Conf: ", nc.GetCur())
 	rs.Cur = nc.Cur
 	rs.CurC = nc.CurC
 
@@ -146,6 +149,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
+	glog.V(5).Infoln("Handling ReadS")	
 	//defer rs.PrintState("readS")
 
 	if rr.CurC < rs.CurC {
@@ -160,6 +164,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadRep
 func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling WriteS")
 	//defer rs.PrintState("writeS")
 	if rs.RState.Compare(wr.State) == 1 {
 		rs.RState = wr.State
@@ -181,6 +186,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWriteNReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling WriteN")
 	//defer rs.PrintState("writeN")
 	found := false
 
@@ -206,6 +212,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling LAProp")
 	//defer rs.PrintState("LAProp")
 	if lap == nil {
 		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
@@ -230,6 +237,7 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling SetState")
 	if ns == nil {
 		return nil, errors.New("Empty NewState message")
 	}

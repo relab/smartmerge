@@ -10,7 +10,7 @@ import (
 )
 
 
-var ConfTimeout = 10 * tiime.Second
+var ConfTimeout = 1 * time.Second
 
 func majQuorum(bp *pb.Blueprint) int {
 	return len(bp.Add)/2 + 1

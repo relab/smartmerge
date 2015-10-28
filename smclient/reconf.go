@@ -13,6 +13,9 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	}
 	prop, cnt = smc.lagree(prop)
 	//fmt.Printf("LA returned Blueprint with %d procs and %d removals.\n", len(prop.Add), len(prop.Rem))
+	if glog.V(3) {
+		glog.Infof("Needed %d proposals to solv LA.", cnt)
+	}
 
 	//Proposed blueprint is already in place, or outdated.
 	if prop.LearnedCompare(smc.Blueps[0]) == 0 {

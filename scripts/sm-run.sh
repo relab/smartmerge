@@ -5,10 +5,14 @@ export SM=$GOPATH/src/github.com/relab/smartMerge
 SERVS=(9 10 11 12 13 14 15 17)
 READS=(25 26 30 31 32)
 
+cd $SM
+mkdir exlogs || echo folder exlogs already exists
+
 echo starting servers.
 for Pi in ${SERVS[@]}
 do
-	ssh pitter"$Pi" "nohup $SM/server/server -all-cores -port 13000 -v=0 -logtostderr > /local/scratch/ljehl/servlogpi'$Pi' 2>&1 &"
+	echo starting server on pitter$Pi
+	ssh pitter"$Pi" "nohup $SM/server/server -all-cores -port 13000 -v=6 -logtostderr > /local/scratch/ljehl/servlogpi'$Pi' 2>&1 &"
 done
 
 
@@ -22,7 +26,7 @@ echo starting Readers
 for Pi in ${READS[@]}
 do
 	echo starting reader on pitter$Pi
-ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=sm -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -all-cores -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=sm -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -all-cores -log_events -v=5 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
 done
 
 sleep 3
@@ -48,14 +52,13 @@ done
 echo copy reader logs
 for Pi in ${READS[@]}
 do	
-ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/"
-ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/"
+ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/exlogs"
+ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
 done
-mv /local/scratch/ljehl/*.elog $SM/
-mv /local/scratch/ljehl/reconflog $SM/
+mv /local/scratch/ljehl/*log* $SM/exlogs
 
 for Pi in ${SERVS[@]}
 do
 	ssh pitter"$Pi" "cd $SM/server && killall server" 
-	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/"
+	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
 done

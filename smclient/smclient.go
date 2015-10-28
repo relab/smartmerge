@@ -10,7 +10,7 @@ import (
 )
 
 
-var ConfTimeout = 10 * time.Second
+var ConfTimeout = 1 * time.Second
 
 func majQuorum(bp *pb.Blueprint) int {
 	return len(bp.Add)/2 + 1
@@ -89,6 +89,9 @@ func (smc *SmClient) Write(val []byte) int {
 		glog.Infoln("starting Write")
 	}
 	rs, cnt := smc.get()
+	if rs == nil && cnt == 0 {
+		return 0
+	}
 	if rs == nil {
 		rs = &pb.State{Value: val, Timestamp: 1, Writer: smc.ID}
 	} else {

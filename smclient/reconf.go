@@ -31,7 +31,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 
 	if len(prop.Add) == 0 {
 		glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
-		return cnt, errors.New("Abort before proposing unacceptable configuration.")
+		return 0, errors.New("Abort before proposing unacceptable configuration.")
 	}
 
 	cur := 0
@@ -50,7 +50,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		if err != nil {
 			//Should log this for debugging
 			glog.Errorln("AWriteN returned error: ", err)
-			panic("Error from AWriteN")
+			return 0, err
 		}
 
 		cur = smc.handleNewCur(cur, writeN.Reply.GetCur())
@@ -74,7 +74,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		if err != nil {
 			//Not sure what to do:
 			glog.Errorln("SetState returned error, not sure what to do")
-			panic("Error from SetState")
+			return 0, err
 		}
 
 		cur = smc.handleNewCur(i, setS.Reply.GetCur())

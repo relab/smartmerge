@@ -1814,7 +1814,7 @@ func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -1852,7 +1852,7 @@ func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -1909,7 +1909,7 @@ func (m *Manager) aWriteS(configID uint32, args *AdvWriteS) (*AWriteSReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -1947,7 +1947,7 @@ func (m *Manager) aWriteS(configID uint32, args *AdvWriteS) (*AWriteSReply, erro
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2004,7 +2004,7 @@ func (m *Manager) aWriteN(configID uint32, args *AdvWriteN) (*AWriteNReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteNReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2042,7 +2042,7 @@ func (m *Manager) aWriteN(configID uint32, args *AdvWriteN) (*AWriteNReply, erro
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2099,7 +2099,7 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2137,7 +2137,7 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2194,7 +2194,7 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*LAReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2232,7 +2232,7 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2289,7 +2289,7 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewStateReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2327,7 +2327,7 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2384,7 +2384,7 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2422,7 +2422,7 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2479,7 +2479,7 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2517,7 +2517,7 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2574,7 +2574,7 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*DWriteNReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2612,7 +2612,7 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2669,7 +2669,7 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*GetOneReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2707,7 +2707,7 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2764,7 +2764,7 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2802,7 +2802,7 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2859,7 +2859,7 @@ func (m *Manager) cPrepare(configID uint32, args *Prepare) (*CPrepareReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Promise, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2897,7 +2897,7 @@ func (m *Manager) cPrepare(configID uint32, args *Prepare) (*CPrepareReply, erro
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -2954,7 +2954,7 @@ func (m *Manager) cAccept(configID uint32, args *Propose) (*CAcceptReply, error)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Learn, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2992,7 +2992,7 @@ func (m *Manager) cAccept(configID uint32, args *Propose) (*CAcceptReply, error)
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -3049,7 +3049,7 @@ func (m *Manager) cReadS(configID uint32, args *DRead) (*CReadSReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3087,7 +3087,7 @@ func (m *Manager) cReadS(configID uint32, args *DRead) (*CReadSReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -3144,7 +3144,7 @@ func (m *Manager) cWriteS(configID uint32, args *AdvWriteS) (*CWriteSReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3182,7 +3182,7 @@ func (m *Manager) cWriteS(configID uint32, args *AdvWriteS) (*CWriteSReply, erro
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:
@@ -3239,7 +3239,7 @@ func (m *Manager) cSetState(configID uint32, args *CNewCur) (*CSetStateReply, er
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3277,7 +3277,7 @@ func (m *Manager) cSetState(configID uint32, args *CNewCur) (*CSetStateReply, er
 
 	defer func() {
 		close(stopSignal)
-		cancel()
+		//cancel()
 	}()
 	for {
 	select_:

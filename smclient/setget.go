@@ -15,13 +15,13 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 
 		read, err := smc.Confs[i].AReadS(&pb.AdvRead{uint32(smc.Blueps[i].Len())})
 		cnt++
-		if glog.V(6) {
-			glog.Infoln("AReadS returned.")
-		}
 		if err != nil {
-			glog.Fatalln("error from AReadS: ", err)
+			glog.Errorln("error from AReadS: ", err)
 			//No Quorum Available. Retry
-			//return
+			return nil, 0
+		}
+		if glog.V(6) {
+			glog.Infoln("AReadS returned with replies from ", read.MachineIDs)
 		}
 		cur = smc.handleNewCur(cur, read.Reply.GetCur())
 
@@ -48,11 +48,12 @@ func (smc *SmClient) set(rs *pb.State) int {
 
 		write, err := smc.Confs[i].AWriteS(&pb.AdvWriteS{rs, uint32(smc.Blueps[i].Len())})
 		cnt++
+		if err != nil {
+			glog.Errorln("AWriteS returned error, ", err)
+			return 0
+		}
 		if glog.V(6) {
 			glog.Infoln("AWriteS returned, with replies from ", write.MachineIDs)
-		}
-		if err != nil {
-			glog.Fatalln("AWriteS returned error, ", err)
 		}
 
 		cur = smc.handleNewCur(cur, write.Reply.GetCur())

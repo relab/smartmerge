@@ -251,6 +251,13 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
 		rs.Cur = ns.Cur
 		rs.CurC = ns.CurC
+		next := make([]*pb.Blueprint,0,len(rs.Next))
+		for _, nxt := range rs.Next {
+			if nxt.Len() > rs.Cur.Len() {
+				next = append(next, nxt)
+			}
+		}
+		rs.Next = next
 		return &pb.NewStateReply{}, nil
 	}
 	if rs.CurC == ns.CurC {

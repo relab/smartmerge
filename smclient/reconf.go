@@ -102,6 +102,9 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 			glog.Errorln("LA prop returned error: ", err)
 			panic("Error from LAProp")
 		}
+		if glog.V(4) {
+			glog.Infoln("LAProp returned.")
+		}
 
 		cur = smc.handleNewCur(cur, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()

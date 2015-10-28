@@ -218,12 +218,13 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
 	}
 
-	c := new(pb.Blueprint)
+	var c *pb.Blueprint
 	if lap.CurC < rs.CurC {
 		c = rs.Cur
-	}
+	} 
 
 	if rs.LAState.Compare(lap.Prop) == 1 {
+		glog.V(6).Infoln("LAState Accepted")
 		//Accept
 		rs.LAState = lap.Prop
 		return &pb.LAReply{Cur: c, Next: rs.Next}, nil

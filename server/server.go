@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	//"strconv"
 	"os"
 	"os/signal"
@@ -36,7 +35,7 @@ func main() {
 	}
 
 	var err error
-	fmt.Println("Starting Server with port: ", *port)
+	glog.Infoln("Starting Server with port: ", *port)
 	switch *alg {
 	case "", "sm":
 		_, err = regserver.StartAdv(*port)
@@ -47,8 +46,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Println(err)
-		panic("Starting server returned error")
+		glog.Fatalln("Starting server returned error", err)
 	}
 
 	signalChan := make(chan os.Signal, 1)
@@ -60,7 +58,7 @@ func main() {
 			if exit := handleSignal(signal); exit {
 				err = regserver.Stop()
 				if err != nil {
-					fmt.Printf("Stopping server returned error: %v\n", err)
+					glog.Errorf("Stopping server returned error: %v\n", err)
 				}
 				return
 			}

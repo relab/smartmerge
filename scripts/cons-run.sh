@@ -15,7 +15,7 @@ echo starting servers.
 for Pi in ${SERVS[@]}
 do
 	echo starting server on pitter$Pi
-	ssh pitter"$Pi" "nohup $SM/server/server -all-cores -alg=cons -port 13000 -v=6 -logtostderr > /local/scratch/ljehl/servlogpi'$Pi' 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -all-cores -alg=cons -port 13000 -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/servlogpi'$Pi' 2>&1 &"
 done
 
 

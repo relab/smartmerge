@@ -94,17 +94,45 @@ func main() {
 	}
 
 	readl, writel, reconfl := sortLatencies(events)
+	// if len(readl) > 0 {
+// 		_, err := fmt.Fprintln(of, "Read Latencies:")
+// 		if err != nil {
+// 			fmt.Println("Error writing to file:", err)
+// 		}
+// 		for k, durs := range readl {
+// 			avg := MeanDuration(durs...)
+// 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
+// 		}
+// 	}
+	
+	normal := uint64(*norm)
 	if len(readl) > 0 {
+		var totalaffected time.Duration
+		var affected time.Duration
+
 		_, err := fmt.Fprintln(of, "Read Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 		}
+		avgWrites := computeAverageDurations(readl)
 		for k, durs := range readl {
-			avg := MeanDuration(durs...)
-			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
+			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
+			if k != normal {
+				affected += time.Duration(len(durs))
+				totalaffected += time.Duration(len(durs)) * avgWrites[k]
+			}
+		}
+		if affected > 0 {
+			fmt.Fprintf(of, "Mean latency for reads with more than %d acceses is: %v\n", normal, (totalaffected / affected))
+			nwavg := 2070 * time.Microsecond
+			if normal == 4 {
+				nwavg = 5700 * time.Microsecond
+			}
+					
+			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
 		}
 	}
-	normal := uint64(*norm)
+	
 	if len(writel) > 0 {
 		var totalaffected time.Duration
 		var affected time.Duration
@@ -131,6 +159,8 @@ func main() {
 			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
 		}
 	}
+
+
 
 	if len(reconfl) > 0 {
 		var total time.Duration

@@ -15,13 +15,13 @@ var CWriteNQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvRe
 	// Stop RPC if new current configuration reported. 
 	lastrep := replies[len(replies)-1]
 	if lastrep.GetCur() != nil {
-		if glog.V(3) { glog.Infoln("ReadS reported new Cur.")}
+		if glog.V(3) { glog.Infoln("WriteN reported new Cur.")}
 		return lastrep, true
 	}
 	
 	// Return false, if not enough replies yet.
 	if len(replies) < c.MaxQuorum() {
-		if glog.V(6) { glog.Infoln("Not enough ReadSReplies yet.")}
+		if glog.V(6) { glog.Infoln("Not enough WriteNReplies yet.")}
 		return nil, false
 	}
 	

@@ -72,7 +72,7 @@ func main() {
 	defer glog.Flush()	
 
 	if *gcOff {
-		fmt.Println("Setting garbage collection to -1")
+		glog.Infoln("Setting garbage collection to -1")
 		debug.SetGCPercent(-1)
 	}
 
@@ -118,11 +118,11 @@ func benchmain() {
 	}
 
 	//Parse Processes from Config file.
-	addrs, ids := util.GetProcs(*confFile, true)
+	addrs, ids := util.GetProcs(*confFile, false)
 
 	//Build initial blueprint.
 	if *initsize > len(ids) && *initsize < 100 {
-		fmt.Fprintln(os.Stderr, "Not enough servers to fulfill initsize.")
+		glog.Errorln(os.Stderr, "Not enough servers to fulfill initsize.")
 		return
 	}
 
@@ -141,14 +141,14 @@ func benchmain() {
 	stop := make(chan struct{}, *nclients)
 
 	for i := 0; i < *nclients; i++ {
-		fmt.Printf("starting client number:  %d at time %v\n", i, time.Now())
+		glog.Infof("starting client number:  %d at time %v\n", i, time.Now())
 		cl, mgr, err := NewClient(addrs, initBlp, *alg, (*clientid)+i)
 		if err != nil {
-			fmt.Println("Error creating client: ", err)
+			glog.Errorln("Error creating client: ", err)
 			continue
 		}
 
-		defer PrintErrors(mgr)
+		defer LogErrors(mgr)
 		wg.Add(1)
 		switch {
 		case *contW:
@@ -171,16 +171,16 @@ func benchmain() {
 			select {
 			case signal := <-signalChan:
 				if exit := handleSignal(signal); exit {
-					fmt.Println("stopping goroutines")
+					glog.Infoln("stopping goroutines")
 					close(stop)
 					break loopSignals //break for loop, not only select
 				}
 			}
 		}
 	}
-	fmt.Println("waiting for goroutines")
+	glog.Infoln("waiting for goroutines")
 	wg.Wait()
-	fmt.Println("finished waiting")
+	glog.Infoln("finished waiting")
 	return
 }
 
@@ -208,7 +208,7 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, id int) (cl RWRe
 		pb.WithCWriteNQuorumFunc(qf.CWriteNQF),
 	)
 	if err != nil {
-		fmt.Println("Creating manager returned error: ", err)
+		glog.Errorln("Creating manager returned error: ", err)
 		return
 	}
 	switch alg {
@@ -226,7 +226,7 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, id int) (cl RWRe
 }
 
 func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
-	fmt.Println("starting continous write")
+	glog.Infoln("starting continous write")
 	var (
 		value   = make([]byte, size)
 		cnt     int
@@ -251,12 +251,12 @@ loop:
 			break loop
 		}
 	}
-	fmt.Println("finished continous write")
+	glog.Infoln("finished continous write")
 	wg.Done()
 }
 
 func contRead(cl RWRer, stop chan struct{}, wg *sync.WaitGroup) {
-	fmt.Println("starting continous read")
+	glog.Infoln("starting continous read")
 	var (
 		c       int
 		cnt     int
@@ -273,13 +273,13 @@ loop:
 		}()
 		select {
 		case <-stop:
-			fmt.Println("received stopping signal")
+			glog.Infoln("received stopping signal")
 			break loop
 		case cnt = <-cchan:
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 		}
 	}
-	fmt.Println("finished continous read")
+	glog.Infoln("finished continous read")
 	wg.Done()
 }
 
@@ -296,7 +296,7 @@ func doWrites(cl RWRer, size int, writes int, wg *sync.WaitGroup) {
 		cnt = cl.Write(value)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
 	}
-	fmt.Println("finished writes")
+	glog.Infoln("finished writes")
 	if wg != nil {
 		wg.Done()
 	}
@@ -313,7 +313,7 @@ func doReads(cl RWRer, reads int, wg *sync.WaitGroup) {
 		_, cnt = cl.Read()
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 	}
-	fmt.Println("finished reads")
+	glog.Infoln("finished reads")
 	wg.Done()
 }
 
@@ -327,7 +327,7 @@ func parseFlags() {
 }
 
 func handleSignal(signal os.Signal) bool {
-	fmt.Println("received signal,", signal)
+	glog.Infoln("received signal,", signal)
 	switch signal {
 	case os.Interrupt, os.Kill, syscall.SIGTERM:
 		return true
@@ -343,4 +343,21 @@ type RWRer interface {
 	Write(val []byte) int
 	Reconf(prop *pb.Blueprint) (int, error)
 	GetCur() *pb.Blueprint
+}
+
+func LogErrors(mgr *pb.Manager) {
+	errs := mgr.GetErrors()
+	founderrs := false
+	for id, e := range errs {
+		if !founderrs {
+			glog.Infoln("Printing connection errors.")
+		}
+		glog.Infof("id %d: error %v\n", id, e)
+		founderrs = true
+	}
+	if !founderrs {
+		glog.Infoln("No connection errors.")
+	}
+
+	return
 }

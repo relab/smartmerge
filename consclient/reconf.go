@@ -49,7 +49,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		prepare:
 		promise, err = cc.Confs[i].CPrepare(&pb.Prepare{CurC: uint32(cc.Blueps[i].Len()),Rnd: rnd})
 		if glog.V(3) {
-			glog.Infoln("Promise returned")
+			glog.Infoln("Prepare returned")
 		}
 		cnt++
 		cur = cc.handleNewCur(cur, promise.Reply.GetCur())
@@ -130,7 +130,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		decide:
 		readS, err := cc.Confs[i].CWriteN(&pb.DRead{CurC: uint32(cc.Blueps[i].Len()),Prop: next})
 		if glog.V(3) {
-			glog.Infoln("CReadS returned.")
+			glog.Infoln("CWriteN returned.")
 		}
 		cnt++
 		cur = cc.handleNewCur(cur, readS.Reply.GetCur())

@@ -13,7 +13,7 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 
-		read, err := cc.Confs[i].CReadS(&pb.AdvRead{uint32(cc.Blueps[i].Len())})
+		read, err := cc.Confs[i].CReadS(&pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())})
 		cnt++
 		cur = cc.handleNewCur(cur, read.Reply.GetCur())
 		if err != nil && cur <= i {
@@ -29,7 +29,7 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 		for _, next := range read.Reply.GetNext() {
 			cc.handleNext(i, next)
 		}
-		
+
 		if rs.Compare(read.Reply.GetState()) == 1 {
 			rs = read.Reply.GetState()
 		}
@@ -49,7 +49,7 @@ func (cc *CClient) set(rs *pb.State) int {
 			continue
 		}
 
-		write, err := cc.Confs[i].CWriteS(&pb.AdvWriteS{rs,uint32(cc.Blueps[i].Len())})
+		write, err := cc.Confs[i].CWriteS(&pb.WriteS{rs, &pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())}})
 		cnt++
 		cur = cc.handleNewCur(cur, write.Reply.GetCur())
 		if err != nil {
@@ -59,13 +59,12 @@ func (cc *CClient) set(rs *pb.State) int {
 		if glog.V(6) {
 			glog.Infoln("CWriteS returned, with replies from ", write.MachineIDs)
 		}
-		
 
 		// This should never be more than one iteration. How to fix that?
 		for _, next := range write.Reply.GetNext() {
 			cc.handleNext(i, next)
 		}
-		
+
 	}
 	if cur > 0 {
 		cc.Blueps = cc.Blueps[cur:]
@@ -74,14 +73,20 @@ func (cc *CClient) set(rs *pb.State) int {
 	return cnt
 }
 
-func (cc *CClient) handleNewCur(cur int, newCur *pb.Blueprint) int {
+func (cc *CClient) handleNewCur(cur int, newCur *pb.ConfReply) int {
 	if newCur == nil {
 		return cur
 	}
-	if glog.V(3) {
-		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), cc.Blueps[cur].Len())
+	if newCur.GetCur() != nil {
+		if glog.V(3) {
+			glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), cc.Blueps[cur].Len())
+		}
+		return cc.findorinsert(cur, newCur.Cur)
 	}
-	return cc.findorinsert(cur, newCur)
+	if glog.V(3) {
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.NewCur.Len(), cc.Blueps[cur].Len())
+	}
+	return cc.findorinsert(cur, newCur.NewCur)
 }
 
 func (cc *CClient) handleNext(i int, next *pb.Blueprint) {
@@ -114,22 +119,22 @@ func (cc *CClient) findorinsert(i int, blp *pb.Blueprint) int {
 }
 
 func (cc *CClient) insert(i int, blp *pb.Blueprint) {
-	cnf, err := cc.mgr.NewConfiguration(blp.Add, majQuorum(blp),ConfTimeout)
+	cnf, err := cc.mgr.NewConfiguration(blp.Add, majQuorum(blp), ConfTimeout)
 	if err != nil {
 		panic("could not get new config")
 	}
-	
+
 	glog.V(3).Infoln("Inserting new configuration at place ", i)
 
 	cc.Blueps = append(cc.Blueps, blp)
 	cc.Confs = append(cc.Confs, cnf)
 
-	for j:= len(cc.Blueps)-1; j>i; j-- {
+	for j := len(cc.Blueps) - 1; j > i; j-- {
 		cc.Blueps[j] = cc.Blueps[j-1]
 		cc.Confs[j] = cc.Confs[j-1]
-	} 
+	}
 
-	if len(cc.Blueps) != i + 1 {
+	if len(cc.Blueps) != i+1 {
 		cc.Blueps[i] = blp
 		cc.Confs[i] = cnf
 	}

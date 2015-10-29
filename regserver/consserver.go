@@ -15,7 +15,7 @@ type ConsServer struct {
 	RState *pb.State
 	Next   map[uint32]*pb.Blueprint
 	Rnd    map[uint32]uint32
-	Val	   map[uint32]*pb.CV
+	Val    map[uint32]*pb.CV
 	mu     sync.RWMutex
 }
 
@@ -34,8 +34,8 @@ func NewConsServer() *ConsServer {
 	return &ConsServer{
 		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
 		Next:   make(map[uint32]*pb.Blueprint, 0),
-		Rnd: 	make(map[uint32]uint32,0),
-		Val:    make(map[uint32]*pb.CV,0),
+		Rnd:    make(map[uint32]uint32, 0),
+		Val:    make(map[uint32]*pb.CV, 0),
 		mu:     sync.RWMutex{},
 	}
 }
@@ -46,8 +46,8 @@ func NewConsServerWithCur(cur *pb.Blueprint, curc uint32) *ConsServer {
 		CurC:   curc,
 		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
 		Next:   make(map[uint32]*pb.Blueprint, 0),
-		Rnd: 	make(map[uint32]uint32,0),
-		Val:    make(map[uint32]*pb.CV,0),
+		Rnd:    make(map[uint32]uint32, 0),
+		Val:    make(map[uint32]*pb.CV, 0),
 		mu:     sync.RWMutex{},
 	}
 }
@@ -99,32 +99,34 @@ func (cs *ConsServer) CWriteN(ctx context.Context, rr *pb.DRead) (*pb.AdvReadRep
 	if rr.CurC < cs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{State: cs.RState,Cur: cs.Cur, Next: next}, nil
+		return &pb.AdvReadReply{State: cs.RState, Cur: cs.Cur, Next: next}, nil
 	}
 
 	return &pb.AdvReadReply{State: cs.RState, Next: next}, nil
 }
 
-func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
+func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
 	cs.mu.RLock()
 	defer cs.mu.RUnlock()
 	//defer cs.PrintState("CReadS")
 
-
+	if rr.This < cs.CurC {
+		return &pb.ReadReply{Cur: &pb.ConfReply{cs.CurC, nil}}, nil
+	}
 	var next []*pb.Blueprint
-	if cs.Next[rr.CurC] != nil {
+	if cs.Next[rr.Conf.This] != nil {
 		next = []*pb.Blueprint{cs.Next[rr.CurC]}
 	}
-	if rr.CurC < cs.CurC {
+	if rr.Cur < cs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{State: cs.RState,Cur: cs.Cur, Next: next}, nil
+		return &pb.ReadReply{State: cs.RState, Cur: &pb.ConfReply{nil, cs.CurC}, Next: next}, nil
 	}
 
-	return &pb.AdvReadReply{State: cs.RState, Next: next}, nil
+	return &pb.ReadReply{State: cs.RState, Next: next}, nil
 }
 
-func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
+func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	//defer cs.PrintState("CWriteS")
@@ -136,18 +138,19 @@ func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 		return &pb.AdvWriteSReply{}, nil
 	}
 
+	if wr.Conf.This < cs.CurC {
+		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.CurC, nil}}, nil
+	}
 	var next []*pb.Blueprint
 	if cs.Next[wr.CurC] != nil {
 		next = []*pb.Blueprint{cs.Next[wr.CurC]}
 	}
-	
-	if wr.CurC < cs.CurC {
-		//Not sure if we should return an empty Next in this case.
-		//Returning it is safer. The other faster.
-		return &pb.AdvWriteSReply{Cur: cs.Cur,Next: next}, nil
+
+	if wr.Conf.Cur < cs.CurC {
+		return &pb.WriteSReply{Cur: &pb.ConfReply{nil, cs.Cur}, Next: next}, nil
 	}
 
-	return &pb.AdvWriteSReply{Next: next}, nil
+	return &pb.WriteSReply{Next: next}, nil
 }
 
 func (cs *ConsServer) CPrepare(ctx context.Context, pre *pb.Prepare) (*pb.Promise, error) {
@@ -166,12 +169,12 @@ func (cs *ConsServer) CPrepare(ctx context.Context, pre *pb.Prepare) (*pb.Promis
 		return &pb.Promise{Cur: cur, Dec: cs.Next[pre.CurC]}, nil
 	}
 
-	if rnd, ok := cs.Rnd[pre.CurC]; !ok || pre.Rnd > rnd  {
+	if rnd, ok := cs.Rnd[pre.CurC]; !ok || pre.Rnd > rnd {
 		// A Prepare in a new and higher round.
-		cs.Rnd[pre.CurC] = pre.Rnd 
+		cs.Rnd[pre.CurC] = pre.Rnd
 		return &pb.Promise{Cur: cur, Val: cs.Val[pre.CurC]}, nil
 	}
-	
+
 	return &pb.Promise{Cur: cur, Rnd: cs.Rnd[pre.CurC], Val: cs.Val[pre.CurC]}, nil
 }
 
@@ -195,7 +198,7 @@ func (cs *ConsServer) CAccept(ctx context.Context, pro *pb.Propose) (lrn *pb.Lea
 		// Accept in old round.
 		return &pb.Learn{Cur: cur, Learned: false}, nil
 	}
-	
+
 	cs.Rnd[pro.CurC] = pro.Val.Rnd
 	cs.Val[pro.CurC] = pro.Val
 	return &pb.Learn{Cur: cur, Learned: true}, nil

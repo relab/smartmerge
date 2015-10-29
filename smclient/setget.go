@@ -13,7 +13,7 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 
-		read, err := smc.Confs[i].AReadS(&pb.AdvRead{uint32(smc.Blueps[i].Len())})
+		read, err := smc.Confs[i].AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())})
 		cnt++
 		if err != nil {
 			glog.Errorln("error from AReadS: ", err)
@@ -46,7 +46,7 @@ func (smc *SmClient) set(rs *pb.State) int {
 			continue
 		}
 
-		write, err := smc.Confs[i].AWriteS(&pb.AdvWriteS{rs, uint32(smc.Blueps[i].Len())})
+		write, err := smc.Confs[i].AWriteS(&pb.WriteS{rs, &pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())}})
 		cnt++
 		if err != nil {
 			glog.Errorln("AWriteS returned error, ", err)
@@ -66,14 +66,20 @@ func (smc *SmClient) set(rs *pb.State) int {
 	return cnt
 }
 
-func (smc *SmClient) handleNewCur(cur int, newCur *pb.Blueprint) int {
+func (smc *SmClient) handleNewCur(cur int, newCur *pb.ConfReply) int {
 	if newCur == nil {
 		return cur
 	}
-	if glog.V(3) {
-		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), smc.Blueps[cur].Len())
+	if newCur.GetCur != nil {
+		if glog.V(3) {
+			glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), smc.Blueps[cur].Len())
+		}
+		return smc.findorinsert(cur, newCur.Cur)
 	}
-	return smc.findorinsert(cur, newCur)
+	if glog.V(3) {
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.NewCur.Len(), smc.Blueps[cur].Len())
+	}
+	return smc.findorinsert(cur, newCur.NewCur)
 }
 
 func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {

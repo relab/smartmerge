@@ -29,7 +29,7 @@ func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*CClient, error) {
 	}
 
 	glog.Infof("New Client with Id: %d\n", id)
-	
+
 	_, err = conf.CSetState(&pb.CNewCur{Cur: initBlp, CurC: uint32(initBlp.Len())})
 	if err != nil {
 		glog.Errorln("initial SetCur returned error: ", err)
@@ -48,7 +48,7 @@ func (cc *CClient) Read() (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting Read")
 	}
-	
+
 	rs, cnt := cc.get()
 	if rs == nil {
 		return nil, cnt
@@ -83,7 +83,6 @@ func (cc *CClient) RRead() (val []byte, cnt int) {
 	}
 	return rs.Value, cnt
 }
-
 
 func (cc *CClient) Write(val []byte) int {
 	if glog.V(5) {

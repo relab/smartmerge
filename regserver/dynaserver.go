@@ -86,7 +86,7 @@ func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadRepl
 	if rr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{State: rs.RState,Cur: rs.Cur, Next: next}, nil
+		return &pb.AdvReadReply{State: rs.RState, Cur: rs.Cur, Next: next}, nil
 	}
 
 	return &pb.AdvReadReply{State: rs.RState, Next: next}, nil
@@ -112,7 +112,7 @@ func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWri
 	if wr.CurC != rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteSReply{Cur: rs.Cur,Next: next}, nil
+		return &pb.AdvWriteSReply{Cur: rs.Cur, Next: next}, nil
 	}
 
 	return &pb.AdvWriteSReply{Next: next}, nil
@@ -130,7 +130,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWrit
 	if rs.Next[wr.CurC] == nil {
 		rs.Next[wr.CurC] = wr.Next
 	}
-	outerLoop:
+outerLoop:
 	for _, newBp := range wr.Next {
 		for _, bp := range rs.Next[wr.CurC] {
 			if bp.Equals(newBp) {
@@ -168,7 +168,7 @@ func (ds *DynaServer) CheckNext(curc uint32, op string) {
 	if ds.Next[curc] == nil {
 		return
 	}
-	for _,pb := range ds.Next[curc] {
+	for _, pb := range ds.Next[curc] {
 		if pb == nil {
 			fmt.Println("found nil in bp slice, doing ", op)
 		}

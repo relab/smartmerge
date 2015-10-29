@@ -3,7 +3,7 @@
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
 SERVS=(9 10 11 12 13 14 15 17)
-READS=(25 26 30 31 32)
+READS=(30 31 32 33 34)
 
 cd $SM
 mkdir exlogs || {

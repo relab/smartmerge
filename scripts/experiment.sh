@@ -16,12 +16,14 @@ echo "$RMS removal runs"
 echo SmartMerge
 mkdir "sm_rm$RMS$*"
 mkdir "sm_rm$RMS$*"/events
-for i in {1..1} 
+for i in {1..20} 
 do
 	echo make run $i
 	./scripts/sm-run.sh "$RMS"
 	mv $SM/exlogs/*.elog $SM/"sm_rm$RMS$*"/events
-	mv $SM/exlogs ../"sm_rm$RMS$*"/"run$i"
+	mv $SM/exlogs $SM/"sm_rm$RMS$*"/"run$i"
+	echo sleeping 5 seconds
+	sleep 5
 done
 cd $SM
 cd "sm_rm$RMS$*"/events
@@ -66,12 +68,14 @@ echo Consensus Based
 cd $SM
 mkdir "cons_rm$RMS$*"
 mkdir "cons_rm$RMS$*"/events
-for i in {1..1} 
+for i in {1..20} 
 do
 	echo make run $i
 	./scripts/cons-run.sh "$RMS"
 	mv $SM/exlogs/*.elog $SM/"cons_rm$RMS$*"/events
-	mv $SM/exlogs ../"cons_rm$RMS$*"/"run$i"
+	mv $SM/exlogs $SM/"cons_rm$RMS$*"/"run$i"
+	echo sleeping 5 seconds
+	sleep 5
 done
 cd $SM/"cons_rm$RMS$*"/events
 echo Analyzing

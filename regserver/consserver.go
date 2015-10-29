@@ -77,7 +77,7 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewCur
 	return &pb.NewCurReply{false}, nil
 }
 
-func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {
+func (cs *ConsServer) CWriteN(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {
 	cs.mu.RLock()
 	defer cs.mu.RUnlock()
 	//defer cs.PrintState("CReadS")
@@ -91,6 +91,25 @@ func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadRepl
 			cs.Next[rr.CurC] = rr.Prop
 		}
 	}
+
+	var next []*pb.Blueprint
+	if cs.Next[rr.CurC] != nil {
+		next = []*pb.Blueprint{cs.Next[rr.CurC]}
+	}
+	if rr.CurC < cs.CurC {
+		//Not sure if we should return an empty Next and State in this case.
+		//Returning it is safer. The other faster.
+		return &pb.AdvReadReply{State: cs.RState,Cur: cs.Cur, Next: next}, nil
+	}
+
+	return &pb.AdvReadReply{State: cs.RState, Next: next}, nil
+}
+
+func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
+	cs.mu.RLock()
+	defer cs.mu.RUnlock()
+	//defer cs.PrintState("CReadS")
+
 
 	var next []*pb.Blueprint
 	if cs.Next[rr.CurC] != nil {

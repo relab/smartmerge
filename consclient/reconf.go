@@ -128,7 +128,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		}
 		
 		decide:
-		readS, err := cc.Confs[i].CReadS(&pb.DRead{CurC: uint32(cc.Blueps[i].Len()),Prop: next})
+		readS, err := cc.Confs[i].CWriteN(&pb.DRead{CurC: uint32(cc.Blueps[i].Len()),Prop: next})
 		if glog.V(3) {
 			glog.Infoln("CReadS returned.")
 		}
@@ -153,7 +153,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	if i := len(cc.Confs) - 1; i > cur {
 		_, err := cc.Confs[i].CSetState(&pb.CNewCur{Cur:cc.Blueps[i], CurC: uint32(cc.Blueps[i].Len()),State: rst})
 		if glog.V(3) {
-			glog.Infoln("Set state in configuration of size %d.", cc.Blueps[i].Len())
+			glog.Infof("Set state in configuration of size %d.\n", cc.Blueps[i].Len())
 		}
 		cnt++
 		if err != nil {

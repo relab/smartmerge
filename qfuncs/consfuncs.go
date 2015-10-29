@@ -1,7 +1,7 @@
 package qfuncs
 
 import (
-
+	"github.com/golang/glog"
 	pr "github.com/relab/smartMerge/proto"
 
 )
@@ -9,6 +9,38 @@ import (
 var CReadSQF = AReadSQF
 var CWriteSQF = AWriteSQF
 var CSetStateQF = SetCurQF
+
+var CWriteNQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvReadReply, bool){
+	
+	// Stop RPC if new current configuration reported. 
+	lastrep := replies[len(replies)-1]
+	if lastrep.GetCur() != nil {
+		if glog.V(3) { glog.Infoln("ReadS reported new Cur.")}
+		return lastrep, true
+	}
+	
+	// Return false, if not enough replies yet.
+	if len(replies) < c.MaxQuorum() {
+		if glog.V(6) { glog.Infoln("Not enough ReadSReplies yet.")}
+		return nil, false
+	}
+	
+	lastrep = new(pr.AdvReadReply)
+	for _,rep := range replies {
+		if lastrep.GetState().Compare(rep.GetState()) == 1 {
+			lastrep.State = rep.GetState()
+		}
+	}
+	
+	next := make([]*pr.Blueprint,0,1)
+	for _, rep := range replies {
+		next = GetBlueprintSlice(next, rep)
+	}
+	
+	lastrep.Next = next
+	
+	return lastrep, true	
+}
 
 var CPrepareQF = func(c *pr.Configuration, replies []*pr.Promise) (*pr.Promise, bool){
 	

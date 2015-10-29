@@ -120,7 +120,8 @@ message GetOneReply {
 service ConsDisk {
 	rpc CPrepare(Prepare) returns (Promise) {}
 	rpc CAccept(Propose) returns (Learn) {}
-	rpc CReadS(DRead) returns (AdvReadReply) {} 
+	rpc CReadS(AdvRead) returns (AdvReadReply) {} 
+	rpc CWriteN(DRead) returns (AdvReadReply) {}
 	rpc CWriteS(AdvWriteS) returns (AdvWriteSReply) {}
 	rpc CSetState(CNewCur) returns (NewCurReply) {}
 }

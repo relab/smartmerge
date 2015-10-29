@@ -13,7 +13,7 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 
-		read, err := cc.Confs[i].CReadS(&pb.DRead{uint32(cc.Blueps[i].Len()), nil})
+		read, err := cc.Confs[i].CReadS(&pb.AdvRead{uint32(cc.Blueps[i].Len())})
 		cnt++
 		cur = cc.handleNewCur(cur, read.Reply.GetCur())
 		if err != nil && cur <= i {

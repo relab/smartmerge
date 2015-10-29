@@ -205,6 +205,7 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, id int) (cl RWRe
 		pb.WithCPrepareQuorumFunc(qf.CPrepareQF),
 		pb.WithCAcceptQuorumFunc(qf.CAcceptQF),
 		pb.WithCSetStateQuorumFunc(qf.CSetStateQF),
+		pb.WithCWriteNQuorumFunc(qf.CWriteNQF),
 	)
 	if err != nil {
 		fmt.Println("Creating manager returned error: ", err)

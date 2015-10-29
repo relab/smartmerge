@@ -72,7 +72,7 @@ var CPrepareQF = func(c *pr.Configuration, replies []*pr.Promise) (*pr.Promise, 
 		if rep.Val == nil {
 			continue
 		}
-		if rep.Val.Rnd > lastrep.Val.Rnd {
+		if lastrep.Val == nil || rep.Val.Rnd > lastrep.Val.Rnd {
 			lastrep.Val = rep.Val
 		}
 	}

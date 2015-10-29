@@ -3,7 +3,18 @@
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
 SERVS=(9 10 11 12 13 14 15 17)
-READS=(25 26 30 31 32)
+#READS=(25 26 30 31 32)
+
+i=0
+while read R; do
+	READS[i]=$R
+	i=$(($i+1))
+	echo $i
+done <$SM/scripts/readersList
+for Pi in ${READS[@]}; do
+	echo $Pi
+done
+
 
 cd $SM
 mkdir exlogs || {

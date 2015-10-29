@@ -1,9 +1,7 @@
 package consclient
 
 import (
-	"fmt"
-	"time"
-
+	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
 )
 
@@ -19,10 +17,13 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 		cnt++
 		cur = cc.handleNewCur(cur, read.Reply.GetCur())
 		if err != nil && cur <= i {
-			fmt.Println("error from CReadS: ", err)
-			//No Quorum Available. Retry
-			panic("Cread returned error")
+			glog.Errorln("error from CReadS: ", err)
+			return nil, 0
 			//return
+		}
+
+		if glog.V(6) {
+			glog.Infoln("CReadS returned with replies from ", read.MachineIDs)
 		}
 
 		for _, next := range read.Reply.GetNext() {
@@ -51,10 +52,14 @@ func (cc *CClient) set(rs *pb.State) int {
 		write, err := cc.Confs[i].CWriteS(&pb.AdvWriteS{rs,uint32(cc.Blueps[i].Len())})
 		cnt++
 		cur = cc.handleNewCur(cur, write.Reply.GetCur())
-		if err != nil && cur <= i {
-			fmt.Println("CWriteS returned error, ", err)
-			panic("Error from CRead")
+		if err != nil {
+			glog.Errorln("CWriteS returned error, ", err)
+			return 0
 		}
+		if glog.V(6) {
+			glog.Infoln("CWriteS returned, with replies from ", write.MachineIDs)
+		}
+		
 
 		// This should never be more than one iteration. How to fix that?
 		for _, next := range write.Reply.GetNext() {
@@ -73,11 +78,15 @@ func (cc *CClient) handleNewCur(cur int, newCur *pb.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
+	if glog.V(3) {
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), cc.Blueps[cur].Len())
+	}
 	return cc.findorinsert(cur, newCur)
 }
 
 func (cc *CClient) handleNext(i int, next *pb.Blueprint) {
 	if next != nil {
+		glog.V(3).Infof("Found a next configurations.")
 		i = cc.findorinsert(i, next)
 	}
 }
@@ -105,10 +114,12 @@ func (cc *CClient) findorinsert(i int, blp *pb.Blueprint) int {
 }
 
 func (cc *CClient) insert(i int, blp *pb.Blueprint) {
-	cnf, err := cc.mgr.NewConfiguration(blp.Add, majQuorum(blp),2 * time.Second)
+	cnf, err := cc.mgr.NewConfiguration(blp.Add, majQuorum(blp),ConfTimeout)
 	if err != nil {
 		panic("could not get new config")
 	}
+	
+	glog.V(3).Infoln("Inserting new configuration at place ", i)
 
 	cc.Blueps = append(cc.Blueps, blp)
 	cc.Confs = append(cc.Confs, cnf)

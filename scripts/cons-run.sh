@@ -3,7 +3,7 @@
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
 SERVS=(9 10 11 12 13 14 15 17)
-READS=(25 26 30 31 32)
+READS=(27 28 30 31 32)
 
 cd $SM
 mkdir exlogs || {
@@ -29,7 +29,7 @@ echo starting Readers
 for Pi in ${READS[@]}
 do
 	echo starting reader on pitter$Pi
-ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -all-cores -log_events -v=5 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -all-cores -log_events -v=4 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
 done
 
 sleep 3

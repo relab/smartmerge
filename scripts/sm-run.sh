@@ -7,7 +7,7 @@ READS=(25 26 30 31 32)
 
 cd $SM
 mkdir exlogs || {
-	echo "press enter to continue"
+	echo "press enter to continue or Ctrl-C to abort"
 	read
 }
 

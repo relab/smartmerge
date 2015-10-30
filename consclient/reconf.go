@@ -10,11 +10,11 @@ import (
 
 func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	if glog.V(2) {
-		glog.Infoln("Starting reconfiguration")
+		glog.Infof("C%d: Starting reconfiguration\n", cc.ID)
 	}
 	//Proposed blueprint is already in place, or outdated.
 	if prop.Compare(cc.Blueps[0]) == 1 {
-		glog.V(3).Infoln("Proposal is already in place.")
+		glog.V(3).Infof("C%d: Proposal is already in place.", cc.ID)
 		return cnt, nil
 	}
 
@@ -71,12 +71,12 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		if cc.Blueps[i].LearnedCompare(next) == 1 {
 			readS, err := cc.Confs[i].CWriteN(&pb.DRead{CurC: uint32(cc.Blueps[i].Len()), Prop: next})
 			if glog.V(3) {
-				glog.Infoln("CWriteN returned.")
+				glog.Infof("C%d: CWriteN returned.\n", cc.ID)
 			}
 			cnt++
 			cur = cc.handleOneCur(cur, readS.Reply.GetCur())
 			if err != nil && cur <= i {
-				glog.Errorln("error from CReadS: ", err)
+				glog.Errorf("C%d: error from CReadS: %v\n", cc.ID, err)
 				//No Quorum Available. Retry
 				return 0, err
 			}
@@ -90,7 +90,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			}			
 			
 		} else if next != nil {
-			glog.Errorln("This case should never happen. There might be a but in the code.")
+			glog.Errorln("This case should never happen. There might be a bug in the code.")
 		}
 		
 	}
@@ -98,12 +98,12 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	if i := len(cc.Confs) - 1; i > cur {
 		_, err := cc.Confs[i].CSetState(&pb.CNewCur{Cur: cc.Blueps[i], CurC: uint32(cc.Blueps[i].Len()), State: rst})
 		if glog.V(3) {
-			glog.Infof("Set state in configuration of size %d.\n", cc.Blueps[i].Len())
+			glog.Infof("C%d: Set state in configuration of size %d.\n", cc.ID, cc.Blueps[i].Len())
 		}
 		cnt++
 		if err != nil {
 			//Not sure what to do:
-			glog.Errorln("SetState returned error, not sure what to do")
+			glog.Errorf("C%d: SetState returned error, not sure what to do\n", cc.ID)
 			return 0, err
 		}
 		cur = i
@@ -121,7 +121,7 @@ func (cc *CClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
 	}
 	
 	if glog.V(3) {
-		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), cc.Blueps[cur].Len())
+		glog.Infof("C%d: Found new Cur with length %d, current has length %d\n", cc.ID newCur.Len(), cc.Blueps[cur].Len())
 	}
 	return cc.findorinsert(cur, newCur)
 	
@@ -136,13 +136,13 @@ func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blue
 		promise, errx := cc.Confs[i].CPrepare(&pb.Prepare{CurC: uint32(cc.Blueps[i].Len()), Rnd: rnd})
 		if errx != nil {
 			//Should log this for debugging
-			glog.Errorln("Prepare returned error: ", errx)
+			glog.Errorf("C%d: Prepare returned error: %v\n", cc.ID, errx)
 			return nil,0, curin, errx
 		}
 		cnt++
 		cur = cc.handleOneCur(curin, promise.Reply.GetCur())
 		if i < cur {
-			glog.V(3).Infoln("Prepare returned new current conf.")
+			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", cc.ID)
 			return nil, cnt, cur, nil
 		}
 
@@ -151,25 +151,25 @@ func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blue
 		case promise.Reply.GetDec() != nil:
 			next = promise.Reply.GetDec()
 			if glog.V(3) {
-				glog.Infoln("Promise reported decided value.")
+				glog.Infof("C%d: Promise reported decided value.\n", cc.ID)
 			}
 			return
 		case rrnd <= rnd:
 			if promise.Reply.GetVal() != nil {
 				next = promise.Reply.Val.Val
 				if glog.V(3) {
-					glog.Infoln("Re-propose a value.")
+					glog.Infof("C%d: Re-propose a value.\n", cc.ID)
 				}
 			} else {
 				next = prop.Merge(cc.Blueps[i])
 				if glog.V(3) {
-					glog.Infoln("Proposing my value.")
+					glog.Infof("C%d: Proposing my value.\n", cc.ID )
 				}
 			}
 		case rrnd > rnd:
 			// Increment round, sleep then return to prepare.
 			if glog.V(3) {
-				glog.Infoln("Conflict, sleeping %d ms.", ms)
+				glog.Infof("C%d: Conflict, sleeping %d ms.\n", cc.ID, ms)
 			}
 			if rrid := rrnd % 256; rrid < cc.ID {
 				rnd = rrnd - rrid + cc.ID
@@ -184,20 +184,20 @@ func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blue
 
 		learn, errx := cc.Confs[i].CAccept(&pb.Propose{CurC: uint32(cc.Blueps[i].Len()), Val: &pb.CV{rnd, next}})
 		if err != nil {
-			glog.Errorln("Accept returned error: ", errx)
+			glog.Errorf("C%d: Accept returned error: %v\n", cc.ID , errx)
 			return nil,0, cur, errx
 		}
 	
 		cnt++
 		cur = cc.handleOneCur(cur, learn.Reply.GetCur())
 		if i < cur {
-			glog.V(3).Infoln("Prepare returned new current conf.")
+			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", cc.ID)
 			return
 		}
 
 		if learn.Reply.GetDec() == nil && !learn.Reply.Learned {
 			if glog.V(3) {
-				glog.Infoln("Did not learn, redo prepare.")
+				glog.Infof("C%d: Did not learn, redo prepare.\n", cc.ID)
 			}
 			rnd += 256
 			continue prepare
@@ -214,12 +214,12 @@ func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blue
 func (cc *CClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur int, err error) {
 	read, errx := cc.Confs[i].CReadS(&pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[i].Len())})
 	if errx != nil {
-		glog.Errorln("error from CReadS: ", errx)
+		glog.Errorf("C%d: error from CReadS: ", errx)
 		return nil, nil, 0, errx
 		//return
 	}
-	if glog.V(6) {
-		glog.Infoln("CReadS returned with replies from ", read.MachineIDs)
+	if glog.V(4) {
+		glog.Infof("C%d: CReadS returned with replies from \n", cc.ID , read.MachineIDs)
 	}
 	cur = cc.handleNewCur(curin, read.Reply.GetCur())
 	

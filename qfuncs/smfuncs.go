@@ -30,7 +30,7 @@ var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply
 			lastrep.State = rep.GetState()
 		}
 		if rep.GetCur() != nil {
-			if rep.GetCur().GetNewCur().Len() > lastrep.GetCur().GetCur().GetNewCur.Len() {
+			if rep.GetCur().GetNewCur().Len() > lastrep.GetCur().GetNewCur().Len() {
 				lastrep.Cur = rep.Cur
 			}
 		}
@@ -71,7 +71,7 @@ var AWriteSQF = func(c *pr.Configuration, replies []*pr.WriteSReply) (*pr.WriteS
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 		if rep.GetCur() != nil {
-			if rep.GetCur().GetNewCur().Len() > lastrep.GetCur().GetCur().GetNewCur.Len() {
+			if rep.GetCur().GetNewCur().Len() > lastrep.GetCur().GetNewCur().Len() {
 				lastrep.Cur = rep.Cur
 			}
 		}

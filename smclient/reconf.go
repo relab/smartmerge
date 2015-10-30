@@ -56,7 +56,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			return 0, err
 		}
 
-		cur = smc.handleNewCur(cur, writeN.Reply.GetCur())
+		cur = smc.handleOneCur(cur, writeN.Reply.GetCur())
 		smc.handleNext(i, writeN.Reply.GetNext())
 		las = las.Merge(writeN.Reply.GetLAState())
 		if rst.Compare(writeN.Reply.GetState()) == 1 {
@@ -80,7 +80,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			return 0, err
 		}
 
-		cur = smc.handleNewCur(i, setS.Reply.GetCur())
+		cur = smc.handleOneCur(i, setS.Reply.GetCur())
 	}
 
 	smc.Blueps = smc.Blueps[cur:]
@@ -109,7 +109,7 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 			glog.Infoln("LAProp returned.")
 		}
 
-		cur = smc.handleNewCur(cur, laProp.Reply.GetCur())
+		cur = smc.handleOneCur(cur, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.Equals(la) {
 			if glog.V(3) {
@@ -127,4 +127,14 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 		smc.Confs = smc.Confs[cur:]
 	}
 	return prop, cnt
+}
+
+func (smc *SmClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
+	if newCur == nil {
+		return cur
+	}
+	if glog.V(3) {
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), smc.Blueps[cur].Len())
+	}
+	return smc.findorinsert(cur, newCur)
 }

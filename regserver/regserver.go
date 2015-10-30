@@ -160,8 +160,15 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 	if rr.Cur < rs.CurC {
 		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{nil, rs.Cur}, Next: rs.Next}, nil
 	}
+	next := make([]*pb.Blueprint,0,len(rs.Next))
+	this := int(rr.This)
+	for _,nxt := range rs.Next {
+		if nxt.Len() > this {
+			next = append(next, nxt)
+		}
+	}
 
-	return &pb.ReadReply{State: rs.RState, Next: rs.Next}, nil
+	return &pb.ReadReply{State: rs.RState, Next: next}, nil
 }
 
 func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
@@ -177,21 +184,22 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 	// 		return &pb.AdvWriteSReply{}, nil
 	// 	}
 
-	if rr.Conf.This < rs.CurC {
+	if wr.Conf.This < rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
 		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, nil}}, nil
 	}
 	next := make([]*pb.Blueprint,0,len(rs.Next))
+	this := int(wr.Conf.This)
 	for _,nxt := range rs.Next {
-		if nxt.Len() > rr.Conf.This {
+		if nxt.Len() > this {
 			next = append(next, nxt)
 		}
 	}
-	if rr.Conf.Cur < rs.CurC {
-		return &pb.WriteSReply{Cur: &pb.ConfReply{nil, rs.Cur}, Next: next}
-
-	return &pb.AdvWriteSReply{Next: next}, nil
+	if wr.Conf.Cur < rs.CurC {
+		return &pb.WriteSReply{Cur: &pb.ConfReply{nil, rs.Cur}, Next: next}, nil
+	}
+	return &pb.WriteSReply{Next: next}, nil
 }
 
 func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWriteNReply, error) {

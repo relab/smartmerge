@@ -121,7 +121,7 @@ func (cc *CClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
 	}
 	
 	if glog.V(3) {
-		glog.Infof("C%d: Found new Cur with length %d, current has length %d\n", cc.ID newCur.Len(), cc.Blueps[cur].Len())
+		glog.Infof("C%d: Found new Cur with length %d, current has length %d\n", cc.ID, newCur.Len(), cc.Blueps[cur].Len())
 	}
 	return cc.findorinsert(cur, newCur)
 	

@@ -24,12 +24,12 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	}
 
 	cur := 0
-	
+
 	var (
-		rrnd uint32
-		next *pb.Blueprint
+		rrnd    uint32
+		next    *pb.Blueprint
 		promise *pb.CPrepareReply
-		learn *pb.CAcceptReply
+		learn   *pb.CAcceptReply
 	)
 	rst := new(pb.State)
 	rnd := cc.ID
@@ -37,17 +37,16 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		if i < cur {
 			continue
 		}
-		
+
 		ms := 1 * time.Millisecond
 		if prop.Compare(cc.Blueps[i]) == 1 {
 			//No new proposal, that we need to agree on.
 			next = nil
 			goto decide
 		}
-			
-		
-		prepare:
-		promise, err = cc.Confs[i].CPrepare(&pb.Prepare{CurC: uint32(cc.Blueps[i].Len()),Rnd: rnd})
+
+	prepare:
+		promise, err = cc.Confs[i].CPrepare(&pb.Prepare{CurC: uint32(cc.Blueps[i].Len()), Rnd: rnd})
 		if glog.V(3) {
 			glog.Infoln("Prepare returned")
 		}
@@ -56,10 +55,10 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		if i < cur {
 			continue
 		}
-		
+
 		if err != nil {
 			//Should log this for debugging
-			glog.Errorln("Prepare returned error: ",err)
+			glog.Errorln("Prepare returned error: ", err)
 			return 0, err
 		}
 
@@ -83,23 +82,22 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 					glog.Infoln("Proposing my value.")
 				}
 			}
-			
-		case rrnd > rnd: 
+
+		case rrnd > rnd:
 			if glog.V(3) {
 				glog.Infoln("Conflict, sleeping %d ms.", ms)
 			}
-			if rrid := rrnd%256; rrid < cc.ID {
-				rnd = rrnd-rrid+cc.ID
+			if rrid := rrnd % 256; rrid < cc.ID {
+				rnd = rrnd - rrid + cc.ID
 			} else {
-				rnd = rrnd-rrid+256+cc.ID
+				rnd = rrnd - rrid + 256 + cc.ID
 			}
 			time.Sleep(ms)
-			ms = 2*ms
+			ms = 2 * ms
 			goto prepare
 		}
-		
-	
-		learn, err = cc.Confs[i].CAccept(&pb.Propose{CurC: uint32(cc.Blueps[i].Len()),Val: &pb.CV{rnd, next}})
+
+		learn, err = cc.Confs[i].CAccept(&pb.Propose{CurC: uint32(cc.Blueps[i].Len()), Val: &pb.CV{rnd, next}})
 		if glog.V(3) {
 			glog.Infoln("Accept returned.")
 		}
@@ -108,11 +106,11 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		if i < cur {
 			continue
 		}
-		
+
 		if err != nil {
 			//Should log this for debugging
-			glog.Errorln("Accept returned error: ",err)
-			return 0,err
+			glog.Errorln("Accept returned error: ", err)
+			return 0, err
 		}
 
 		if learn.Reply.GetDec() == nil && !learn.Reply.Learned {
@@ -122,13 +120,13 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			rnd += 256
 			goto prepare
 		}
-		
+
 		if learn.Reply.GetDec() != nil {
 			next = learn.Reply.GetDec()
 		}
-		
-		decide:
-		readS, err := cc.Confs[i].CWriteN(&pb.DRead{CurC: uint32(cc.Blueps[i].Len()),Prop: next})
+
+	decide:
+		readS, err := cc.Confs[i].CWriteN(&pb.DRead{CurC: uint32(cc.Blueps[i].Len()), Prop: next})
 		if glog.V(3) {
 			glog.Infoln("CWriteN returned.")
 		}
@@ -139,19 +137,18 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			//No Quorum Available. Retry
 			return 0, err
 		}
-		
+
 		for _, next = range readS.Reply.GetNext() {
 			cc.handleNext(i, next)
 		}
-		
-		
+
 		if rst.Compare(readS.Reply.GetState()) == 1 {
 			rst = readS.Reply.GetState()
 		}
 	}
 
 	if i := len(cc.Confs) - 1; i > cur {
-		_, err := cc.Confs[i].CSetState(&pb.CNewCur{Cur:cc.Blueps[i], CurC: uint32(cc.Blueps[i].Len()),State: rst})
+		_, err := cc.Confs[i].CSetState(&pb.CNewCur{Cur: cc.Blueps[i], CurC: uint32(cc.Blueps[i].Len()), State: rst})
 		if glog.V(3) {
 			glog.Infof("Set state in configuration of size %d.\n", cc.Blueps[i].Len())
 		}
@@ -163,9 +160,9 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		}
 		cur = i
 	}
-	
+
 	cc.Blueps = cc.Blueps[cur:]
 	cc.Confs = cc.Confs[cur:]
-	
+
 	return cnt, nil
 }

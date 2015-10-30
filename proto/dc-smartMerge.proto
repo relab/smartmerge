@@ -3,8 +3,8 @@ syntax = "proto3";
 package proto;
 
 service AdvRegister {
-	rpc AReadS(AdvRead) returns (AdvReadReply) {} 
-	rpc AWriteS(AdvWriteS) returns (AdvWriteSReply) {}
+	rpc AReadS(Conf) returns (ReadReply) {} 
+	rpc AWriteS(WriteS) returns (WriteSReply) {}
 	rpc AWriteN(AdvWriteN) returns (AdvWriteNReply) {}
 	rpc SetCur(NewCur) returns (NewCurReply) {}
 	rpc LAProp(LAProposal) returns (LAReply) {} 
@@ -15,6 +15,16 @@ message State {
 	bytes Value = 1;
 	int32 Timestamp = 2;
 	uint32 Writer = 3;
+}
+
+message Conf {
+	uint32 This = 1;
+	uint32 Cur = 2;
+}
+
+message ConfReply {
+	Blueprint Cur = 1;
+	Blueprint NewCur = 2;
 }
 
 message Blueprint {
@@ -31,6 +41,25 @@ message NewCurReply {
 	bool New = 1;
 }
 
+message Read {
+	Conf Conf = 1;
+}
+
+message ReadReply {
+	State State = 1;
+	ConfReply Cur = 2;
+	repeated Blueprint Next = 3;
+}
+
+message WriteS {
+	State State = 1;
+	Conf Conf = 2;
+}
+
+message WriteSReply {
+	ConfReply Cur = 1;
+	repeated Blueprint Next = 2;
+}
 message AdvRead {
 	uint32 CurC = 1;
 }
@@ -120,9 +149,9 @@ message GetOneReply {
 service ConsDisk {
 	rpc CPrepare(Prepare) returns (Promise) {}
 	rpc CAccept(Propose) returns (Learn) {}
-	rpc CReadS(AdvRead) returns (AdvReadReply) {} 
+	rpc CReadS(Conf) returns (ReadReply) {} 
 	rpc CWriteN(DRead) returns (AdvReadReply) {}
-	rpc CWriteS(AdvWriteS) returns (AdvWriteSReply) {}
+	rpc CWriteS(WriteS) returns (WriteSReply) {}
 	rpc CSetState(CNewCur) returns (NewCurReply) {}
 }
 

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	
+
+	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
-	"github.com/golang/glog"
 )
 
 type RegServer struct {
@@ -146,22 +146,25 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 	return &pb.NewCurReply{true}, nil
 }
 
-func (rs *RegServer) AReadS(ctx context.Context, rr *pb.AdvRead) (*pb.AdvReadReply, error) {
+func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	glog.V(5).Infoln("Handling ReadS")	
+	glog.V(5).Infoln("Handling ReadS")
 	//defer rs.PrintState("readS")
 
-	if rr.CurC < rs.CurC {
+	if rr.This < rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{nil, rs.Cur, nil}, nil
+		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{rs.Cur, nil}, Next: nil}, nil
+	}
+	if rr.Cur < rs.CurC {
+		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{nil, rs.Cur}, Next: rs.Next}, nil
 	}
 
-	return &pb.AdvReadReply{State: rs.RState, Next: rs.Next}, nil
+	return &pb.ReadReply{State: rs.RState, Next: rs.Next}, nil
 }
 
-func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
+func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	glog.V(5).Infoln("Handling WriteS")
@@ -171,16 +174,24 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWrit
 	}
 
 	// if wr.CurC == 0 {
-// 		return &pb.AdvWriteSReply{}, nil
-// 	}
+	// 		return &pb.AdvWriteSReply{}, nil
+	// 	}
 
-	if wr.CurC < rs.CurC {
+	if rr.Conf.This < rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
-		return &pb.AdvWriteSReply{rs.Cur, nil}, nil
+		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, nil}}, nil
 	}
+	next := make([]*pb.Blueprint,0,len(rs.Next))
+	for _,nxt := range rs.Next {
+		if nxt.Len() > rr.Conf.This {
+			next = append(next, nxt)
+		}
+	}
+	if rr.Conf.Cur < rs.CurC {
+		return &pb.WriteSReply{Cur: &pb.ConfReply{nil, rs.Cur}, Next: next}
 
-	return &pb.AdvWriteSReply{Next: rs.Next}, nil
+	return &pb.AdvWriteSReply{Next: next}, nil
 }
 
 func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWriteNReply, error) {
@@ -221,7 +232,7 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	var c *pb.Blueprint
 	if lap.CurC < rs.CurC {
 		c = rs.Cur
-	} 
+	}
 
 	if rs.LAState.Compare(lap.Prop) == 1 {
 		glog.V(6).Infoln("LAState Accepted")
@@ -242,17 +253,17 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 	if ns == nil {
 		return nil, errors.New("Empty NewState message")
 	}
-	
+
 	rs.LAState = rs.LAState.Merge(ns.LAState)
 	if rs.RState.Compare(ns.State) == 1 {
 		rs.RState = ns.State
 	}
-	
+
 	if rs.CurC < ns.CurC && rs.Cur.Compare(ns.Cur) == 1 {
 		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
 		rs.Cur = ns.Cur
 		rs.CurC = ns.CurC
-		next := make([]*pb.Blueprint,0,len(rs.Next))
+		next := make([]*pb.Blueprint, 0, len(rs.Next))
 		for _, nxt := range rs.Next {
 			if nxt.Len() > rs.Cur.Len() {
 				next = append(next, nxt)

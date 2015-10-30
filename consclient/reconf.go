@@ -9,13 +9,18 @@ import (
 )
 
 func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
+	_, cnt, err = cc.reconf(prop, false, nil)
+	return
+}
+
+func (cc *CClient) reconf(prop *pb.Blueprint, regular bool, inst *pb.State) (rst *pb.State, cnt int, err error) {
 	if glog.V(2) {
 		glog.Infof("C%d: Starting reconfiguration\n", cc.ID)
 	}
 	//Proposed blueprint is already in place, or outdated.
 	if prop.Compare(cc.Blueps[0]) == 1 {
 		glog.V(3).Infof("C%d: Proposal is already in place.", cc.ID)
-		return cnt, nil
+		return nil, cnt, nil
 	}
 
 	if len(prop.Add) == 0 {
@@ -24,8 +29,6 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	}
 
 	cur := 0
-	getcons := true
-	rst := new(pb.State)
 	forconfiguration:
 	for i := 0; i < len(cc.Confs); i++ {
 		if i < cur {
@@ -34,20 +37,16 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 
 		var next *pb.Blueprint
 		
-		cmpprop := prop.Compare(cc.Blueps[i])
-		
-		switch {
-			
-			
-		case cmpprop != 1 && getcons:
+		switch prop.Compare(cc.Blueps[i]) {
+		case 0, -1:
 			//Need to agree on new proposal
 			var cs int
-			next, cs, cur, err = cc.getconsensus(cur, i, prop)
+			next, cs, cur, err = cc.getconsensus(i, prop)
 			if err != nil {
 				return 0, err
 			}
 			cnt += cs
-		case cmpprop == 1:
+		case 1:
 			// No proposal
 			var st *pb.State
 			st, next, cur, err = cc.doread(cur,i)
@@ -58,11 +57,6 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			if rst.Compare(st) == 1 {
 				rst = st
 			}		 
-		case cmpprop == -1 && !getcons: 
-			// A new proposal that was chosen already
-			next = prop
-		default:
-			glog.Fatalln("Trying to avoid consensus with uncomparable proposal.")
 		}
 		if i < cur {
 			continue forconfiguration
@@ -115,6 +109,9 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	return cnt, nil
 }
 
+
+
+
 func (cc *CClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
 	if newCur == nil {
 		return cur
@@ -127,7 +124,10 @@ func (cc *CClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
 	
 }
 
-func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt, cur int, err error) {
+
+
+
+func (cc *CClient) getconsensus(i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt, cur int, err error) {
 	ms := 1 * time.Millisecond	
 	rnd := cc.ID
 	prepare:	
@@ -137,10 +137,10 @@ func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blue
 		if errx != nil {
 			//Should log this for debugging
 			glog.Errorf("C%d: Prepare returned error: %v\n", cc.ID, errx)
-			return nil,0, curin, errx
+			return nil,0, i, errx
 		}
 		cnt++
-		cur = cc.handleOneCur(curin, promise.Reply.GetCur())
+		cur = cc.handleOneCur(i, promise.Reply.GetCur())
 		if i < cur {
 			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", cc.ID)
 			return nil, cnt, cur, nil
@@ -169,7 +169,7 @@ func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blue
 		case rrnd > rnd:
 			// Increment round, sleep then return to prepare.
 			if glog.V(3) {
-				glog.Infof("C%d: Conflict, sleeping %d ms.\n", cc.ID, ms)
+				glog.Infof("C%d: Conflict, sleeping %v.\n", cc.ID, ms)
 			}
 			if rrid := rrnd % 256; rrid < cc.ID {
 				rnd = rrnd - rrid + cc.ID
@@ -191,7 +191,7 @@ func (cc *CClient) getconsensus(curin, i int, prop *pb.Blueprint) (next *pb.Blue
 		cnt++
 		cur = cc.handleOneCur(cur, learn.Reply.GetCur())
 		if i < cur {
-			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", cc.ID)
+			glog.V(3).Infof("C%d: Accept returned new current conf.\n", cc.ID)
 			return
 		}
 

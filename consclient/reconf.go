@@ -51,7 +51,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			glog.Infoln("Prepare returned")
 		}
 		cnt++
-		cur = cc.handleNewCur(cur, promise.Reply.GetCur())
+		cur = cc.handleOneCur(cur, promise.Reply.GetCur())
 		if i < cur {
 			continue
 		}
@@ -102,7 +102,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			glog.Infoln("Accept returned.")
 		}
 		cnt++
-		cur = cc.handleNewCur(cur, learn.Reply.GetCur())
+		cur = cc.handleOneCur(cur, learn.Reply.GetCur())
 		if i < cur {
 			continue
 		}
@@ -131,7 +131,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 			glog.Infoln("CWriteN returned.")
 		}
 		cnt++
-		cur = cc.handleNewCur(cur, readS.Reply.GetCur())
+		cur = cc.handleOneCur(cur, readS.Reply.GetCur())
 		if err != nil && cur <= i {
 			glog.Errorln("error from CReadS: ", err)
 			//No Quorum Available. Retry
@@ -165,4 +165,16 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	cc.Confs = cc.Confs[cur:]
 
 	return cnt, nil
+}
+
+func (cc *CClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
+	if newCur == nil {
+		return cur
+	}
+	
+	if glog.V(3) {
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), cc.Blueps[cur].Len())
+	}
+	return cc.findorinsert(cur, newCur)
+	
 }

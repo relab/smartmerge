@@ -10,9 +10,15 @@ It is generated from these files:
 
 It has these top-level messages:
 	State
+	Conf
+	ConfReply
 	Blueprint
 	NewCur
 	NewCurReply
+	Read
+	ReadReply
+	WriteS
+	WriteSReply
 	AdvRead
 	AdvReadReply
 	AdvWriteS
@@ -72,6 +78,38 @@ func (m *State) Reset()         { *m = State{} }
 func (m *State) String() string { return proto1.CompactTextString(m) }
 func (*State) ProtoMessage()    {}
 
+type Conf struct {
+	This uint32 `protobuf:"varint,1,opt,name=This" json:"This,omitempty"`
+	Cur  uint32 `protobuf:"varint,2,opt,name=Cur" json:"Cur,omitempty"`
+}
+
+func (m *Conf) Reset()         { *m = Conf{} }
+func (m *Conf) String() string { return proto1.CompactTextString(m) }
+func (*Conf) ProtoMessage()    {}
+
+type ConfReply struct {
+	Cur    *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	NewCur *Blueprint `protobuf:"bytes,2,opt,name=NewCur" json:"NewCur,omitempty"`
+}
+
+func (m *ConfReply) Reset()         { *m = ConfReply{} }
+func (m *ConfReply) String() string { return proto1.CompactTextString(m) }
+func (*ConfReply) ProtoMessage()    {}
+
+func (m *ConfReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *ConfReply) GetNewCur() *Blueprint {
+	if m != nil {
+		return m.NewCur
+	}
+	return nil
+}
+
 type Blueprint struct {
 	Add []uint32 `protobuf:"varint,1,rep,name=Add" json:"Add,omitempty"`
 	Rem []uint32 `protobuf:"varint,2,rep,name=Rem" json:"Rem,omitempty"`
@@ -104,6 +142,98 @@ type NewCurReply struct {
 func (m *NewCurReply) Reset()         { *m = NewCurReply{} }
 func (m *NewCurReply) String() string { return proto1.CompactTextString(m) }
 func (*NewCurReply) ProtoMessage()    {}
+
+type Read struct {
+	Conf *Conf `protobuf:"bytes,1,opt,name=Conf" json:"Conf,omitempty"`
+}
+
+func (m *Read) Reset()         { *m = Read{} }
+func (m *Read) String() string { return proto1.CompactTextString(m) }
+func (*Read) ProtoMessage()    {}
+
+func (m *Read) GetConf() *Conf {
+	if m != nil {
+		return m.Conf
+	}
+	return nil
+}
+
+type ReadReply struct {
+	State *State       `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
+	Cur   *ConfReply   `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+	Next  []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
+}
+
+func (m *ReadReply) Reset()         { *m = ReadReply{} }
+func (m *ReadReply) String() string { return proto1.CompactTextString(m) }
+func (*ReadReply) ProtoMessage()    {}
+
+func (m *ReadReply) GetState() *State {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+func (m *ReadReply) GetCur() *ConfReply {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *ReadReply) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+type WriteS struct {
+	State *State `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
+	Conf  *Conf  `protobuf:"bytes,2,opt,name=Conf" json:"Conf,omitempty"`
+}
+
+func (m *WriteS) Reset()         { *m = WriteS{} }
+func (m *WriteS) String() string { return proto1.CompactTextString(m) }
+func (*WriteS) ProtoMessage()    {}
+
+func (m *WriteS) GetState() *State {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+func (m *WriteS) GetConf() *Conf {
+	if m != nil {
+		return m.Conf
+	}
+	return nil
+}
+
+type WriteSReply struct {
+	Cur  *ConfReply   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
+}
+
+func (m *WriteSReply) Reset()         { *m = WriteSReply{} }
+func (m *WriteSReply) String() string { return proto1.CompactTextString(m) }
+func (*WriteSReply) ProtoMessage()    {}
+
+func (m *WriteSReply) GetCur() *ConfReply {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *WriteSReply) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
 
 type AdvRead struct {
 	CurC uint32 `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
@@ -546,8 +676,8 @@ var _ grpc.ClientConn
 // Client API for AdvRegister service
 
 type AdvRegisterClient interface {
-	AReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error)
-	AWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
+	AReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error)
+	AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error)
 	AWriteN(ctx context.Context, in *AdvWriteN, opts ...grpc.CallOption) (*AdvWriteNReply, error)
 	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
 	LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error)
@@ -562,8 +692,8 @@ func NewAdvRegisterClient(cc *grpc.ClientConn) AdvRegisterClient {
 	return &advRegisterClient{cc}
 }
 
-func (c *advRegisterClient) AReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
-	out := new(AdvReadReply)
+func (c *advRegisterClient) AReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error) {
+	out := new(ReadReply)
 	err := grpc.Invoke(ctx, "/proto.AdvRegister/AReadS", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -571,8 +701,8 @@ func (c *advRegisterClient) AReadS(ctx context.Context, in *AdvRead, opts ...grp
 	return out, nil
 }
 
-func (c *advRegisterClient) AWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error) {
-	out := new(AdvWriteSReply)
+func (c *advRegisterClient) AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error) {
+	out := new(WriteSReply)
 	err := grpc.Invoke(ctx, "/proto.AdvRegister/AWriteS", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -619,8 +749,8 @@ func (c *advRegisterClient) SetState(ctx context.Context, in *NewState, opts ...
 // Server API for AdvRegister service
 
 type AdvRegisterServer interface {
-	AReadS(context.Context, *AdvRead) (*AdvReadReply, error)
-	AWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
+	AReadS(context.Context, *Conf) (*ReadReply, error)
+	AWriteS(context.Context, *WriteS) (*WriteSReply, error)
 	AWriteN(context.Context, *AdvWriteN) (*AdvWriteNReply, error)
 	SetCur(context.Context, *NewCur) (*NewCurReply, error)
 	LAProp(context.Context, *LAProposal) (*LAReply, error)
@@ -632,7 +762,7 @@ func RegisterAdvRegisterServer(s *grpc.Server, srv AdvRegisterServer) {
 }
 
 func _AdvRegister_AReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AdvRead)
+	in := new(Conf)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -644,7 +774,7 @@ func _AdvRegister_AReadS_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _AdvRegister_AWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AdvWriteS)
+	in := new(WriteS)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -905,9 +1035,9 @@ var _DynaDisk_serviceDesc = grpc.ServiceDesc{
 type ConsDiskClient interface {
 	CPrepare(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error)
 	CAccept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error)
-	CReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error)
+	CReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error)
 	CWriteN(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error)
-	CWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
+	CWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error)
 	CSetState(ctx context.Context, in *CNewCur, opts ...grpc.CallOption) (*NewCurReply, error)
 }
 
@@ -937,8 +1067,8 @@ func (c *consDiskClient) CAccept(ctx context.Context, in *Propose, opts ...grpc.
 	return out, nil
 }
 
-func (c *consDiskClient) CReadS(ctx context.Context, in *AdvRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
-	out := new(AdvReadReply)
+func (c *consDiskClient) CReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error) {
+	out := new(ReadReply)
 	err := grpc.Invoke(ctx, "/proto.ConsDisk/CReadS", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -955,8 +1085,8 @@ func (c *consDiskClient) CWriteN(ctx context.Context, in *DRead, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *consDiskClient) CWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error) {
-	out := new(AdvWriteSReply)
+func (c *consDiskClient) CWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error) {
+	out := new(WriteSReply)
 	err := grpc.Invoke(ctx, "/proto.ConsDisk/CWriteS", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -978,9 +1108,9 @@ func (c *consDiskClient) CSetState(ctx context.Context, in *CNewCur, opts ...grp
 type ConsDiskServer interface {
 	CPrepare(context.Context, *Prepare) (*Promise, error)
 	CAccept(context.Context, *Propose) (*Learn, error)
-	CReadS(context.Context, *AdvRead) (*AdvReadReply, error)
+	CReadS(context.Context, *Conf) (*ReadReply, error)
 	CWriteN(context.Context, *DRead) (*AdvReadReply, error)
-	CWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
+	CWriteS(context.Context, *WriteS) (*WriteSReply, error)
 	CSetState(context.Context, *CNewCur) (*NewCurReply, error)
 }
 
@@ -1013,7 +1143,7 @@ func _ConsDisk_CAccept_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _ConsDisk_CReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AdvRead)
+	in := new(Conf)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1037,7 +1167,7 @@ func _ConsDisk_CWriteN_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _ConsDisk_CWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AdvWriteS)
+	in := new(WriteS)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1127,7 +1257,7 @@ func (m *Manager) setDefaultQuorumFuncs() {
 	if m.opts.aReadSqf != nil {
 		m.aReadSqf = m.opts.aReadSqf
 	} else {
-		m.aReadSqf = func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool) {
+		m.aReadSqf = func(c *Configuration, replies []*ReadReply) (*ReadReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -1137,7 +1267,7 @@ func (m *Manager) setDefaultQuorumFuncs() {
 	if m.opts.aWriteSqf != nil {
 		m.aWriteSqf = m.opts.aWriteSqf
 	} else {
-		m.aWriteSqf = func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool) {
+		m.aWriteSqf = func(c *Configuration, replies []*WriteSReply) (*WriteSReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -1257,7 +1387,7 @@ func (m *Manager) setDefaultQuorumFuncs() {
 	if m.opts.cReadSqf != nil {
 		m.cReadSqf = m.opts.cReadSqf
 	} else {
-		m.cReadSqf = func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool) {
+		m.cReadSqf = func(c *Configuration, replies []*ReadReply) (*ReadReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -1277,7 +1407,7 @@ func (m *Manager) setDefaultQuorumFuncs() {
 	if m.opts.cWriteSqf != nil {
 		m.cWriteSqf = m.opts.cWriteSqf
 	} else {
-		m.cWriteSqf = func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool) {
+		m.cWriteSqf = func(c *Configuration, replies []*WriteSReply) (*WriteSReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -1458,13 +1588,13 @@ func WithCSetStateQuorumFunc(f CSetStateQuorumFn) ManagerOption {
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
-type AReadSQuorumFn func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool)
+type AReadSQuorumFn func(c *Configuration, replies []*ReadReply) (*ReadReply, bool)
 
 // AWriteSQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
-type AWriteSQuorumFn func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool)
+type AWriteSQuorumFn func(c *Configuration, replies []*WriteSReply) (*WriteSReply, bool)
 
 // AWriteNQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
@@ -1536,7 +1666,7 @@ type CAcceptQuorumFn func(c *Configuration, replies []*Learn) (*Learn, bool)
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
-type CReadSQuorumFn func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool)
+type CReadSQuorumFn func(c *Configuration, replies []*ReadReply) (*ReadReply, bool)
 
 // CWriteNQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
@@ -1548,7 +1678,7 @@ type CWriteNQuorumFn func(c *Configuration, replies []*AdvReadReply) (*AdvReadRe
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
-type CWriteSQuorumFn func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool)
+type CWriteSQuorumFn func(c *Configuration, replies []*WriteSReply) (*WriteSReply, bool)
 
 // CSetStateQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
@@ -1565,7 +1695,7 @@ type CSetStateQuorumFn func(c *Configuration, replies []*NewCurReply) (*NewCurRe
 // reply.
 type AReadSReply struct {
 	MachineIDs []uint32
-	Reply      *AdvReadReply
+	Reply      *ReadReply
 }
 
 func (r AReadSReply) String() string {
@@ -1574,7 +1704,7 @@ func (r AReadSReply) String() string {
 
 // AReadSReply invokes a AReadS RPC on configuration c
 // and returns the result as a AReadSReply.
-func (c *Configuration) AReadS(args *AdvRead) (*AReadSReply, error) {
+func (c *Configuration) AReadS(args *Conf) (*AReadSReply, error) {
 	return c.mgr.aReadS(c.id, args)
 }
 
@@ -1583,7 +1713,7 @@ func (c *Configuration) AReadS(args *AdvRead) (*AReadSReply, error) {
 // reply.
 type AWriteSReply struct {
 	MachineIDs []uint32
-	Reply      *AdvWriteSReply
+	Reply      *WriteSReply
 }
 
 func (r AWriteSReply) String() string {
@@ -1592,7 +1722,7 @@ func (r AWriteSReply) String() string {
 
 // AWriteSReply invokes a AWriteS RPC on configuration c
 // and returns the result as a AWriteSReply.
-func (c *Configuration) AWriteS(args *AdvWriteS) (*AWriteSReply, error) {
+func (c *Configuration) AWriteS(args *WriteS) (*AWriteSReply, error) {
 	return c.mgr.aWriteS(c.id, args)
 }
 
@@ -1799,7 +1929,7 @@ func (c *Configuration) CAccept(args *Propose) (*CAcceptReply, error) {
 // reply.
 type CReadSReply struct {
 	MachineIDs []uint32
-	Reply      *AdvReadReply
+	Reply      *ReadReply
 }
 
 func (r CReadSReply) String() string {
@@ -1808,7 +1938,7 @@ func (r CReadSReply) String() string {
 
 // CReadSReply invokes a CReadS RPC on configuration c
 // and returns the result as a CReadSReply.
-func (c *Configuration) CReadS(args *AdvRead) (*CReadSReply, error) {
+func (c *Configuration) CReadS(args *Conf) (*CReadSReply, error) {
 	return c.mgr.cReadS(c.id, args)
 }
 
@@ -1835,7 +1965,7 @@ func (c *Configuration) CWriteN(args *DRead) (*CWriteNReply, error) {
 // reply.
 type CWriteSReply struct {
 	MachineIDs []uint32
-	Reply      *AdvWriteSReply
+	Reply      *WriteSReply
 }
 
 func (r CWriteSReply) String() string {
@@ -1844,7 +1974,7 @@ func (r CWriteSReply) String() string {
 
 // CWriteSReply invokes a CWriteS RPC on configuration c
 // and returns the result as a CWriteSReply.
-func (c *Configuration) CWriteS(args *AdvWriteS) (*CWriteSReply, error) {
+func (c *Configuration) CWriteS(args *WriteS) (*CWriteSReply, error) {
 	return c.mgr.cWriteS(c.id, args)
 }
 
@@ -1870,11 +2000,11 @@ func (c *Configuration) CSetState(args *CNewCur) (*CSetStateReply, error) {
 
 type aReadSReply struct {
 	mid   uint32
-	reply *AdvReadReply
+	reply *ReadReply
 	err   error
 }
 
-func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
+func (m *Manager) aReadS(configID uint32, args *Conf) (*AReadSReply, error) {
 	c, err := m.getConfig(configID)
 	if err != nil {
 		return nil, err
@@ -1883,9 +2013,9 @@ func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
 	var (
 		replyChan   = make(chan aReadSReply, c.quorum)
 		stopSignal  = make(chan struct{})
-		replyValues = make([]*AdvReadReply, 0, c.quorum)
+		replyValues = make([]*ReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -1895,7 +2025,7 @@ func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
 			return nil, err
 		}
 		go func(machine *machine) {
-			reply := new(AdvReadReply)
+			reply := new(ReadReply)
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
@@ -1923,7 +2053,7 @@ func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -1965,11 +2095,11 @@ func (m *Manager) aReadS(configID uint32, args *AdvRead) (*AReadSReply, error) {
 
 type aWriteSReply struct {
 	mid   uint32
-	reply *AdvWriteSReply
+	reply *WriteSReply
 	err   error
 }
 
-func (m *Manager) aWriteS(configID uint32, args *AdvWriteS) (*AWriteSReply, error) {
+func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) {
 	c, err := m.getConfig(configID)
 	if err != nil {
 		return nil, err
@@ -1978,9 +2108,9 @@ func (m *Manager) aWriteS(configID uint32, args *AdvWriteS) (*AWriteSReply, erro
 	var (
 		replyChan   = make(chan aWriteSReply, c.quorum)
 		stopSignal  = make(chan struct{})
-		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
+		replyValues = make([]*WriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -1990,7 +2120,7 @@ func (m *Manager) aWriteS(configID uint32, args *AdvWriteS) (*AWriteSReply, erro
 			return nil, err
 		}
 		go func(machine *machine) {
-			reply := new(AdvWriteSReply)
+			reply := new(WriteSReply)
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
@@ -2018,7 +2148,7 @@ func (m *Manager) aWriteS(configID uint32, args *AdvWriteS) (*AWriteSReply, erro
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2075,7 +2205,7 @@ func (m *Manager) aWriteN(configID uint32, args *AdvWriteN) (*AWriteNReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteNReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2113,7 +2243,7 @@ func (m *Manager) aWriteN(configID uint32, args *AdvWriteN) (*AWriteNReply, erro
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2170,7 +2300,7 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2208,7 +2338,7 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2265,7 +2395,7 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*LAReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2303,7 +2433,7 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2360,7 +2490,7 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewStateReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2398,7 +2528,7 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2455,7 +2585,7 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2493,7 +2623,7 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2550,7 +2680,7 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2588,7 +2718,7 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2645,7 +2775,7 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*DWriteNReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2683,7 +2813,7 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2740,7 +2870,7 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*GetOneReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2778,7 +2908,7 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2835,7 +2965,7 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2873,7 +3003,7 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -2930,7 +3060,7 @@ func (m *Manager) cPrepare(configID uint32, args *Prepare) (*CPrepareReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Promise, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -2968,7 +3098,7 @@ func (m *Manager) cPrepare(configID uint32, args *Prepare) (*CPrepareReply, erro
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -3025,7 +3155,7 @@ func (m *Manager) cAccept(configID uint32, args *Propose) (*CAcceptReply, error)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Learn, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -3063,7 +3193,7 @@ func (m *Manager) cAccept(configID uint32, args *Propose) (*CAcceptReply, error)
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -3105,11 +3235,11 @@ func (m *Manager) cAccept(configID uint32, args *Propose) (*CAcceptReply, error)
 
 type cReadSReply struct {
 	mid   uint32
-	reply *AdvReadReply
+	reply *ReadReply
 	err   error
 }
 
-func (m *Manager) cReadS(configID uint32, args *AdvRead) (*CReadSReply, error) {
+func (m *Manager) cReadS(configID uint32, args *Conf) (*CReadSReply, error) {
 	c, err := m.getConfig(configID)
 	if err != nil {
 		return nil, err
@@ -3118,9 +3248,9 @@ func (m *Manager) cReadS(configID uint32, args *AdvRead) (*CReadSReply, error) {
 	var (
 		replyChan   = make(chan cReadSReply, c.quorum)
 		stopSignal  = make(chan struct{})
-		replyValues = make([]*AdvReadReply, 0, c.quorum)
+		replyValues = make([]*ReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -3130,7 +3260,7 @@ func (m *Manager) cReadS(configID uint32, args *AdvRead) (*CReadSReply, error) {
 			return nil, err
 		}
 		go func(machine *machine) {
-			reply := new(AdvReadReply)
+			reply := new(ReadReply)
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
@@ -3158,7 +3288,7 @@ func (m *Manager) cReadS(configID uint32, args *AdvRead) (*CReadSReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -3215,7 +3345,7 @@ func (m *Manager) cWriteN(configID uint32, args *DRead) (*CWriteNReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -3253,7 +3383,7 @@ func (m *Manager) cWriteN(configID uint32, args *DRead) (*CWriteNReply, error) {
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -3295,11 +3425,11 @@ func (m *Manager) cWriteN(configID uint32, args *DRead) (*CWriteNReply, error) {
 
 type cWriteSReply struct {
 	mid   uint32
-	reply *AdvWriteSReply
+	reply *WriteSReply
 	err   error
 }
 
-func (m *Manager) cWriteS(configID uint32, args *AdvWriteS) (*CWriteSReply, error) {
+func (m *Manager) cWriteS(configID uint32, args *WriteS) (*CWriteSReply, error) {
 	c, err := m.getConfig(configID)
 	if err != nil {
 		return nil, err
@@ -3308,9 +3438,9 @@ func (m *Manager) cWriteS(configID uint32, args *AdvWriteS) (*CWriteSReply, erro
 	var (
 		replyChan   = make(chan cWriteSReply, c.quorum)
 		stopSignal  = make(chan struct{})
-		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
+		replyValues = make([]*WriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -3320,7 +3450,7 @@ func (m *Manager) cWriteS(configID uint32, args *AdvWriteS) (*CWriteSReply, erro
 			return nil, err
 		}
 		go func(machine *machine) {
-			reply := new(AdvWriteSReply)
+			reply := new(WriteSReply)
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
@@ -3348,7 +3478,7 @@ func (m *Manager) cWriteS(configID uint32, args *AdvWriteS) (*CWriteSReply, erro
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:
@@ -3405,7 +3535,7 @@ func (m *Manager) cSetState(configID uint32, args *CNewCur) (*CSetStateReply, er
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Background()
+		ctx, _ = context.WithTimeout(context.Background(), 2 * c.timeout)
 		errCount    int
 	)
 
@@ -3443,7 +3573,7 @@ func (m *Manager) cSetState(configID uint32, args *CNewCur) (*CSetStateReply, er
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		// cancel()
 	}()
 	for {
 	select_:

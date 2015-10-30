@@ -79,6 +79,9 @@ func main() {
 		}
 		fmt.Fprintf(of, "%v\n", events[len(events)-1])
 		fmt.Fprintf(of, "%d spike latencies.\n", cnt)
+		if cnt > 0 {
+			os.Exit(1)
+		}
 		return
 	}
 

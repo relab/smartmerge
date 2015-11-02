@@ -23,7 +23,7 @@ func (cc *CClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *pb
 		glog.Infof("C%d: Starting reconfiguration\n", cc.ID)
 	}
 
-
+	doconsensus := true
 	cur := 0
 forconfiguration:
 	for i := 0; i < len(cc.Confs); i++ {
@@ -35,13 +35,17 @@ forconfiguration:
 
 		switch prop.Compare(cc.Blueps[i]) {
 		case 0, -1:
-			//Need to agree on new proposal
-			var cs int
-			next, cs, cur, err = cc.getconsensus(i, prop)
-			if err != nil {
-				return nil, 0, err
+			if doconsensus {
+				//Need to agree on new proposal
+				var cs int
+				next, cs, cur, err = cc.getconsensus(i, prop)
+				if err != nil {
+					return nil, 0, err
+				}
+				cnt += cs
+			} else {
+				next = prop
 			}
-			cnt += cs
 		case 1:
 			// No proposal
 			var st *pb.State
@@ -107,6 +111,8 @@ forconfiguration:
 			cc.handleNext(i, next)
 		}
 		if !regular && i < len(cc.Confs) -1 {
+			prop = cc.Blueps[len(cc.Blueps)-1]
+			doconsensus = false
 			goto forconfiguration
 		}
 	}

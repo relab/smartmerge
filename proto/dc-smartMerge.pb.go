@@ -2023,7 +2023,7 @@ func (m *Manager) aReadS(configID uint32, args *Conf) (*AReadSReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*ReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2118,7 +2118,7 @@ func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*WriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2213,7 +2213,7 @@ func (m *Manager) aWriteN(configID uint32, args *AdvWriteN) (*AWriteNReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteNReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2308,7 +2308,7 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2403,7 +2403,7 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*LAReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2498,7 +2498,7 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewStateReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2593,7 +2593,7 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2688,7 +2688,7 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2783,7 +2783,7 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*DWriteNReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2878,7 +2878,7 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*GetOneReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -2973,7 +2973,7 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3068,7 +3068,7 @@ func (m *Manager) cPrepare(configID uint32, args *Prepare) (*CPrepareReply, erro
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Promise, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3163,7 +3163,7 @@ func (m *Manager) cAccept(configID uint32, args *Propose) (*CAcceptReply, error)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Learn, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3258,7 +3258,7 @@ func (m *Manager) cReadS(configID uint32, args *Conf) (*CReadSReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*ReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3353,7 +3353,7 @@ func (m *Manager) cWriteN(configID uint32, args *DRead) (*CWriteNReply, error) {
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3448,7 +3448,7 @@ func (m *Manager) cWriteS(configID uint32, args *WriteS) (*CWriteSReply, error) 
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*WriteSReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 
@@ -3543,7 +3543,7 @@ func (m *Manager) cSetState(configID uint32, args *CNewCur) (*CSetStateReply, er
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewStateReply, 0, c.quorum)
 		mids        = make([]uint32, 0, c.quorum)
-		ctx = context.Bachground()
+		ctx = context.Background()
 		errCount    int
 	)
 

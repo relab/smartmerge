@@ -102,6 +102,7 @@ forconfiguration:
 		cur = smc.handleOneCur(i, setS.Reply.GetCur())
 		smc.handleNext(i, setS.Reply.GetNext())
 		if !regular && i+1 < len(smc.Confs) {
+			prop = smc.Blueps[len(smc.Blueps)-1]
 			goto forconfiguration
 		}
 	}

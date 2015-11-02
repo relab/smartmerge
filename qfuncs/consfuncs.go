@@ -7,7 +7,7 @@ import (
 
 var CReadSQF = AReadSQF
 var CWriteSQF = AWriteSQF
-var CSetStateQF = SetCurQF
+var CSetStateQF = SetStateQF
 
 var CWriteNQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvReadReply, bool) {
 

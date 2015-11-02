@@ -89,7 +89,7 @@ forconfiguration:
 
 		rst = cc.WriteValue(val, rst)
 
-		_, err := cc.Confs[i].CSetState(&pb.CNewCur{Cur: cc.Blueps[i], CurC: uint32(cc.Blueps[i].Len()), State: rst})
+		setS, err := cc.Confs[i].CSetState(&pb.CNewCur{Cur: cc.Blueps[i], CurC: uint32(cc.Blueps[i].Len()), State: rst})
 		if i > 0 && glog.V(3) {
 			glog.Infof("C%d: Set state in configuration of size %d.\n", cc.ID, cc.Blueps[i].Len())
 		} else if glog.V(6) {
@@ -102,7 +102,13 @@ forconfiguration:
 			glog.Errorf("C%d: SetState returned error, not sure what to do\n", cc.ID)
 			return nil, 0, err
 		}
-		cur = i
+		cur = cc.handleOneCur(i, setS.Reply.GetCur())
+		for _, next := range setS.Reply.GetNext() {
+			cc.handleNext(i, next)
+		}
+		if !regular && i < len(cc.Confs) -1 {
+			goto forconfiguration
+		}
 	}
 
 	cc.Blueps = cc.Blueps[cur:]

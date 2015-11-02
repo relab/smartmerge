@@ -52,21 +52,28 @@ func NewConsServerWithCur(cur *pb.Blueprint, curc uint32) *ConsServer {
 	}
 }
 
-func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewCurReply, error) {
+func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewStateReply, error) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	//defer cs.PrintState("SetCur")
 	if cs.RState.Compare(nc.State) == 1 {
 		cs.RState = nc.State
 	}
+	
+	if nc.CurC == 0 || nc.Cur.LearnedCompare(cs.Cur) == 1 {
+		return &pb.NewStateReply{Cur: cs.Cur}, nil
+	}
+	
+	var next *pb.Blueprint
+	if n, ok := cs.Next[nc.CurC] ; ok {
+		next = n
+	}
 
 	if nc.CurC == cs.CurC {
-		return &pb.NewCurReply{false}, nil
+		return &pb.NewStateReply{Next: next}, nil
 	}
 
-	if nc.CurC == 0 || nc.Cur.Compare(cs.Cur) == 1 {
-		return &pb.NewCurReply{false}, nil
-	}
+	
 
 	if cs.Cur != nil && cs.Cur.Compare(nc.Cur) == 0 {
 		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
@@ -74,7 +81,7 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewCur
 
 	cs.Cur = nc.Cur
 	cs.CurC = nc.CurC
-	return &pb.NewCurReply{false}, nil
+	return &pb.NewCurReply{Next: next}, nil
 }
 
 func (cs *ConsServer) CWriteN(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {

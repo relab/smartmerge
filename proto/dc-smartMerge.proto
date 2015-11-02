@@ -112,6 +112,7 @@ message NewState {
 
 message NewStateReply {
 	Blueprint Cur = 1;
+	repeated Blueprint Next = 2;
 }
 
 service DynaDisk {
@@ -152,7 +153,7 @@ service ConsDisk {
 	rpc CReadS(Conf) returns (ReadReply) {} 
 	rpc CWriteN(DRead) returns (AdvReadReply) {}
 	rpc CWriteS(WriteS) returns (WriteSReply) {}
-	rpc CSetState(CNewCur) returns (NewCurReply) {}
+	rpc CSetState(CNewCur) returns (NewStateReply) {}
 }
 
 message CV {

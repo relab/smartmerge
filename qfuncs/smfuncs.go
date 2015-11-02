@@ -178,11 +178,19 @@ var SetStateQF = func(c *pr.Configuration, replies []*pr.NewStateReply) (*pr.New
 	}
 
 	// Return false, if not enough replies yet.
-	if len(replies) < c.WriteQuorum() {
+	if len(replies) < c.MaxQuorum() {
 		return nil, false
 	}
 
-	return nil, true
+	next := make([]*pr.Blueprint, 0, 1)
+	for _, rep := range replies {
+		next = GetBlueprintSlice(next, rep)
+	}
+
+	lastrep.Next = next	
+
+
+	return lastrep, true
 }
 
 type NextReport interface {

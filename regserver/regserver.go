@@ -278,10 +278,12 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 			}
 		}
 		rs.Next = next
-		return &pb.NewStateReply{}, nil
+		return &pb.NewStateReply{Next: rs.Next}, nil
 	}
+		
+	
 	if rs.CurC == ns.CurC {
-		return &pb.NewStateReply{}, nil
+		return &pb.NewStateReply{Next: rs.Next}, nil
 	}
-	return &pb.NewStateReply{rs.Cur}, nil
+	return &pb.NewStateReply{Cur: rs.Cur, Next: rs.Next}, nil
 }

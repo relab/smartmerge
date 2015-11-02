@@ -18,7 +18,7 @@ var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply
 
 	// Return false, if not enough replies yet.
 	if len(replies) < c.ReadQuorum() {
-		if glog.V(6) {
+		if glog.V(7) {
 			glog.Infoln("Not enough ReadSReplies yet.")
 		}
 		return nil, false
@@ -60,7 +60,7 @@ var AWriteSQF = func(c *pr.Configuration, replies []*pr.WriteSReply) (*pr.WriteS
 	// Return false, if not enough replies yet.
 	// This rpc is both reading and writing.
 	if len(replies) < c.MaxQuorum() {
-		if glog.V(6) {
+		if glog.V(7) {
 			glog.Infoln("Not enough WriteSReplies yet.")
 		}
 		return nil, false

@@ -90,15 +90,16 @@ forconfiguration:
 
 		rst = smc.WriteValue(val, rst)
 		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
-		if glog.V(3) {
-			glog.Infof("C%d: Set State in Configuration with length %d\n ",smc.ID, smc.Blueps[i].Len())
-		}
 		cnt++
 		if err != nil {
 			//Not sure what to do:
 			glog.Errorf("C%d: SetState returned error, not sure what to do\n", smc.ID)
 			return nil, 0, err
 		}
+		if i>0 && glog.V(3) || glog.V(6) {
+			glog.Infof("C%d: Set State in Configuration with length %d\n ",smc.ID, smc.Blueps[i].Len())
+		}
+		
 		cur = smc.handleOneCur(i, setS.Reply.GetCur())
 		smc.handleNext(i, setS.Reply.GetNext())
 		if !regular && i+1 < len(smc.Confs) {

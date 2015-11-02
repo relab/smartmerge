@@ -22,7 +22,7 @@ var CWriteNQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvRe
 
 	// Return false, if not enough replies yet.
 	if len(replies) < c.MaxQuorum() {
-		if glog.V(6) {
+		if glog.V(7) {
 			glog.Infoln("Not enough WriteNReplies yet.")
 		}
 		return nil, false

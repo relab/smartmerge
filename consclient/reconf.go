@@ -9,6 +9,11 @@ import (
 )
 
 func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
+	//Proposed blueprint is already in place, or outdated.
+	if prop.Compare(cc.Blueps[0]) == 1 {
+		glog.V(3).Infof("C%d: Proposal is already in place.", cc.ID)
+		return 0, nil
+	}
 	_, cnt, err = cc.reconf(prop, true, nil)
 	return
 }
@@ -17,16 +22,7 @@ func (cc *CClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *pb
 	if glog.V(2) {
 		glog.Infof("C%d: Starting reconfiguration\n", cc.ID)
 	}
-	//Proposed blueprint is already in place, or outdated.
-	if prop.Compare(cc.Blueps[0]) == 1 {
-		glog.V(3).Infof("C%d: Proposal is already in place.", cc.ID)
-		return nil, cnt, nil
-	}
 
-	if len(prop.Add) == 0 {
-		glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
-		return nil, cnt, errors.New("Abort before proposing unacceptable configuration.")
-	}
 
 	cur := 0
 forconfiguration:
@@ -158,10 +154,14 @@ prepare:
 					glog.Infof("C%d: Re-propose a value.\n", cc.ID)
 				}
 			} else {
-				next = prop.Merge(cc.Blueps[i])
 				if glog.V(3) {
 					glog.Infof("C%d: Proposing my value.\n", cc.ID)
 				}
+				if len(prop.Add) == 0 {
+					glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
+					return nil, cnt, cur, errors.New("Abort before proposing unacceptable configuration.")
+				}
+				next = prop.Merge(cc.Blueps[i])
 			}
 		case rrnd > rnd:
 			// Increment round, sleep then return to prepare.
@@ -220,11 +220,15 @@ func (cc *CClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur i
 	}
 	cur = cc.handleNewCur(curin, read.Reply.GetCur())
 
-	for _, next = range read.Reply.GetNext() {
+	var j int
+	for j, next = range read.Reply.GetNext() {
 		cc.handleNext(i, next)
+		if j > 0 {
+			glog.Errorln("CReadS returned more than one Next value.")
+		}
 	}
 
-	return
+	return read.Reply.GetState(), next, cur, nil
 }
 
 func (cc *CClient) WriteValue(val []byte, st *pb.State) *pb.State {

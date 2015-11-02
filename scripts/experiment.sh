@@ -8,27 +8,46 @@ go build || exit
 
 cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
 
-for RMS in 2 5
+for RMS in 5 2
 do
 
+: <<'END'
 cd $SM
 echo "$RMS removal runs"
 echo SmartMerge
 mkdir "sm_rm$RMS$*"
-mkdir "sm_rm$RMS$*"/events
-for i in {1..20} 
+for i in {1..19} 
 do
 	echo make run $i
 	./scripts/sm-run.sh "$RMS"
-	cp $SM/exlogs/*.elog $SM/"sm_rm$RMS$*"/events
 	mv $SM/exlogs $SM/"sm_rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
 done
-cd $SM
-cd "sm_rm$RMS$*"/events
-echo 
-$SM/scripts/analyzeall analysis
+cd "sm_rm$RMS$*"
+
+echo checking
+mkdir problem
+for R in run*; do
+	cd $R
+	if ls ./*ERROR* > /dev/null 2>&1; then
+		cd ..
+		mv $R problem/
+	fi
+	cd $SM/"sm_rm$RMS$*"
+done
+for R in run*; do
+	cd $R
+	$SM/scripts/checkall debug || {
+		cd ..  
+		mv $R problem/
+	}
+	cd $SM/"sm_rm$RMS$*"
+done
+rmdir problem || echo some runs had problems		
+echo analysing
+$SM/scripts/analyzeallsub analysis
+END
 
 #echo DynaStore
 #cd $SM
@@ -67,19 +86,37 @@ $SM/scripts/analyzeall analysis
 echo Consensus Based
 cd $SM
 mkdir "cons_rm$RMS$*"
-mkdir "cons_rm$RMS$*"/events
-for i in {1..20} 
+for i in {1..19} 
 do
 	echo make run $i
 	./scripts/cons-run.sh "$RMS"
-	cp $SM/exlogs/*.elog $SM/"cons_rm$RMS$*"/events
 	mv $SM/exlogs $SM/"cons_rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
 done
-cd $SM/"cons_rm$RMS$*"/events
-echo Analyzing
-$SM/scripts/analyzeall analysis
+cd $SM/"cons_rm$RMS$*"
 
+echo checking
+mkdir problem
+for R in run*; do
+	cd $R
+	if ls ./*ERROR* > /dev/null 2>&1; then
+		cd ..
+		mv $R problem/
+	fi
+	cd $SM/"cons_rm$RMS$*"
+done
+
+for R in run*; do
+	cd $R
+	$SM/scripts/checkall debug || {
+		cd ..  
+		mv $R problem/
+	}
+	cd $SM/"cons_rm$RMS$*"
+done
+rmdir problem || echo some runs had problems		
+echo analysing
+$SM/scripts/analyzeallsub analysis
 
 done

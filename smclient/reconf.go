@@ -18,38 +18,32 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 }
 
 func (smc *SmClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
-	if glog.V(2) {
+	if glog.V(6) {
 		glog.Infof("C%d: Starting reconf\n", smc.ID)
 	}
-
-
-	if len(prop.Add) == 0 {
-		glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
-		return nil, cnt, errors.New("Abort before proposing unacceptable configuration.")
+	
+	if prop.Compare(smc.Blueps[0]) != 1 {
+		prop, cnt, err = smc.lagree(prop)
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(next.Add) == 0 {
+			glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
+			return nil, cnt, errors.New("Abort before moving to unacceptable configuration.")
+		}
 	}
-
+	
 	cur := 0
+	las := new(pb.Blueprint)
 forconfiguration:
 	for i := 0; i < len(smc.Confs); i++ {
 		if i < cur {
 			continue
 		}
-
-		var next *pb.Blueprint
-
-		switch prop.Compare(smc.Blueps[i]) {
-		case 0, -1:
-			//Need to agree on new proposal
-			var cs int
-			next, cs, cur, err = smc.getconsensus(i, prop)
-			if err != nil {
-				return nil, 0, err
-			}
-			cnt += cs
-		case 1:
-			// No proposal
+		
+		if prop.LearnedCompare(smc.Blueps[i]) != -1 {
 			var st *pb.State
-			st, next, cur, err = smc.doread(cur, i)
+			st, cur, err = smc.doread(cur, i)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -58,44 +52,46 @@ forconfiguration:
 				rst = st
 			}
 		}
+		
 		if i < cur {
 			continue forconfiguration
 		}
 
-		if smc.Blueps[i].LearnedCompare(next) == 1 {
-			readS, err := smc.Confs[i].CWriteN(&pb.DRead{CurC: uint32(smc.Blueps[i].Len()), Prop: next})
+		if len(smc.Blueps) > i + 1 {
+			if prop.LearnedCompare(smc.Blueps[len(smc.Blueps)-1]) == 1{
+				prop = smc.Blueps[len(smc.Blueps)-1]
+			}
+		}
+
+		if prop.LearnedCompare(smc.Blueps[i]) == -1 {
+			writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()), prop})
 			if glog.V(3) {
-				glog.Infof("C%d: CWriteN returned.\n", smc.ID)
+				glog.Infoln("AWriteN returned")
 			}
 			cnt++
-			cur = smc.handleOneCur(cur, readS.Reply.GetCur())
-			if err != nil && cur <= i {
-				glog.Errorf("C%d: error from CReadS: %v\n", smc.ID, err)
-				//No Quorum Available. Retry
+			if err != nil {
+				//Should log this for debugging
+				glog.Errorln("AWriteN returned error: ", err)
 				return nil, 0, err
 			}
 
-			for _, next = range readS.Reply.GetNext() {
-				smc.handleNext(i, next)
+			cur = smc.handleOneCur(cur, writeN.Reply.GetCur())
+			smc.handleNext(i, writeN.Reply.GetNext())
+			las = las.Merge(writeN.Reply.GetLAState())
+			if rst.Compare(writeN.Reply.GetState()) == 1 {
+				rst = writeN.Reply.GetState()
 			}
 
-			if rst.Compare(readS.Reply.GetState()) == 1 {
-				rst = readS.Reply.GetState()
-			}
-
-		} else if next != nil {
-			glog.Errorln("This case should never happen. There might be a bug in the code.")
+			prop = smc.Blueps[len(smc.Blueps)-1]
 		}
-
 	}
 
 	if i := len(smc.Confs) - 1; i > cur || !regular {
 
 		rst = smc.WriteValue(val, rst)
-
-		_, err := smc.Confs[i].CSetState(&pb.CNewCur{Cur: smc.Blueps[i], CurC: uint32(smc.Blueps[i].Len()), State: rst})
+		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
 		if glog.V(3) {
-			glog.Infof("C%d: Set state in configuration of size %d.\n", smc.ID, smc.Blueps[i].Len())
+			glog.Infof("C%d: Set State in Configuration with length %d\n ",smc.ID, smc.Blueps[i].Len())
 		}
 		cnt++
 		if err != nil {
@@ -103,12 +99,18 @@ forconfiguration:
 			glog.Errorf("C%d: SetState returned error, not sure what to do\n", smc.ID)
 			return nil, 0, err
 		}
-		cur = i
+		cur = smc.handleOneCur(i, setS.Reply.GetCur())
+		// smc.handleNext(i, setS.Reply.GetNext())
+// 		if !regular && i+1 < len(smc.Confs) {
+// 			goto forconfiguration
+// 		}
+		
 	}
 
-	smc.Blueps = smc.Blueps[cur:]
-	smc.Confs = smc.Confs[cur:]
-
+	if cur > 0 {
+		smc.Blueps = smc.Blueps[cur:]
+		smc.Confs = smc.Confs[cur:]
+	}
 	return rst, cnt, nil
 }
 
@@ -195,8 +197,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	return cnt, nil
 }
 
-func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
-	cnt := 0
+func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint,cnt int, err error) {
 	cur := 0
 	prop = prop.Merge(smc.Blueps[0])
 	for i := 0; i < len(smc.Confs); i++ {
@@ -209,7 +210,7 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 		cnt++
 		if err != nil {
 			glog.Errorln("LA prop returned error: ", err)
-			panic("Error from LAProp")
+			return nil, 0,0, err
 		}
 		if glog.V(4) {
 			glog.Infoln("LAProp returned.")
@@ -228,11 +229,12 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (*pb.Blueprint, int) {
 
 		smc.handleNext(i, laProp.Reply.GetNext())
 	}
+	
 	if cur > 0 {
 		smc.Blueps = smc.Blueps[cur:]
 		smc.Confs = smc.Confs[cur:]
 	}
-	return prop, cnt
+	return prop, cnt, nil
 }
 
 func (smc *SmClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
@@ -244,3 +246,28 @@ func (smc *SmClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
 	}
 	return smc.findorinsert(cur, newCur)
 }
+
+func (smc *SmClient) doread(curin, i int) (st *pb.State, cur int, err error) {
+	read, errx := smc.Confs[i].AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[i].Len())})
+	if errx != nil {
+		glog.Errorf("C%d: error from AReadS: ", errx)
+		return nil, 0, errx
+		//return
+	}
+	if glog.V(6) {
+		glog.Infof("C%d: AReadS returned with replies from \n",smc.ID, read.MachineIDs)
+	}
+	cur =smc.handleNewCur(curin, read.Reply.GetCur())
+
+	smc.handleNext(i, read.Reply.GetNext())
+
+	return read.Reply.GetState(), cur, nil
+}
+
+func (smc *SmClient) WriteValue(val []byte, st *pb.State) *pb.State {
+	if val == nil {
+		return st
+	}
+	return &pb.State{Value: val, Timestamp: st.Timestamp + 1, Writer:smc.ID}
+}
+

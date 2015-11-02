@@ -19,7 +19,7 @@ func (cc *CClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 }
 
 func (cc *CClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
-	if glog.V(2) {
+	if glog.V(6) {
 		glog.Infof("C%d: Starting reconfiguration\n", cc.ID)
 	}
 
@@ -90,9 +90,12 @@ forconfiguration:
 		rst = cc.WriteValue(val, rst)
 
 		_, err := cc.Confs[i].CSetState(&pb.CNewCur{Cur: cc.Blueps[i], CurC: uint32(cc.Blueps[i].Len()), State: rst})
-		if glog.V(3) {
+		if i > 0 && glog.V(3) {
 			glog.Infof("C%d: Set state in configuration of size %d.\n", cc.ID, cc.Blueps[i].Len())
+		} else if glog.V(6) {
+			glog.Infof("Set state returned.")
 		}
+		
 		cnt++
 		if err != nil {
 			//Not sure what to do:
@@ -215,7 +218,7 @@ func (cc *CClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur i
 		return nil, nil, 0, errx
 		//return
 	}
-	if glog.V(4) {
+	if glog.V(6) {
 		glog.Infof("C%d: CReadS returned with replies from \n", cc.ID, read.MachineIDs)
 	}
 	cur = cc.handleNewCur(curin, read.Reply.GetCur())

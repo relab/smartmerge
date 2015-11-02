@@ -21,7 +21,7 @@ func (cr *CRClient) Read() (val []byte, cnt int) {
 	}
 	st, cnt, err := cr.reconf(nil, false, nil)
 	if err != nil {
-		glog.Errorln("Error during Read")
+		glog.Errorln("Error during Read", err)
 		return nil, 0
 	}
 
@@ -29,6 +29,10 @@ func (cr *CRClient) Read() (val []byte, cnt int) {
 		if cnt > 2 {
 			glog.Infof("Read used %d accesses\n", cnt)
 		}
+	}
+	if st == nil {
+		glog.Errorln("read returned nil state")
+		return nil, cnt
 	}
 	return st.Value, cnt
 }
@@ -47,6 +51,10 @@ func (cr *CRClient) RRead() (val []byte, cnt int) {
 		if cnt > 1 {
 			glog.Infof("RRead used %d accesses\n", cnt)
 		}
+	}
+	if st == nil {
+		glog.Errorln("read returned nil state")
+		return nil, cnt
 	}
 	return st.Value, cnt
 }

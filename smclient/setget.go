@@ -86,7 +86,7 @@ func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {
 	if len(next) == 0 {
 		return
 	}
-	glog.V(3).Infof("Found %d next configurations.", len(next))
+	
 	for _, nxt := range next {
 		if nxt != nil {
 			i = smc.findorinsert(i, nxt)
@@ -122,7 +122,7 @@ func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
 		panic("could not get new config")
 	}
 
-	glog.V(3).Infoln("Inserting new configuration at place ", i)
+	glog.V(3).Infof("Inserting next configuration with length %d at place %d\n", blp.Len(), i)
 
 	smc.Blueps = append(smc.Blueps, blp)
 	smc.Confs = append(smc.Confs, cnf)

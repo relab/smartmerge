@@ -96,8 +96,10 @@ forconfiguration:
 			glog.Errorf("C%d: SetState returned error, not sure what to do\n", smc.ID)
 			return nil, 0, err
 		}
-		if i>0 && glog.V(3) || glog.V(6) {
+		if i>0 && glog.V(3) {
 			glog.Infof("C%d: Set State in Configuration with length %d\n ",smc.ID, smc.Blueps[i].Len())
+		} else if glog.V(6) {
+			glog.Infoln("Set state returned.")
 		}
 		
 		cur = smc.handleOneCur(i, setS.Reply.GetCur())

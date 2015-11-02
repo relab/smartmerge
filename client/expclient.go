@@ -55,6 +55,7 @@ var (
 	reads  = flag.Int("reads", 0, "number of reads to be performed.")
 	writes = flag.Int("writes", 0, "number of writes to be performed.")
 	size   = flag.Int("size", 16, "number of bytes for value.")
+	regul  = flag.Bool("regular", false, "do only regular reads")
 
 	//Reconf Exp
 	rm = flag.Bool("rm",false , "remove nclients servers concurrently.")
@@ -155,9 +156,9 @@ func benchmain() {
 		case *contW:
 			go contWrite(cl, *size, stop, &wg)
 		case *contR:
-			go contRead(cl, stop, &wg)
+			go contRead(cl, stop, *regul, &wg)
 		case *reads > 0:
-			go doReads(cl, *reads, &wg)
+			go doReads(cl, *reads, *regul, &wg)
 		case *writes > 0:
 			go doWrites(cl, *size, *writes, &wg)
 		}
@@ -276,7 +277,7 @@ loop:
 	wg.Done()
 }
 
-func contRead(cl RWRer, stop chan struct{}, wg *sync.WaitGroup) {
+func contRead(cl RWRer, stop chan struct{}, reg bool, wg *sync.WaitGroup) {
 	glog.Infoln("starting continous read")
 	var (
 		c       int
@@ -289,7 +290,11 @@ loop:
 	for {
 		reqsent = time.Now()
 		go func() {
-			_, c = cl.Read()
+			if reg {
+				_, c = cl.RRead()
+			} else {
+				_, c = cl.Read()
+			}			
 			cchan <- c
 		}()
 		select {
@@ -323,7 +328,7 @@ func doWrites(cl RWRer, size int, writes int, wg *sync.WaitGroup) {
 	}
 }
 
-func doReads(cl RWRer, reads int, wg *sync.WaitGroup) {
+func doReads(cl RWRer, reads int, reg bool, wg *sync.WaitGroup) {
 	var (
 		cnt     int
 		reqsent time.Time
@@ -331,7 +336,11 @@ func doReads(cl RWRer, reads int, wg *sync.WaitGroup) {
 
 	for i := 0; i < reads; i++ {
 		reqsent = time.Now()
-		_, cnt = cl.Read()
+		if reg {
+			_, cnt = cl.RRead()
+		} else {
+			_, cnt = cl.Read()
+		}			
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 	}
 	glog.Infoln("finished reads")

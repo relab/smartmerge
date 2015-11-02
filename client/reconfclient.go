@@ -40,7 +40,7 @@ func expmain() {
 
 	for i := 0; i < *nclients; i++ {
 		glog.Infoln("starting client number: ", i)
-		cl, mgr, err := NewClient(addrs, initBlp, *alg, (*clientid)+i)
+		cl, mgr, err := NewClient(addrs, initBlp, *alg, *opt, (*clientid)+i)
 		if err != nil {
 			glog.Errorln("Error creating client: ", err)
 			continue

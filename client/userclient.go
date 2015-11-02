@@ -25,7 +25,7 @@ func usermain() {
 
 	initBlp := pb.Blueprint{Add: ids[:*initsize], Rem: nil}
 
-	client, mgr, err := NewClient(addrs, &initBlp, *alg, *clientid)
+	client, mgr, err := NewClient(addrs, &initBlp, *alg, *opt, *clientid)
 	defer PrintErrors(mgr)
 	if err != nil {
 		fmt.Println("Error creating client: ", err)

@@ -39,6 +39,7 @@ var (
 	// Mode
 	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
 	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | odyna | cons )")
+	opt = flag.String("opt", "", "which optimization to use: ( no | doreconf | recontact)")
 	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
 
 	//Config
@@ -142,7 +143,7 @@ func benchmain() {
 
 	for i := 0; i < *nclients; i++ {
 		glog.Infof("starting client number:  %d at time %v\n", i, time.Now())
-		cl, mgr, err := NewClient(addrs, initBlp, *alg, (*clientid)+i)
+		cl, mgr, err := NewClient(addrs, initBlp, *alg, *opt, (*clientid)+i)
 		if err != nil {
 			glog.Errorln("Error creating client: ", err)
 			continue
@@ -184,7 +185,7 @@ func benchmain() {
 	return
 }
 
-func NewClient(addrs []string, initB *pb.Blueprint, alg string, id int) (cl RWRer, mgr *pb.Manager, err error) {
+func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id int) (cl RWRer, mgr *pb.Manager, err error) {
 	mgr, err = pb.NewManager(addrs, pb.WithGrpcDialOptions(
 		grpc.WithBlock(),
 		grpc.WithTimeout(1000*time.Millisecond),
@@ -213,14 +214,20 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, id int) (cl RWRe
 	}
 	switch alg {
 	case "", "sm":
-		
 		cl, err = smclient.New(initB, mgr, uint32(id))
 	case "dyna":
 		cl, err = dynaclient.New(initB, mgr, uint32(id))
 	case "odyna": 
 		cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
 	case "cons":
-		cl, err = consclient.New(initB, mgr, uint32(id))
+		switch opt {
+		case "", "no":
+			cl, err = consclient.New(initB, mgr, uint32(id))
+		case "doreconf":
+			cl, err = consclient.NewCR(initB, mgr, uint32(id))
+		case "recontact":
+			glog.Fatalln("optimization recontact not yet supported.")
+		}
 	}
 	return
 }

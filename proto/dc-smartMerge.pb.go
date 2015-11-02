@@ -88,8 +88,8 @@ func (m *Conf) String() string { return proto1.CompactTextString(m) }
 func (*Conf) ProtoMessage()    {}
 
 type ConfReply struct {
-	Cur    *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-	NewCur *Blueprint `protobuf:"bytes,2,opt,name=NewCur" json:"NewCur,omitempty"`
+	Cur   *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Abort bool       `protobuf:"varint,2,opt,name=Abort" json:"Abort,omitempty"`
 }
 
 func (m *ConfReply) Reset()         { *m = ConfReply{} }
@@ -99,13 +99,6 @@ func (*ConfReply) ProtoMessage()    {}
 func (m *ConfReply) GetCur() *Blueprint {
 	if m != nil {
 		return m.Cur
-	}
-	return nil
-}
-
-func (m *ConfReply) GetNewCur() *Blueprint {
-	if m != nil {
-		return m.NewCur
 	}
 	return nil
 }
@@ -2156,7 +2149,7 @@ func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) 
 
 	defer func() {
 		close(stopSignal)
-		//cancel()
+		////cancel()
 	}()
 	for {
 	select_:

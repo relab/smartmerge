@@ -155,10 +155,10 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 	if rr.This < rs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{rs.Cur, nil}, Next: nil}, nil
+		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{rs.Cur, true}, Next: nil}, nil
 	}
 	if rr.Cur < rs.CurC {
-		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{nil, rs.Cur}, Next: rs.Next}, nil
+		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{rs.Cur, false}, Next: rs.Next}, nil
 	}
 	next := make([]*pb.Blueprint,0,len(rs.Next))
 	this := int(rr.This)
@@ -187,7 +187,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 	if wr.Conf.This < rs.CurC {
 		//Not sure if we should return an empty Next in this case.
 		//Returning it is safer. The other faster.
-		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, nil}}, nil
+		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
 	}
 	next := make([]*pb.Blueprint,0,len(rs.Next))
 	this := int(wr.Conf.This)
@@ -197,7 +197,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 		}
 	}
 	if wr.Conf.Cur < rs.CurC {
-		return &pb.WriteSReply{Cur: &pb.ConfReply{nil, rs.Cur}, Next: next}, nil
+		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, false}, Next: next}, nil
 	}
 	return &pb.WriteSReply{Next: next}, nil
 }

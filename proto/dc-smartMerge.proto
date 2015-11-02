@@ -24,7 +24,7 @@ message Conf {
 
 message ConfReply {
 	Blueprint Cur = 1;
-	Blueprint NewCur = 2;
+	bool Abort = 2;
 }
 
 message Blueprint {

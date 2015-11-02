@@ -120,7 +120,7 @@ func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, e
 	//defer cs.PrintState("CReadS")
 
 	if rr.This < cs.CurC {
-		return &pb.ReadReply{Cur: &pb.ConfReply{cs.Cur, nil}}, nil
+		return &pb.ReadReply{Cur: &pb.ConfReply{cs.Cur, true}}, nil
 	}
 	var next []*pb.Blueprint
 	if cs.Next[rr.This] != nil {
@@ -129,7 +129,7 @@ func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, e
 	if rr.Cur < cs.CurC {
 		//Not sure if we should return an empty Next and State in this case.
 		//Returning it is safer. The other faster.
-		return &pb.ReadReply{State: cs.RState, Cur: &pb.ConfReply{nil, cs.Cur}, Next: next}, nil
+		return &pb.ReadReply{State: cs.RState, Cur: &pb.ConfReply{cs.Cur, false}, Next: next}, nil
 	}
 
 	return &pb.ReadReply{State: cs.RState, Next: next}, nil
@@ -144,7 +144,7 @@ func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRep
 	}
 
 	if wr.Conf.This < cs.CurC {
-		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.Cur, nil}}, nil
+		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.Cur, true}}, nil
 	}
 	var next []*pb.Blueprint
 	if cs.Next[wr.Conf.This] != nil {
@@ -152,7 +152,7 @@ func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRep
 	}
 
 	if wr.Conf.Cur < cs.CurC {
-		return &pb.WriteSReply{Cur: &pb.ConfReply{nil, cs.Cur}, Next: next}, nil
+		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.Cur, false}, Next: next}, nil
 	}
 
 	return &pb.WriteSReply{Next: next}, nil

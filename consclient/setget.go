@@ -78,16 +78,10 @@ func (cc *CClient) handleNewCur(cur int, newCur *pb.ConfReply) int {
 	if newCur == nil {
 		return cur
 	}
-	if newCur.GetCur() != nil {
-		if glog.V(3) {
-			glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), cc.Blueps[cur].Len())
-		}
-		return cc.findorinsert(cur, newCur.Cur)
-	}
 	if glog.V(3) {
-		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.NewCur.Len(), cc.Blueps[cur].Len())
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), cc.Blueps[cur].Len())
 	}
-	return cc.findorinsert(cur, newCur.NewCur)
+	return cc.findorinsert(cur, newCur.Cur)
 }
 
 func (cc *CClient) handleNext(i int, next *pb.Blueprint) {

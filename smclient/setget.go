@@ -70,16 +70,10 @@ func (smc *SmClient) handleNewCur(cur int, newCur *pb.ConfReply) int {
 	if newCur == nil {
 		return cur
 	}
-	if newCur.GetCur != nil {
-		if glog.V(3) {
-			glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), smc.Blueps[cur].Len())
-		}
-		return smc.findorinsert(cur, newCur.Cur)
-	}
 	if glog.V(3) {
-		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.NewCur.Len(), smc.Blueps[cur].Len())
+		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), smc.Blueps[cur].Len())
 	}
-	return smc.findorinsert(cur, newCur.NewCur)
+	return smc.findorinsert(cur, newCur.Cur)
 }
 
 func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {

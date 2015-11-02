@@ -70,18 +70,18 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewSta
 	}
 
 	if nc.CurC == cs.CurC {
-		return &pb.NewStateReply{Next: next}, nil
+		return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
 	}
 
 	
 
 	if cs.Cur != nil && cs.Cur.Compare(nc.Cur) == 0 {
-		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
+		return &pb.NewStateReply{}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
 	cs.Cur = nc.Cur
 	cs.CurC = nc.CurC
-	return &pb.NewCurReply{Next: next}, nil
+	return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
 }
 
 func (cs *ConsServer) CWriteN(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {

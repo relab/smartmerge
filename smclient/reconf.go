@@ -8,6 +8,112 @@ import (
 )
 
 func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
+	//Proposed blueprint is already in place, or outdated.
+	if prop.Compare(smc.Blueps[0]) == 1 {
+		glog.V(3).Infof("C%d: Proposal is already in place.", smc.ID)
+		return 0, nil
+	}
+	_, cnt, err = smc.reconf(prop, true, nil)
+	return
+}
+
+func (smc *SmClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
+	if glog.V(2) {
+		glog.Infof("C%d: Starting reconf\n", smc.ID)
+	}
+
+
+	if len(prop.Add) == 0 {
+		glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
+		return nil, cnt, errors.New("Abort before proposing unacceptable configuration.")
+	}
+
+	cur := 0
+forconfiguration:
+	for i := 0; i < len(smc.Confs); i++ {
+		if i < cur {
+			continue
+		}
+
+		var next *pb.Blueprint
+
+		switch prop.Compare(smc.Blueps[i]) {
+		case 0, -1:
+			//Need to agree on new proposal
+			var cs int
+			next, cs, cur, err = smc.getconsensus(i, prop)
+			if err != nil {
+				return nil, 0, err
+			}
+			cnt += cs
+		case 1:
+			// No proposal
+			var st *pb.State
+			st, next, cur, err = smc.doread(cur, i)
+			if err != nil {
+				return nil, 0, err
+			}
+			cnt++
+			if rst.Compare(st) == 1 {
+				rst = st
+			}
+		}
+		if i < cur {
+			continue forconfiguration
+		}
+
+		if smc.Blueps[i].LearnedCompare(next) == 1 {
+			readS, err := smc.Confs[i].CWriteN(&pb.DRead{CurC: uint32(smc.Blueps[i].Len()), Prop: next})
+			if glog.V(3) {
+				glog.Infof("C%d: CWriteN returned.\n", smc.ID)
+			}
+			cnt++
+			cur = smc.handleOneCur(cur, readS.Reply.GetCur())
+			if err != nil && cur <= i {
+				glog.Errorf("C%d: error from CReadS: %v\n", smc.ID, err)
+				//No Quorum Available. Retry
+				return nil, 0, err
+			}
+
+			for _, next = range readS.Reply.GetNext() {
+				smc.handleNext(i, next)
+			}
+
+			if rst.Compare(readS.Reply.GetState()) == 1 {
+				rst = readS.Reply.GetState()
+			}
+
+		} else if next != nil {
+			glog.Errorln("This case should never happen. There might be a bug in the code.")
+		}
+
+	}
+
+	if i := len(smc.Confs) - 1; i > cur || !regular {
+
+		rst = smc.WriteValue(val, rst)
+
+		_, err := smc.Confs[i].CSetState(&pb.CNewCur{Cur: smc.Blueps[i], CurC: uint32(smc.Blueps[i].Len()), State: rst})
+		if glog.V(3) {
+			glog.Infof("C%d: Set state in configuration of size %d.\n", smc.ID, smc.Blueps[i].Len())
+		}
+		cnt++
+		if err != nil {
+			//Not sure what to do:
+			glog.Errorf("C%d: SetState returned error, not sure what to do\n", smc.ID)
+			return nil, 0, err
+		}
+		cur = i
+	}
+
+	smc.Blueps = smc.Blueps[cur:]
+	smc.Confs = smc.Confs[cur:]
+
+	return rst, cnt, nil
+}
+
+
+func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 	if glog.V(2) {
 		glog.Infoln("Starting reconfiguration")
 	}

@@ -214,6 +214,16 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 	}
 	switch alg {
 	case "", "sm":
+		switch opt {
+		case "", "no":
+			cl, err = smclient.New(initB, mgr, uint32(id))
+		case "doreconf":
+			cl, err = smclient.NewSmR(initB, mgr, uint32(id))
+		case "recontact":
+			glog.Fatalln("optimization recontact not yet supported.")
+		default: 
+			glog.Fatalln("optimization recontact not yet supported.")
+		}
 		cl, err = smclient.New(initB, mgr, uint32(id))
 	case "dyna":
 		cl, err = dynaclient.New(initB, mgr, uint32(id))
@@ -227,7 +237,11 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 			cl, err = consclient.NewCR(initB, mgr, uint32(id))
 		case "recontact":
 			glog.Fatalln("optimization recontact not yet supported.")
+		default: 
+			glog.Fatalln("optimization recontact not yet supported.")
 		}
+	default:
+		glog.Fatalln("this algorithm is not supported.")
 	}
 	return
 }

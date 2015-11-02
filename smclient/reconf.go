@@ -213,14 +213,14 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint,cnt int, err 
 			return nil, 0, err
 		}
 		if glog.V(4) {
-			glog.Infoln("LAProp returned.")
+			glog.Infof("C%d: LAProp returned.\n", smc.ID)
 		}
 
 		cur = smc.handleOneCur(cur, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.Equals(la) {
 			if glog.V(3) {
-				glog.Infoln("LAProp returned new state, try again.")
+				glog.Infof("C%d: LAProp returned new state, try again.\n", smc.ID)
 			}
 			prop = la
 			i--

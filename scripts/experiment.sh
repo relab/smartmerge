@@ -11,20 +11,23 @@ cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
 for RMS in 5 2
 do
 
-: <<'END'
+for Opt in "no" "doreconf"
+do
+
+#: <<'END'
 cd $SM
 echo "$RMS removal runs"
-echo SmartMerge
-mkdir "sm_rm$RMS$*"
-for i in {1..19} 
+echo SmartMerge with optimization $Opt
+mkdir "sm_opt'$Opt'_rm$RMS$*"
+for i in {1..1} 
 do
 	echo make run $i
-	./scripts/sm-run.sh "$RMS"
-	mv $SM/exlogs $SM/"sm_rm$RMS$*"/"run$i"
+	./scripts/sm-run.sh "$Opt" "$RMS"
+	mv $SM/exlogs $SM/"sm_opt'$Opt'_rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
 done
-cd "sm_rm$RMS$*"
+cd "sm_opt'$Opt'_rm$RMS$*"
 
 echo checking
 mkdir problem
@@ -34,7 +37,7 @@ for R in run*; do
 		cd ..
 		mv $R problem/
 	fi
-	cd $SM/"sm_rm$RMS$*"
+	cd $SM/"sm_opt'$Opt'_rm$RMS$*"
 done
 for R in run*; do
 	cd $R
@@ -42,12 +45,12 @@ for R in run*; do
 		cd ..  
 		mv $R problem/
 	}
-	cd $SM/"sm_rm$RMS$*"
+	cd $SM/"sm_opt'$Opt'_rm$RMS$*"
 done
 rmdir problem || echo some runs had problems		
 echo analysing
 $SM/scripts/analyzeallsub analysis
-END
+#END
 
 #echo DynaStore
 #cd $SM
@@ -83,18 +86,18 @@ END
 #echo Analyzing
 #$SM/scripts/analyzeall "orgd_rm$RMS$*" 4
 
-echo Consensus Based
+echo Consensus Based with optimization $Opt
 cd $SM
-mkdir "cons_rm$RMS$*"
-for i in {1..19} 
+mkdir "cons_opt'$Opt'_rm$RMS$*"
+for i in {1..1} 
 do
 	echo make run $i
-	./scripts/cons-run.sh "$RMS"
-	mv $SM/exlogs $SM/"cons_rm$RMS$*"/"run$i"
+	./scripts/cons-run.sh "$Opt" "$RMS"
+	mv $SM/exlogs $SM/"cons_opt'$Opt'_rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
 done
-cd $SM/"cons_rm$RMS$*"
+cd $SM/"cons_opt'$Opt'_rm$RMS$*"
 
 echo checking
 mkdir problem
@@ -104,7 +107,7 @@ for R in run*; do
 		cd ..
 		mv $R problem/
 	fi
-	cd $SM/"cons_rm$RMS$*"
+	cd $SM/"cons_opt'$Opt'_rm$RMS$*"
 done
 
 for R in run*; do
@@ -113,10 +116,11 @@ for R in run*; do
 		cd ..  
 		mv $R problem/
 	}
-	cd $SM/"cons_rm$RMS$*"
+	cd $SM/"cons_opt'$Opt'_rm$RMS$*"
 done
 rmdir problem || echo some runs had problems		
 echo analysing
 $SM/scripts/analyzeallsub analysis
 
+done
 done

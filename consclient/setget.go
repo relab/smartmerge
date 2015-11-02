@@ -15,7 +15,6 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 
 		read, err := cc.Confs[i].CReadS(&pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())})
 		cnt++
-		cur = cc.handleNewCur(cur, read.Reply.GetCur())
 		if err != nil && cur <= i {
 			glog.Errorln("error from CReadS: ", err)
 			return nil, 0
@@ -25,6 +24,8 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 		if glog.V(6) {
 			glog.Infoln("CReadS returned with replies from ", read.MachineIDs)
 		}
+		
+		cur = cc.handleNewCur(cur, read.Reply.GetCur())
 
 		for _, next := range read.Reply.GetNext() {
 			cc.handleNext(i, next)
@@ -51,7 +52,6 @@ func (cc *CClient) set(rs *pb.State) int {
 
 		write, err := cc.Confs[i].CWriteS(&pb.WriteS{rs, &pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())}})
 		cnt++
-		cur = cc.handleNewCur(cur, write.Reply.GetCur())
 		if err != nil {
 			glog.Errorln("CWriteS returned error, ", err)
 			return 0
@@ -59,6 +59,7 @@ func (cc *CClient) set(rs *pb.State) int {
 		if glog.V(6) {
 			glog.Infoln("CWriteS returned, with replies from ", write.MachineIDs)
 		}
+		cur = cc.handleNewCur(cur, write.Reply.GetCur())
 
 		// This should never be more than one iteration. How to fix that?
 		for _, next := range write.Reply.GetNext() {

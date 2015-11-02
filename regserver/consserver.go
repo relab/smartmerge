@@ -70,7 +70,8 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewSta
 	}
 
 	if nc.CurC == cs.CurC {
-		return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
+		if next != nil { return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil }
+		return &pb.NewStateReply{}, nil
 	}
 
 	
@@ -81,7 +82,8 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewSta
 
 	cs.Cur = nc.Cur
 	cs.CurC = nc.CurC
-	return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
+	if next != nil { return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil }
+	return &pb.NewStateReply{}, nil
 }
 
 func (cs *ConsServer) CWriteN(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {

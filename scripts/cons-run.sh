@@ -36,16 +36,16 @@ for Pi in ${READS[@]}
 
 do
 	echo -n "pitter$Pi "
-ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -nclients=1 -opt=doreconf -id='$Pi' -initsize=100 -all-cores -log_events -v=5 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -nclients=1 -opt=$1 -id='$Pi' -initsize=100 -all-cores -log_events -v=5 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
 done
 echo " "
 
 sleep 3
 
 
-if ! [ "$*" == "" ]; then
+if ! [ "$2" == "" ]; then
 	echo starting Reconfigurers
-	$SM/client/client -conf $SM/scripts/newList -alg=cons -mode=exp -rm -nclients="$*" -initsize=100 -gc-off -elog -all-cores -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
+	$SM/client/client -conf $SM/scripts/newList -alg=cons -mode=exp -rm -nclients="$2" -initsize=100 -gc-off -elog -all-cores -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
 else
 	echo no reconfiguration, waiting 10 seconds
 	sleep 10

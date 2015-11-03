@@ -39,7 +39,7 @@ var (
 	// Mode
 	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
 	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | odyna | cons )")
-	opt = flag.String("opt", "", "which optimization to use: ( no | doreconf | recontact)")
+	opt = flag.String("opt", "", "which optimization to use: ( no | doreconf | norecontact)")
 	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
 
 	//Config
@@ -220,8 +220,8 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 			cl, err = smclient.New(initB, mgr, uint32(id))
 		case "doreconf":
 			cl, err = smclient.NewSmR(initB, mgr, uint32(id))
-		case "recontact":
-			glog.Fatalln("optimization recontact not yet supported.")
+		case "norecontact":
+			cl, err = smclient.NewOpt(initB, mgr, uint32(id))
 		default: 
 			glog.Fatalln("optimization recontact not yet supported.")
 		}
@@ -236,8 +236,8 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 			cl, err = consclient.New(initB, mgr, uint32(id))
 		case "doreconf":
 			cl, err = consclient.NewCR(initB, mgr, uint32(id))
-		case "recontact":
-			glog.Fatalln("optimization recontact not yet supported.")
+		case "norecontact":
+			cl, err = consclient.NewOpt(initB, mgr, uint32(id))
 		default: 
 			glog.Fatalln("optimization recontact not yet supported.")
 		}

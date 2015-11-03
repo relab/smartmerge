@@ -1,5 +1,9 @@
 package proto
 
+func Union(A, B []uint32) (C []uint32) {
+	return union(A,B)
+}
+
 func union(A, B []uint32) (C []uint32) {
 	C = make([]uint32, 0, len(A))
 	for _, id := range A {
@@ -20,6 +24,22 @@ func union(A, B []uint32) (C []uint32) {
 	return C
 }
 
+func Intersection(A,B []uint32) (C []uint32) {
+	C = make([]uint32, 0, len(A))
+	for _, id := range A {
+		for _, id2 := range B {
+			if id == id2 {
+				C = append(C, id)
+				break
+			}
+		}
+	}
+	return C
+}
+
+func Difference(A, B []uint32) (C []uint32) {
+	return difference(A,B)
+}
 func difference(A, B []uint32) (C []uint32) {
 	C = make([]uint32, 0, len(A))
 	for _, id := range A {
@@ -110,4 +130,12 @@ func (bp *Blueprint) LearnedCompare(blpr *Blueprint) int {
 
 func (bp *Blueprint) LearnedEquals(blpr *Blueprint) bool {
 	return bp.Len() == blpr.Len()
+}
+
+func (bp *Blueprint) Ids() []uint32 {
+	ids := make([]uint32,0,len(bp.Add))
+	for i, id := range bp.Add {
+		ids[i]=id
+	}
+	return ids
 }

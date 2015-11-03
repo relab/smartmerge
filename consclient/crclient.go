@@ -75,3 +75,78 @@ func (cr *CRClient) Write(val []byte) int {
 	}
 	return cnt
 }
+
+type COptClient struct {
+	*CClient
+}
+
+func NewOpt(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*COptClient, error) {
+	cr, err := New(initBlp, mgr, id)
+	return &COptClient{cr}, err
+}
+
+func (cc *COptClient) Read() (val []byte, cnt int) {
+	if glog.V(5) {
+		glog.Infoln("starting Read")
+	}
+	rs, cnt := cc.get()
+	if rs == nil {
+		return nil, cnt
+	}
+
+	mcnt := cc.set(rs)
+
+	if glog.V(3) {
+		if cnt > 1 {
+			glog.Infof("get used %d accesses\n", cnt)
+		}
+		if mcnt > 1 {
+			glog.Infof("set used %d accesses\n", mcnt)
+		}
+	}
+	return rs.Value, cnt + mcnt
+}
+
+//Regular read
+func (cc *COptClient) RRead() (val []byte, cnt int) {
+	if glog.V(5) {
+		glog.Infoln("starting regular Read")
+	}
+	rs, cnt := cc.get()
+	if rs == nil {
+		return nil, cnt
+	}
+	if glog.V(3) {
+		if cnt > 1 {
+			glog.Infof("get used %d accesses\n", cnt)
+		}
+	}
+	return rs.Value, cnt
+}
+
+func (cc *COptClient) Write(val []byte) int {
+	if glog.V(5) {
+		glog.Infoln("starting Write")
+	}
+	rs, cnt := cc.get()
+	if rs == nil && cnt == 0 {
+		return 0
+	}
+	if rs == nil {
+		rs = &pb.State{Value: val, Timestamp: 1, Writer: cc.ID}
+	} else {
+		rs.Value = val
+		rs.Timestamp++
+		rs.Writer = cc.ID
+	}
+	mcnt := cc.set(rs)
+	if glog.V(3) {
+		if cnt > 1 {
+			glog.Infof("get used %d accesses\n", cnt)
+		}
+		if mcnt > 1 {
+			glog.Infof("set used %d accesses\n", mcnt)
+		}
+	}
+	return cnt + mcnt
+}

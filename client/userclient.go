@@ -8,8 +8,8 @@ import (
 
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
-	"github.com/relab/smartMerge/util"
 	pb "github.com/relab/smartMerge/proto"
+	"github.com/relab/smartMerge/util"
 )
 
 func usermain() {
@@ -21,7 +21,6 @@ func usermain() {
 		fmt.Fprintln(os.Stderr, "Not enough servers to fulfill initsize.")
 		return
 	}
-
 
 	initBlp := pb.Blueprint{Add: ids[:*initsize], Rem: nil}
 
@@ -80,7 +79,7 @@ func usermain() {
 			fmt.Printf("Did %d accesses.\n", cnt)
 		case 4:
 			handleReconf(client, ids)
-		case 5: 
+		case 5:
 			var size, writes int
 			fmt.Println("Enter size:")
 			fmt.Scanln(&size)
@@ -131,7 +130,7 @@ func handleReconf(c RWRer, ids []uint32) {
 
 		target := new(pb.Blueprint)
 		target.Add = []uint32{id}
-		
+
 		fmt.Println("Starting reconfiguration with target ", target)
 		reqsent := time.Now()
 		cnt, err := c.Reconf(target)
@@ -171,7 +170,7 @@ func handleReconf(c RWRer, ids []uint32) {
 			fmt.Println("Id:", id, " was not added yet.")
 			return
 		}
-		
+
 		target := new(pb.Blueprint)
 		target.Rem = []uint32{id}
 		target = target.Merge(cur)

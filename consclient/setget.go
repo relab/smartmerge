@@ -24,7 +24,7 @@ func (cc *CClient) get() (rs *pb.State, cnt int) {
 		if glog.V(6) {
 			glog.Infoln("CReadS returned with replies from ", read.MachineIDs)
 		}
-		
+
 		cur = cc.handleNewCur(cur, read.Reply.GetCur())
 
 		for _, next := range read.Reply.GetNext() {

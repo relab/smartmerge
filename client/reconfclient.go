@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"os"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/golang/glog"
-	pb "github.com/relab/smartMerge/proto"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
+	pb "github.com/relab/smartMerge/proto"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -50,13 +50,13 @@ func expmain() {
 		wg.Add(1)
 		switch {
 		case *rm:
-			if *clientid + *nclients >= *initsize {
+			if *clientid+*nclients >= *initsize {
 				glog.Errorln("Not enough processes to remove.")
 				return
 			}
 			go remove(cl, ids, syncchan, (*clientid)+i, &wg)
 		case *add:
-			go adds(cl, ids, syncchan, *initsize + i, &wg)
+			go adds(cl, ids, syncchan, *initsize+i, &wg)
 		}
 	}
 	time.Sleep(2 * time.Second)
@@ -68,13 +68,13 @@ func expmain() {
 	return
 }
 
-func remove(c RWRer,ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
-	defer wg.Done()	
+func remove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	cur := c.GetCur()
 	target := new(pb.Blueprint)
 	target.Rem = []uint32{ids[i]}
 	target = target.Merge(cur)
-		
+
 	<-sc
 	reqsent := time.Now()
 	cnt, err := c.Reconf(target)
@@ -86,23 +86,23 @@ func remove(c RWRer,ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	return
 }
 
-func adds(c RWRer,ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
-	defer wg.Done()	
+func adds(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	cur := c.GetCur()
-	if len(ids)<= i {
+	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
 	}
 	target := new(pb.Blueprint)
 	target.Add = []uint32{ids[i]}
 	target = target.Merge(cur)
-	
+
 	if target.Equals(cur) {
 		glog.Errorln("Add did not result in a new configuration.")
 	}
-	
+
 	<-sc
-	
+
 	reqsent := time.Now()
 	cnt, err := c.Reconf(target)
 	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))

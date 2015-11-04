@@ -1,7 +1,7 @@
 package proto
 
 func Union(A, B []uint32) (C []uint32) {
-	return union(A,B)
+	return union(A, B)
 }
 
 func union(A, B []uint32) (C []uint32) {
@@ -24,7 +24,7 @@ func union(A, B []uint32) (C []uint32) {
 	return C
 }
 
-func Intersection(A,B []uint32) (C []uint32) {
+func Intersection(A, B []uint32) (C []uint32) {
 	C = make([]uint32, 0, len(A))
 	for _, id := range A {
 		for _, id2 := range B {
@@ -38,7 +38,7 @@ func Intersection(A,B []uint32) (C []uint32) {
 }
 
 func Difference(A, B []uint32) (C []uint32) {
-	return difference(A,B)
+	return difference(A, B)
 }
 func difference(A, B []uint32) (C []uint32) {
 	C = make([]uint32, 0, len(A))
@@ -113,7 +113,7 @@ func (bp *Blueprint) Len() int {
 	if bp == nil {
 		return 0
 	}
-	
+
 	return len(bp.Add) + (2 * len(bp.Rem))
 }
 
@@ -124,7 +124,7 @@ func (bp *Blueprint) LearnedCompare(blpr *Blueprint) int {
 	if bp.Len() > blpr.Len() {
 		return -1
 	}
-	
+
 	return 0
 }
 
@@ -133,9 +133,9 @@ func (bp *Blueprint) LearnedEquals(blpr *Blueprint) bool {
 }
 
 func (bp *Blueprint) Ids() []uint32 {
-	ids := make([]uint32,0,len(bp.Add))
+	ids := make([]uint32, len(bp.Add))
 	for i, id := range bp.Add {
-		ids[i]=id
+		ids[i] = id
 	}
 	return ids
 }

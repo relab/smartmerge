@@ -80,7 +80,7 @@ func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {
 	if len(next) == 0 {
 		return
 	}
-	
+
 	for _, nxt := range next {
 		if nxt != nil {
 			i = smc.findorinsert(i, nxt)

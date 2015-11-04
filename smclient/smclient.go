@@ -9,7 +9,6 @@ import (
 	pb "github.com/relab/smartMerge/proto"
 )
 
-
 var ConfTimeout = 1 * time.Second
 
 func majQuorum(bp *pb.Blueprint) int {

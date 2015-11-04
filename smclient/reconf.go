@@ -21,7 +21,7 @@ func (smc *SmClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconf\n", smc.ID)
 	}
-	
+
 	if prop.Compare(smc.Blueps[0]) != 1 {
 		prop, cnt, err = smc.lagree(prop)
 		if err != nil {
@@ -32,7 +32,7 @@ func (smc *SmClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *
 			return nil, cnt, errors.New("Abort before moving to unacceptable configuration.")
 		}
 	}
-	
+
 	cur := 0
 	las := new(pb.Blueprint)
 forconfiguration:
@@ -40,7 +40,7 @@ forconfiguration:
 		if i < cur {
 			continue
 		}
-		
+
 		if prop.LearnedCompare(smc.Blueps[i]) != -1 {
 			var st *pb.State
 			st, cur, err = smc.doread(cur, i)
@@ -52,13 +52,13 @@ forconfiguration:
 				rst = st
 			}
 		}
-		
+
 		if i < cur {
 			continue forconfiguration
 		}
 
-		if len(smc.Blueps) > i + 1 {
-			if prop.LearnedCompare(smc.Blueps[len(smc.Blueps)-1]) == 1{
+		if len(smc.Blueps) > i+1 {
+			if prop.LearnedCompare(smc.Blueps[len(smc.Blueps)-1]) == 1 {
 				prop = smc.Blueps[len(smc.Blueps)-1]
 			}
 		}
@@ -96,12 +96,12 @@ forconfiguration:
 			glog.Errorf("C%d: SetState returned error, not sure what to do\n", smc.ID)
 			return nil, 0, err
 		}
-		if i>0 && glog.V(3) {
-			glog.Infof("C%d: Set State in Configuration with length %d\n ",smc.ID, smc.Blueps[i].Len())
+		if i > 0 && glog.V(3) {
+			glog.Infof("C%d: Set State in Configuration with length %d\n ", smc.ID, smc.Blueps[i].Len())
 		} else if glog.V(6) {
 			glog.Infoln("Set state returned.")
 		}
-		
+
 		cur = smc.handleOneCur(i, setS.Reply.GetCur())
 		smc.handleNext(i, setS.Reply.GetNext())
 		if !regular && i+1 < len(smc.Confs) {
@@ -116,7 +116,6 @@ forconfiguration:
 	}
 	return rst, cnt, nil
 }
-
 
 // func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 // 	if glog.V(2) {
@@ -200,7 +199,7 @@ forconfiguration:
 // 	return cnt, nil
 // }
 
-func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint,cnt int, err error) {
+func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err error) {
 	cur := 0
 	prop = prop.Merge(smc.Blueps[0])
 	for i := 0; i < len(smc.Confs); i++ {
@@ -232,7 +231,7 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint,cnt int, err 
 
 		smc.handleNext(i, laProp.Reply.GetNext())
 	}
-	
+
 	if cur > 0 {
 		smc.Blueps = smc.Blueps[cur:]
 		smc.Confs = smc.Confs[cur:]
@@ -258,9 +257,9 @@ func (smc *SmClient) doread(curin, i int) (st *pb.State, cur int, err error) {
 		//return
 	}
 	if glog.V(6) {
-		glog.Infof("C%d: AReadS returned with replies from \n",smc.ID, read.MachineIDs)
+		glog.Infof("C%d: AReadS returned with replies from \n", smc.ID, read.MachineIDs)
 	}
-	cur =smc.handleNewCur(curin, read.Reply.GetCur())
+	cur = smc.handleNewCur(curin, read.Reply.GetCur())
 
 	smc.handleNext(i, read.Reply.GetNext())
 
@@ -271,6 +270,5 @@ func (smc *SmClient) WriteValue(val []byte, st *pb.State) *pb.State {
 	if val == nil {
 		return st
 	}
-	return &pb.State{Value: val, Timestamp: st.Timestamp + 1, Writer:smc.ID}
+	return &pb.State{Value: val, Timestamp: st.Timestamp + 1, Writer: smc.ID}
 }
-

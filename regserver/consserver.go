@@ -59,22 +59,22 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewSta
 	if cs.RState.Compare(nc.State) == 1 {
 		cs.RState = nc.State
 	}
-	
+
 	if nc.CurC == 0 || nc.Cur.LearnedCompare(cs.Cur) == 1 {
 		return &pb.NewStateReply{Cur: cs.Cur}, nil
 	}
-	
+
 	var next *pb.Blueprint
-	if n, ok := cs.Next[nc.CurC] ; ok {
+	if n, ok := cs.Next[nc.CurC]; ok {
 		next = n
 	}
 
 	if nc.CurC == cs.CurC {
-		if next != nil { return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil }
+		if next != nil {
+			return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
+		}
 		return &pb.NewStateReply{}, nil
 	}
-
-	
 
 	if cs.Cur != nil && cs.Cur.Compare(nc.Cur) == 0 {
 		return &pb.NewStateReply{}, errors.New("New Current Blueprint was uncomparable to previous.")
@@ -82,7 +82,9 @@ func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewSta
 
 	cs.Cur = nc.Cur
 	cs.CurC = nc.CurC
-	if next != nil { return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil }
+	if next != nil {
+		return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
+	}
 	return &pb.NewStateReply{}, nil
 }
 

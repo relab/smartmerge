@@ -160,9 +160,9 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 	if rr.Cur < rs.CurC {
 		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{rs.Cur, false}, Next: rs.Next}, nil
 	}
-	next := make([]*pb.Blueprint,0,len(rs.Next))
+	next := make([]*pb.Blueprint, 0, len(rs.Next))
 	this := int(rr.This)
-	for _,nxt := range rs.Next {
+	for _, nxt := range rs.Next {
 		if nxt.Len() > this {
 			next = append(next, nxt)
 		}
@@ -189,9 +189,9 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 		//Returning it is safer. The other faster.
 		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
 	}
-	next := make([]*pb.Blueprint,0,len(rs.Next))
+	next := make([]*pb.Blueprint, 0, len(rs.Next))
 	this := int(wr.Conf.This)
-	for _,nxt := range rs.Next {
+	for _, nxt := range rs.Next {
 		if nxt.Len() > this {
 			next = append(next, nxt)
 		}
@@ -280,8 +280,7 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 		rs.Next = next
 		return &pb.NewStateReply{Next: rs.Next}, nil
 	}
-		
-	
+
 	if rs.CurC == ns.CurC {
 		return &pb.NewStateReply{Next: rs.Next}, nil
 	}

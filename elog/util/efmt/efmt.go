@@ -130,6 +130,9 @@ func main() {
 			nwavg := 2070 * time.Microsecond
 			if normal == 4 {
 				nwavg = 5700 * time.Microsecond
+			} 
+			if normal == 1 {
+				nwavg = 1050 * time.Microsecond
 			}
 					
 			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))

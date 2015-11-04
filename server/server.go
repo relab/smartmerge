@@ -8,17 +8,17 @@ import (
 	"runtime"
 	"runtime/debug"
 	"syscall"
-	
+
 	"github.com/golang/glog"
 
 	"github.com/relab/smartMerge/regserver"
 )
 
 var (
-	port  = flag.Int("port", 10000, "this servers address ip:port.")
-	gcoff = flag.Bool("gcoff", false, "turn garbage collection off.")
-	alg   = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
-	allCores       = flag.Bool("all-cores", false, "use all available logical CPUs")
+	port     = flag.Int("port", 10000, "this servers address ip:port.")
+	gcoff    = flag.Bool("gcoff", false, "turn garbage collection off.")
+	alg      = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
+	allCores = flag.Bool("all-cores", false, "use all available logical CPUs")
 )
 
 func main() {

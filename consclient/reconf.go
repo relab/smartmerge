@@ -99,7 +99,7 @@ forconfiguration:
 		} else if glog.V(6) {
 			glog.Infof("Set state returned.")
 		}
-		
+
 		cnt++
 		if err != nil {
 			//Not sure what to do:
@@ -110,7 +110,7 @@ forconfiguration:
 		for _, next := range setS.Reply.GetNext() {
 			cc.handleNext(i, next)
 		}
-		if !regular && i < len(cc.Confs) -1 {
+		if !regular && i < len(cc.Confs)-1 {
 			prop = cc.Blueps[len(cc.Blueps)-1]
 			doconsensus = false
 			goto forconfiguration

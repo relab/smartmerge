@@ -1,45 +1,45 @@
 package main
 
 import (
-	"runtime/pprof"
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"runtime/pprof"
 	"sync"
 	"syscall"
 	"time"
-	_ "net/http/pprof"
-	"net/http"
-	"log"
 
 	"github.com/golang/glog"
 	"github.com/relab/goxos/kvs/bgen"
+	"github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
-	"github.com/relab/smartMerge/smclient"
-	"github.com/relab/smartMerge/consclient"
-	"github.com/relab/smartMerge/util"
-	qf "github.com/relab/smartMerge/qfuncs"
 	pb "github.com/relab/smartMerge/proto"
+	qf "github.com/relab/smartMerge/qfuncs"
+	"github.com/relab/smartMerge/smclient"
+	"github.com/relab/smartMerge/util"
 	grpc "google.golang.org/grpc"
 )
 
 var (
 	//General
-	gcOff    = flag.Bool("gc-off", false, "turn garbage collection off")
-	showHelp = flag.Bool("help", false, "show this help message and exit")
-	allCores       = flag.Bool("all-cores", false, "use all available logical CPUs")
+	gcOff      = flag.Bool("gc-off", false, "turn garbage collection off")
+	showHelp   = flag.Bool("help", false, "show this help message and exit")
+	allCores   = flag.Bool("all-cores", false, "use all available logical CPUs")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
-	httpprof = flag.Bool("httpprof", false, "enable profiling via http server")
+	httpprof   = flag.Bool("httpprof", false, "enable profiling via http server")
 
 	// Mode
-	mode = flag.String("mode", "", "run mode: (user | bench | exp )")
-	alg = flag.String("alg", "", "algorithm to be used: (sm | dyna | odyna | cons )")
-	opt = flag.String("opt", "", "which optimization to use: ( no | doreconf | norecontact)")
+	mode   = flag.String("mode", "", "run mode: (user | bench | exp )")
+	alg    = flag.String("alg", "", "algorithm to be used: (sm | dyna | odyna | cons )")
+	opt    = flag.String("opt", "", "which optimization to use: ( no | doreconf | norecontact)")
 	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
 
 	//Config
@@ -47,7 +47,6 @@ var (
 	clientid = flag.Int("id", 0, "the client id")
 	nclients = flag.Int("nclients", 1, "the number of clients")
 	initsize = flag.Int("initsize", 1, "the number of servers in the initial configuration")
-
 
 	//Read or Write Bench
 	contW  = flag.Bool("contW", false, "continuously write")
@@ -58,9 +57,8 @@ var (
 	regul  = flag.Bool("regular", false, "do only regular reads")
 
 	//Reconf Exp
-	rm = flag.Bool("rm",false , "remove nclients servers concurrently.")
+	rm  = flag.Bool("rm", false, "remove nclients servers concurrently.")
 	add = flag.Bool("add", false, "add nclients servers concurrently")
-
 )
 
 func Usage() {
@@ -71,7 +69,7 @@ func Usage() {
 
 func main() {
 	parseFlags()
-	defer glog.Flush()	
+	defer glog.Flush()
 
 	if *gcOff {
 		glog.Infoln("Setting garbage collection to -1")
@@ -134,7 +132,6 @@ func benchmain() {
 	} else {
 		initBlp.Add = ids[:*initsize]
 	}
-	
 
 	var wg sync.WaitGroup
 
@@ -222,13 +219,12 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 			cl, err = smclient.NewSmR(initB, mgr, uint32(id))
 		case "norecontact":
 			cl, err = smclient.NewOpt(initB, mgr, uint32(id))
-		default: 
+		default:
 			glog.Fatalln("optimization recontact not yet supported.")
 		}
-		cl, err = smclient.New(initB, mgr, uint32(id))
 	case "dyna":
 		cl, err = dynaclient.New(initB, mgr, uint32(id))
-	case "odyna": 
+	case "odyna":
 		cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
 	case "cons":
 		switch opt {
@@ -238,7 +234,7 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 			cl, err = consclient.NewCR(initB, mgr, uint32(id))
 		case "norecontact":
 			cl, err = consclient.NewOpt(initB, mgr, uint32(id))
-		default: 
+		default:
 			glog.Fatalln("optimization recontact not yet supported.")
 		}
 	default:
@@ -294,7 +290,7 @@ loop:
 				_, c = cl.RRead()
 			} else {
 				_, c = cl.Read()
-			}			
+			}
 			cchan <- c
 		}()
 		select {
@@ -340,7 +336,7 @@ func doReads(cl RWRer, reads int, reg bool, wg *sync.WaitGroup) {
 			_, cnt = cl.RRead()
 		} else {
 			_, cnt = cl.Read()
-		}			
+		}
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 	}
 	glog.Infoln("finished reads")
@@ -368,7 +364,7 @@ func handleSignal(signal os.Signal) bool {
 }
 
 type RWRer interface {
-	RRead() ([]byte,int)
+	RRead() ([]byte, int)
 	Read() ([]byte, int)
 	Write(val []byte) int
 	Reconf(prop *pb.Blueprint) (int, error)

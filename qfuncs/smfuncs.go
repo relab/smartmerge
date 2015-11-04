@@ -25,7 +25,7 @@ var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply
 	}
 
 	lastrep = new(pr.ReadReply)
-	for _,rep := range replies {
+	for _, rep := range replies {
 		if lastrep.GetState().Compare(rep.GetState()) == 1 {
 			lastrep.State = rep.GetState()
 		}
@@ -187,8 +187,7 @@ var SetStateQF = func(c *pr.Configuration, replies []*pr.NewStateReply) (*pr.New
 		next = GetBlueprintSlice(next, rep)
 	}
 
-	lastrep.Next = next	
-
+	lastrep.Next = next
 
 	return lastrep, true
 }

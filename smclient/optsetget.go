@@ -8,26 +8,26 @@ import (
 func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 	cnt = 0
 	cur := 0
-	rid := make([]uint32,0)
+	rid := make([]uint32, 0)
 	for i := 0; i < len(smc.Blueps); i++ {
 		if i < cur {
 			continue
 		}
 		cnt++
 		var cnf *pb.Configuration
-		
-		
+
 		if i > 0 {
 			cnf = smc.createX(rid, smc.Blueps[i].Ids(), false)
 			if cnf == nil {
 				glog.V(4).Infoln("We can skip contacting next configuration.")
 				continue
 			}
-			smc.Confs[i] = cnf
-		} else { cnf = smc.Confs[0] }
+		} else {
+			cnf = smc.Confs[0]
+		}
 
 		read, err := cnf.AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())})
-		if err != nil && (read == nil || read.Reply == nil)  {
+		if err != nil && (read == nil || read.Reply == nil) {
 			glog.Errorln("error from AReadS: ", err)
 			//No Quorum Available. Retry
 			return nil, 0
@@ -35,7 +35,7 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 		if glog.V(6) {
 			glog.Infoln("AReadS returned with replies from ", read.MachineIDs)
 		}
-		
+
 		cur = smc.handleNewCur(cur, read.Reply.GetCur(), false)
 
 		smc.handleNext(i, read.Reply.GetNext(), false)
@@ -43,11 +43,11 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 		if rs.Compare(read.Reply.GetState()) == 1 {
 			rs = read.Reply.GetState()
 		}
-		
+
 		if len(smc.Blueps) > i+1 {
 			rid = pb.Union(rid, read.MachineIDs)
 		}
-		
+
 	}
 	if cur > 0 {
 		smc.Confs[0] = smc.create(smc.Blueps[cur])
@@ -59,7 +59,7 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 func (smc *SmOptClient) set(rs *pb.State) int {
 	cnt := 0
 	cur := 0
-	rid := make([]uint32,0)
+	rid := make([]uint32, 0)
 	for i := 0; i < len(smc.Blueps); i++ {
 		if i < cur {
 			continue
@@ -74,7 +74,9 @@ func (smc *SmOptClient) set(rs *pb.State) int {
 				glog.V(4).Infoln("We can skip contacting next configuration.")
 				continue
 			}
-		} else { cnf = smc.Confs[0] }
+		} else {
+			cnf = smc.Confs[0]
+		}
 
 		write, err := cnf.AWriteS(&pb.WriteS{rs, &pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())}})
 		if err != nil {
@@ -87,7 +89,7 @@ func (smc *SmOptClient) set(rs *pb.State) int {
 
 		cur = smc.handleNewCur(cur, write.Reply.GetCur(), false)
 		smc.handleNext(i, write.Reply.GetNext(), false)
-		
+
 		if len(smc.Blueps) > i+1 {
 			rid = pb.Union(rid, write.MachineIDs)
 		}
@@ -115,7 +117,7 @@ func (smc *SmOptClient) handleNext(i int, next []*pb.Blueprint, createconf bool)
 	if len(next) == 0 {
 		return
 	}
-	
+
 	for _, nxt := range next {
 		if nxt != nil {
 			i = smc.findorinsert(i, nxt, createconf)
@@ -146,7 +148,7 @@ func (smc *SmOptClient) findorinsert(i int, blp *pb.Blueprint, createconf bool) 
 }
 
 func (smc *SmOptClient) insert(i int, blp *pb.Blueprint, createconf bool) {
-	if createconf {	
+	if createconf {
 		cnf := smc.create(blp)
 		smc.Confs = append(smc.Confs, cnf)
 
@@ -172,7 +174,7 @@ func (smc *SmOptClient) insert(i int, blp *pb.Blueprint, createconf bool) {
 	}
 }
 
-func (smc *SmOptClient) create(blp *pb.Blueprint) (*pb.Configuration) {
+func (smc *SmOptClient) create(blp *pb.Blueprint) *pb.Configuration {
 	cnf, err := smc.mgr.NewConfiguration(blp.Add, majQuorum(blp), ConfTimeout)
 	if err != nil {
 		panic("could not get new config")
@@ -182,16 +184,16 @@ func (smc *SmOptClient) create(blp *pb.Blueprint) (*pb.Configuration) {
 
 func (smc *SmOptClient) createX(rids, cids []uint32, write bool) *pb.Configuration {
 	x := pb.Difference(cids, rids)
-	var q = len(cids)/2 +1
+	var q = len(cids)/2 + 1
 	if write {
-		if len(cids) - len(x) >= q {
+		if len(cids)-len(x) >= q {
 			//We already have replies from a quorum.
 			return nil
 		}
 		q = q - len(cids) + len(x)
 	} else {
 		//Read
-		if len(cids) - len(x) >= len(cids) - q + 1 {
+		if len(cids)-len(x) >= len(cids)-q+1 {
 			return nil
 		}
 	}

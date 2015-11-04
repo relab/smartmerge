@@ -36,7 +36,7 @@ for Pi in ${READS[@]}
 
 do
 	echo -n "pitter$Pi "
-ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -nclients=1 -opt=$1 -id='$Pi' -initsize=100 -all-cores -log_events -v=5 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -nclients=1 -opt=$1 $3 -id='$Pi' -initsize=100 -all-cores -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
 done
 echo " "
 

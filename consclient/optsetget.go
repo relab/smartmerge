@@ -14,17 +14,18 @@ func (cc *COptClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 		cnt++
+		var cnf *pb.Configuration
 		
 		if i > 0 {
-			cnf := cc.createX(rid, cc.Blueps[i].Ids(), false)
+			cnf = cc.createX(rid, cc.Blueps[i].Ids(), false)
 			if cnf == nil {
 				glog.V(4).Infoln("We can skip contacting next configuration.")
 				continue
 			}
 			cc.Confs[i] = cnf
-		}
+		} else { cnf = smc.Confs[0] }
 
-		read, err := cc.Confs[i].CReadS(&pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())})
+		read, err := cnf.CReadS(&pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())})
 		
 		if err != nil && (read == nil || read.Reply == nil)  {
 			glog.Errorln("error from AReadS: ", err)
@@ -64,17 +65,18 @@ func (cc *COptClient) set(rs *pb.State) int {
 			continue
 		}
 		cnt++
+		var cnf *pb.Configuration
 
 		if i > 0 {
-			cnf := cc.createX(rid, cc.Blueps[i].Ids(), true)
+			cnf = cc.createX(rid, cc.Blueps[i].Ids(), true)
 			if cnf == nil {
 				glog.V(4).Infoln("We can skip contacting next configuration.")
 				continue
 			}
 			cc.Confs[i] = cnf
-		}
+		} else { cnf = smc.Confs[0] }
 
-		write, err := cc.Confs[i].CWriteS(&pb.WriteS{rs, &pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())}})
+		write, err := cnf.CWriteS(&pb.WriteS{rs, &pb.Conf{uint32(cc.Blueps[i].Len()), uint32(cc.Blueps[cur].Len())}})
 		
 		if err != nil {
 			glog.Errorln("AWriteS returned error, ", err)

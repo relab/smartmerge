@@ -14,17 +14,19 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 			continue
 		}
 		cnt++
+		var cnf *pb.Configuration
+		
 		
 		if i > 0 {
-			cnf := smc.createX(rid, smc.Blueps[i].Ids(), false)
+			cnf = smc.createX(rid, smc.Blueps[i].Ids(), false)
 			if cnf == nil {
 				glog.V(4).Infoln("We can skip contacting next configuration.")
 				continue
 			}
 			smc.Confs[i] = cnf
-		}
+		} else { cnf = smc.Confs[0] }
 
-		read, err := smc.Confs[i].AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())})
+		read, err := cnf.AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())})
 		if err != nil && (read == nil || read.Reply == nil)  {
 			glog.Errorln("error from AReadS: ", err)
 			//No Quorum Available. Retry
@@ -63,17 +65,18 @@ func (smc *SmOptClient) set(rs *pb.State) int {
 			continue
 		}
 
+		var cnf *pb.Configuration
+
 		cnt++
 		if i > 0 {
-			cnf := smc.createX(rid, smc.Blueps[i].Ids(), true)
+			cnf = smc.createX(rid, smc.Blueps[i].Ids(), true)
 			if cnf == nil {
 				glog.V(4).Infoln("We can skip contacting next configuration.")
 				continue
 			}
-			smc.Confs[i] = cnf
-		}
+		} else { cnf = smc.Confs[0] }
 
-		write, err := smc.Confs[i].AWriteS(&pb.WriteS{rs, &pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())}})
+		write, err := cnf.AWriteS(&pb.WriteS{rs, &pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())}})
 		if err != nil {
 			glog.Errorln("AWriteS returned error, ", err)
 			return 0

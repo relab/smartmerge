@@ -264,7 +264,7 @@ func (rs *RegServer) Accept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn
 		return &pb.Learn{Cur: rs.Cur}, nil
 	}
 
-	if rs.Next[pro.CurC] != nil {
+	if rs.NextMap[pro.CurC] != nil {
 		// This instance is decided already
 		return &pb.Learn{Dec: rs.Next[pro.CurC]}, nil
 	}

@@ -9,8 +9,8 @@ type SmRClient struct {
 	*SmClient
 }
 
-func NewSmR(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*SmRClient, error) {
-	cr, err := New(initBlp, mgr, id)
+func NewSmR(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32, cons bool) (*SmRClient, error) {
+	cr, err := New(initBlp, mgr, id, cons)
 	return &SmRClient{cr}, err
 }
 
@@ -19,7 +19,14 @@ func (cr *SmRClient) Read() (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting Read")
 	}
-	st, cnt, err := cr.reconf(nil, false, nil)
+	var st *pb.State
+	var err error
+	
+	if cr.doCons {
+		st, cnt, err = cr.consreconf(nil, false, nil)
+	} else {
+		st, cnt, err = cr.reconf(nil, false, nil)
+	}
 	if err != nil {
 		glog.Errorln("Error during Read", err)
 		return nil, 0
@@ -42,7 +49,14 @@ func (cr *SmRClient) RRead() (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting regular Read")
 	}
-	st, cnt, err := cr.reconf(nil, true, nil)
+	var st *pb.State
+	var err error
+	
+	if cr.doCons {
+		st, cnt, err = cr.consreconf(nil, true, nil)
+	} else {
+		st, cnt, err = cr.reconf(nil, true, nil)
+	}	
 	if err != nil {
 		glog.Errorln("Error during RRead")
 		return nil, 0
@@ -59,11 +73,18 @@ func (cr *SmRClient) RRead() (val []byte, cnt int) {
 	return st.Value, cnt
 }
 
-func (cr *SmRClient) Write(val []byte) int {
+func (cr *SmRClient) Write(val []byte) (cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting Write")
 	}
-	_, cnt, err := cr.reconf(nil, false, val)
+	var err error
+	
+	if cr.doCons {
+		_, cnt, err = cr.consreconf(nil, false, val)
+	} else {
+		_, cnt, err = cr.reconf(nil, false, val)
+	}
+
 	if err != nil {
 		glog.Errorln("Error during Write")
 		return 0
@@ -80,8 +101,8 @@ type SmOptClient struct {
 	*SmClient
 }
 
-func NewOpt(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*SmOptClient, error) {
-	cr, err := New(initBlp, mgr, id)
+func NewOpt(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32, cons bool) (*SmOptClient, error) {
+	cr, err := New(initBlp, mgr, id,cons)
 	return &SmOptClient{cr}, err
 }
 

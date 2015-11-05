@@ -11,12 +11,15 @@ import (
 )
 
 type RegServer struct {
+	sync.RWMutex
 	Cur     *pb.Blueprint
 	CurC    uint32
-	LAState *pb.Blueprint
+	LAState *pb.Blueprint //Used only for SM-Lattice agreement
 	RState  *pb.State
 	Next    []*pb.Blueprint
-	mu      sync.RWMutex
+	NextMap   map[uint32]*pb.Blueprint //Used only for Consensus based
+	Rnd    map[uint32]uint32  //Used only for Consensus based
+	Val    map[uint32]*pb.CV  //Used only for Consensus based
 }
 
 func (rs *RegServer) PrintState(op string) {
@@ -32,97 +35,37 @@ func (rs *RegServer) PrintState(op string) {
 var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
 
 func NewRegServer() *RegServer {
-	return &RegServer{
-		LAState: new(pb.Blueprint),
-		RState:  &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:    make([]*pb.Blueprint, 0),
-		mu:      sync.RWMutex{},
-	}
+	rs := &RegServer{}
+	rs.RWMutex = sync.RWMutex{}
+	rs.RState =   &pb.State{make([]byte, 0), int32(0), uint32(0)}
+	rs.Next =     make([]*pb.Blueprint, 5)
+	rs.NextMap =  make(map[uint32]*pb.Blueprint, 5)
+	rs.Rnd =      make(map[uint32]uint32, 5)
+	rs.Val =      make(map[uint32]*pb.CV, 5)
+	
+	return rs
 }
 
 func NewRegServerWithCur(cur *pb.Blueprint, curc uint32) *RegServer {
-	return &RegServer{
-		Cur:     cur,
-		CurC:    curc,
-		LAState: new(pb.Blueprint),
-		RState:  &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:    make([]*pb.Blueprint, 0),
-		mu:      sync.RWMutex{},
-	}
+	rs := NewRegServer()
+	rs.Cur = cur
+	rs.CurC = curc
+	
+	return rs
 }
 
-// func (rs *RegServer) ReadS(ctx context.Context, rr *pb.ReadRequest) (*pb.ReadReply, error) {
-// 	rs.mu.RLock()
-// 	defer rs.mu.RUnlock()
-//
-// 	if rr.CurC < rs.CurC {
-// 		//Not sure if we should return an empty state in this case.
-// 		//Returning it is safer. The other faster.
-// 		return &pb.ReadReply{rs.RState, rs.Cur}, nil
-// 	}
-//
-// 	return &pb.ReadReply{State: rs.RState}, nil
-// }
-//
-// func (rs *RegServer) ReadN(ctx context.Context, rr *pb.ReadNRequest) (*pb.ReadNReply, error) {
-// 	rs.mu.RLock()
-// 	defer rs.mu.RUnlock()
-//
-// 	if rr.CurC < rs.CurC {
-// 		//Not sure if we should return an empty Next in this case.
-// 		//Returning it is safer. The other faster.
-// 		return &pb.ReadNReply{rs.Cur, rs.Next}, nil
-// 	}
-//
-// 	return &pb.ReadNReply{Next: rs.Next}, nil
-// }
-//
-// func (rs *RegServer) WriteS(ctx context.Context, wr *pb.WriteRequest) (*pb.WriteReply, error) {
-// 	rs.mu.Lock()
-// 	defer rs.mu.Unlock()
-// 	if rs.RState.Compare(wr.State) == 1 {
-// 		rs.RState = wr.State
-// 	}
-//
-// 	if wr.CurC < rs.CurC {
-// 		return &pb.WriteReply{rs.Cur}, nil
-// 	}
-//
-// 	return &pb.WriteReply{}, nil
-// }
-//
-// func (rs *RegServer) WriteN(ctx context.Context, wr *pb.WriteNRequest) (*pb.WriteNReply, error) {
-// 	rs.mu.Lock()
-// 	defer rs.mu.Unlock()
-// 	found := false
-// 	for _, bp := range rs.Next {
-// 		if lat.Equals(bp, (wr.Next)) {
-// 			found = true
-// 			break
-// 		}
-// 	}
-// 	if !found {
-// 		rs.Next = append(rs.Next, wr.Next)
-// 	}
-//
-// 	if wr.CurC < rs.CurC {
-// 		return &pb.WriteNReply{rs.Cur}, nil
-// 	}
-//
-// 	return &pb.WriteNReply{}, nil
-// }
-
+// Used to set the current configuration. Currenlty only used at startup.
 func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	glog.V(5).Infoln("Handling Set Cur")
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
+	rs.Lock()
+	defer rs.Unlock()
 	//defer rs.PrintState("SetCur")
 
 	if nc.CurC == rs.CurC {
 		return &pb.NewCurReply{false}, nil
 	}
 
-	if nc.Cur.LearnedCompare(rs.Cur) == 1 {
+	if nc.Cur.LearnedCompare(rs.Cur) >= 0 {
 		return &pb.NewCurReply{false}, nil
 	}
 
@@ -137,7 +80,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 
 	newNext := make([]*pb.Blueprint, 0, len(rs.Next))
 	for _, blp := range rs.Next {
-		if blp.Compare(rs.Cur) == -1 {
+		if blp.LearnedCompare(rs.Cur) == -1 {
 			newNext = append(newNext, blp)
 		}
 	}
@@ -147,19 +90,15 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 }
 
 func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
-	rs.mu.RLock()
-	defer rs.mu.RUnlock()
+	rs.RLock()
+	defer rs.RUnlock()
 	glog.V(5).Infoln("Handling ReadS")
-	//defer rs.PrintState("readS")
 
 	if rr.This < rs.CurC {
-		//Not sure if we should return an empty Next and State in this case.
-		//Returning it is safer. The other faster.
+		// The client is in an outdated configuration.
 		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{rs.Cur, true}, Next: nil}, nil
 	}
-	if rr.Cur < rs.CurC {
-		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{rs.Cur, false}, Next: rs.Next}, nil
-	}
+	
 	next := make([]*pb.Blueprint, 0, len(rs.Next))
 	this := int(rr.This)
 	for _, nxt := range rs.Next {
@@ -167,26 +106,24 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 			next = append(next, nxt)
 		}
 	}
+	
+	if rr.Cur < rs.CurC {
+		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{rs.Cur, false}, Next: next}, nil
+	}
 
 	return &pb.ReadReply{State: rs.RState, Next: next}, nil
 }
 
 func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
+	rs.Lock()
+	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteS")
-	//defer rs.PrintState("writeS")
 	if rs.RState.Compare(wr.State) == 1 {
 		rs.RState = wr.State
 	}
 
-	// if wr.CurC == 0 {
-	// 		return &pb.AdvWriteSReply{}, nil
-	// 	}
-
 	if wr.Conf.This < rs.CurC {
-		//Not sure if we should return an empty Next in this case.
-		//Returning it is safer. The other faster.
+		// The client is in an outdated configuration.
 		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
 	}
 	next := make([]*pb.Blueprint, 0, len(rs.Next))
@@ -202,15 +139,18 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 	return &pb.WriteSReply{Next: next}, nil
 }
 
-func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWriteNReply, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
+func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNReply, error) {
+	rs.Lock()
+	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
-	//defer rs.PrintState("writeN")
+	
+	if wr.CurC < rs.CurC {
+		return &pb.WriteNReply{Cur: rs.Cur}, nil
+	}
+	
 	found := false
-
 	for _, bp := range rs.Next {
-		if bp.Equals(wr.Next) {
+		if bp.LearnedEquals(wr.Next) {
 			found = true
 			break
 		}
@@ -219,18 +159,23 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.AdvWriteN) (*pb.AdvWrit
 		rs.Next = append(rs.Next, wr.Next)
 	}
 
-	if wr.CurC < rs.CurC {
-		//Not sure if we should return an empty Next/State in this case.
-		//Returning it is safer. The other faster.
-		return &pb.AdvWriteNReply{Cur: rs.Cur, State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
+	rs.NextMap[wr.CurC] = wr.Next
+
+	next := make([]*pb.Blueprint, 0, len(rs.Next))
+	this := int(wr.CurC)
+	for _, nxt := range rs.Next {
+		if nxt.Len() > this {
+			next = append(next, nxt)
+		}
 	}
 
-	return &pb.AdvWriteNReply{State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
+
+	return &pb.WriteNReply{State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
 }
 
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
+	rs.Lock()
+	defer rs.Unlock()
 	glog.V(5).Infoln("Handling LAProp")
 	//defer rs.PrintState("LAProp")
 	if lap == nil {
@@ -255,8 +200,8 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 }
 
 func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
+	rs.Lock()
+	defer rs.Unlock()
 	glog.V(5).Infoln("Handling SetState")
 	if ns == nil {
 		return nil, errors.New("Empty NewState message")
@@ -265,6 +210,10 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 	rs.LAState = rs.LAState.Merge(ns.LAState)
 	if rs.RState.Compare(ns.State) == 1 {
 		rs.RState = ns.State
+	}
+
+	if rs.CurC > ns.CurC {
+		return &pb.NewStateReply{Cur: rs.Cur}, nil
 	}
 
 	if rs.CurC < ns.CurC && rs.Cur.Compare(ns.Cur) == 1 {
@@ -278,11 +227,55 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 			}
 		}
 		rs.Next = next
-		return &pb.NewStateReply{Next: rs.Next}, nil
+	}
+	
+	next := make([]*pb.Blueprint, len(rs.Next))
+	copy(next, rs.Next)
+	return &pb.NewStateReply{Next: next}, nil
+}
+
+func (rs *RegServer) GetPromise(ctx context.Context, pre *pb.Prepare) (*pb.Promise, error) {
+	rs.Lock()
+	defer rs.Unlock()
+
+	if pre.CurC < rs.CurC {
+		return &pb.Promise{Cur: rs.Cur}, nil
 	}
 
-	if rs.CurC == ns.CurC {
-		return &pb.NewStateReply{Next: rs.Next}, nil
+	if rs.NextMap[pre.CurC] != nil {
+		// Something was decided already
+		return &pb.Promise{Dec: rs.NextMap[pre.CurC]}, nil
 	}
-	return &pb.NewStateReply{Cur: rs.Cur, Next: rs.Next}, nil
+
+	if rnd, ok := rs.Rnd[pre.CurC]; !ok || pre.Rnd > rnd {
+		// A Prepare in a new and higher round.
+		rs.Rnd[pre.CurC] = pre.Rnd
+		return &pb.Promise{Val: rs.Val[pre.CurC]}, nil
+	}
+
+	return &pb.Promise{Rnd: rs.Rnd[pre.CurC], Val: rs.Val[pre.CurC]}, nil
 }
+
+func (rs *RegServer) Accept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn, err error) {
+	rs.Lock()
+	defer rs.Unlock()
+
+	if pro.CurC < rs.CurC {
+		return &pb.Learn{Cur: rs.Cur}, nil
+	}
+
+	if rs.Next[pro.CurC] != nil {
+		// This instance is decided already
+		return &pb.Learn{Dec: rs.Next[pro.CurC]}, nil
+	}
+
+	if rs.Rnd[pro.CurC] > pro.Val.Rnd {
+		// Accept in old round.
+		return &pb.Learn{Learned: false}, nil
+	}
+
+	rs.Rnd[pro.CurC] = pro.Val.Rnd
+	rs.Val[pro.CurC] = pro.Val
+	return &pb.Learn{Learned: true}, nil
+}
+

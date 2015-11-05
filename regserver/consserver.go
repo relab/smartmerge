@@ -2,211 +2,121 @@ package regserver
 
 import (
 	"errors"
-	"fmt"
-	"sync"
 
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
+	"github.com/golang/glog"
 )
 
 type ConsServer struct {
-	Cur    *pb.Blueprint
-	CurC   uint32
-	RState *pb.State
-	Next   map[uint32]*pb.Blueprint
-	Rnd    map[uint32]uint32
-	Val    map[uint32]*pb.CV
-	mu     sync.RWMutex
+	*RegServer
 }
 
-func (cs *ConsServer) PrintState(op string) {
-	fmt.Println("Did operation :", op)
-	fmt.Println("New State:")
-	fmt.Println("Cur ", cs.Cur)
-	fmt.Println("CurC ", cs.CurC)
-	fmt.Println("RState ", cs.RState)
-	fmt.Println("Next", cs.Next)
-	fmt.Println("Rnd", cs.Rnd)
-	fmt.Println("Val", cs.Val)
-}
+
 
 func NewConsServer() *ConsServer {
 	return &ConsServer{
-		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:   make(map[uint32]*pb.Blueprint, 0),
-		Rnd:    make(map[uint32]uint32, 0),
-		Val:    make(map[uint32]*pb.CV, 0),
-		mu:     sync.RWMutex{},
+		NewRegServer(),
 	}
 }
 
 func NewConsServerWithCur(cur *pb.Blueprint, curc uint32) *ConsServer {
 	return &ConsServer{
-		Cur:    cur,
-		CurC:   curc,
-		RState: &pb.State{make([]byte, 0), int32(0), uint32(0)},
-		Next:   make(map[uint32]*pb.Blueprint, 0),
-		Rnd:    make(map[uint32]uint32, 0),
-		Val:    make(map[uint32]*pb.CV, 0),
-		mu:     sync.RWMutex{},
+		NewRegServerWithCur(cur, curc),
 	}
 }
 
-func (cs *ConsServer) CSetState(ctx context.Context, nc *pb.CNewCur) (*pb.NewStateReply, error) {
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-	//defer cs.PrintState("SetCur")
-	if cs.RState.Compare(nc.State) == 1 {
-		cs.RState = nc.State
-	}
-
-	if nc.CurC == 0 || nc.Cur.LearnedCompare(cs.Cur) == 1 {
-		return &pb.NewStateReply{Cur: cs.Cur}, nil
-	}
-
-	var next *pb.Blueprint
-	if n, ok := cs.Next[nc.CurC]; ok {
-		next = n
-	}
-
-	if nc.CurC == cs.CurC {
-		if next != nil {
-			return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
-		}
-		return &pb.NewStateReply{}, nil
-	}
-
-	if cs.Cur != nil && cs.Cur.Compare(nc.Cur) == 0 {
-		return &pb.NewStateReply{}, errors.New("New Current Blueprint was uncomparable to previous.")
-	}
-
-	cs.Cur = nc.Cur
-	cs.CurC = nc.CurC
-	if next != nil {
-		return &pb.NewStateReply{Next: []*pb.Blueprint{next}}, nil
-	}
-	return &pb.NewStateReply{}, nil
-}
-
-func (cs *ConsServer) CWriteN(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {
-	cs.mu.RLock()
-	defer cs.mu.RUnlock()
-	//defer cs.PrintState("CReadS")
-
-	if rr.Prop != nil {
-		if n, ok := cs.Next[rr.CurC]; ok {
-			if n != nil && !n.Equals(rr.Prop) {
-				return nil, errors.New("Tried to overwrite Next.")
-			}
-		} else {
-			cs.Next[rr.CurC] = rr.Prop
-		}
-	}
-
-	var next []*pb.Blueprint
-	if cs.Next[rr.CurC] != nil {
-		next = []*pb.Blueprint{cs.Next[rr.CurC]}
-	}
-	if rr.CurC < cs.CurC {
-		//Not sure if we should return an empty Next and State in this case.
-		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{State: cs.RState, Cur: cs.Cur, Next: next}, nil
-	}
-
-	return &pb.AdvReadReply{State: cs.RState, Next: next}, nil
-}
-
-func (cs *ConsServer) CReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
-	cs.mu.RLock()
-	defer cs.mu.RUnlock()
-	//defer cs.PrintState("CReadS")
+func (cs *ConsServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
+	cs.RLock()
+	defer cs.RUnlock()
+	glog.V(5).Infoln("Handling ReadS")
 
 	if rr.This < cs.CurC {
-		return &pb.ReadReply{Cur: &pb.ConfReply{cs.Cur, true}}, nil
+		// The client is in an outdated configuration.
+		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{cs.Cur, true}, Next: nil}, nil
 	}
+	
 	var next []*pb.Blueprint
-	if cs.Next[rr.This] != nil {
-		next = []*pb.Blueprint{cs.Next[rr.This]}
+	if cs.NextMap[rr.This] != nil {
+		next = []*pb.Blueprint{cs.NextMap[rr.This]}
 	}
+	
 	if rr.Cur < cs.CurC {
-		//Not sure if we should return an empty Next and State in this case.
-		//Returning it is safer. The other faster.
 		return &pb.ReadReply{State: cs.RState, Cur: &pb.ConfReply{cs.Cur, false}, Next: next}, nil
 	}
 
 	return &pb.ReadReply{State: cs.RState, Next: next}, nil
 }
 
-func (cs *ConsServer) CWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-	//defer cs.PrintState("CWriteS")
+func (cs *ConsServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
+	cs.Lock()
+	defer cs.Unlock()
+	glog.V(5).Infoln("Handling WriteS")
 	if cs.RState.Compare(wr.State) == 1 {
 		cs.RState = wr.State
 	}
 
 	if wr.Conf.This < cs.CurC {
+		// The client is in an outdated configuration.
 		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.Cur, true}}, nil
 	}
+	
 	var next []*pb.Blueprint
-	if cs.Next[wr.Conf.This] != nil {
-		next = []*pb.Blueprint{cs.Next[wr.Conf.This]}
+	if cs.NextMap[wr.Conf.This] != nil {
+		next = []*pb.Blueprint{cs.NextMap[wr.Conf.This]}
 	}
-
+	
 	if wr.Conf.Cur < cs.CurC {
 		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.Cur, false}, Next: next}, nil
 	}
-
 	return &pb.WriteSReply{Next: next}, nil
 }
 
-func (cs *ConsServer) CPrepare(ctx context.Context, pre *pb.Prepare) (*pb.Promise, error) {
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-	//defer cs.PrintState("CPrepare")
-
-	var cur *pb.Blueprint
-	if pre.CurC < cs.CurC {
-		// Configuration outdated
-		cur = cs.Cur
+func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNReply, error) {
+	cs.Lock()
+	defer cs.Unlock()
+	glog.V(5).Infoln("Handling WriteN")
+	
+	if wr.CurC < cs.CurC {
+		return &pb.WriteNReply{Cur: cs.Cur}, nil
+	}
+	
+	cs.NextMap[wr.CurC] = wr.Next
+	var next []*pb.Blueprint
+	if wr.Next != nil {
+		next = []*pb.Blueprint{wr.Next}
 	}
 
-	if cs.Next[pre.CurC] != nil {
-		// Something was decided already
-		return &pb.Promise{Cur: cur, Dec: cs.Next[pre.CurC]}, nil
-	}
 
-	if rnd, ok := cs.Rnd[pre.CurC]; !ok || pre.Rnd > rnd {
-		// A Prepare in a new and higher round.
-		cs.Rnd[pre.CurC] = pre.Rnd
-		return &pb.Promise{Cur: cur, Val: cs.Val[pre.CurC]}, nil
-	}
-
-	return &pb.Promise{Cur: cur, Rnd: cs.Rnd[pre.CurC], Val: cs.Val[pre.CurC]}, nil
+	return &pb.WriteNReply{State: cs.RState, Next: next}, nil
 }
 
-func (cs *ConsServer) CAccept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn, err error) {
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-	//defer cs.PrintState("Accept")
-
-	var cur *pb.Blueprint
-	if pro.CurC < cs.CurC {
-		// Configuration outdated.
-		cur = cs.Cur
+func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
+	cs.Lock()
+	defer cs.Unlock()
+	glog.V(5).Infoln("Handling SetState")
+	if ns == nil {
+		return nil, errors.New("Empty NewState message")
 	}
 
-	if cs.Next[pro.CurC] != nil {
-		// This instance is decided already
-		return &pb.Learn{Cur: cur, Dec: cs.Next[pro.CurC]}, nil
+	if cs.CurC > ns.CurC {
+		return &pb.NewStateReply{Cur: cs.Cur}, nil
 	}
 
-	if cs.Rnd[pro.CurC] > pro.Val.Rnd {
-		// Accept in old round.
-		return &pb.Learn{Cur: cur, Learned: false}, nil
+	if cs.RState.Compare(ns.State) == 1 {
+		cs.RState = ns.State
 	}
 
-	cs.Rnd[pro.CurC] = pro.Val.Rnd
-	cs.Val[pro.CurC] = pro.Val
-	return &pb.Learn{Cur: cur, Learned: true}, nil
+	// The compare below is not necessary. But better safe than sorry.
+	if cs.CurC < ns.CurC && cs.Cur.Compare(ns.Cur) == 1 {
+		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
+		cs.Cur = ns.Cur
+		cs.CurC = ns.CurC
+	}
+
+	var next []*pb.Blueprint
+	if cs.NextMap[ns.CurC] != nil {
+		next = []*pb.Blueprint{cs.NextMap[ns.CurC]}
+	}
+	return &pb.NewStateReply{Next: next}, nil
 }

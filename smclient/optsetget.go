@@ -44,7 +44,9 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 			rs = read.Reply.GetState()
 		}
 
-		if len(smc.Blueps) > i+1 {
+		if cur > i {
+			rid = nil
+		} else if len(smc.Blueps) > i+1 {
 			rid = pb.Union(rid, read.MachineIDs)
 		}
 
@@ -90,7 +92,9 @@ func (smc *SmOptClient) set(rs *pb.State) int {
 		cur = smc.handleNewCur(cur, write.Reply.GetCur(), false)
 		smc.handleNext(i, write.Reply.GetNext(), false)
 
-		if len(smc.Blueps) > i+1 {
+		if cur > i {
+			rid = nil
+		} else if len(smc.Blueps) > i+1 {
 			rid = pb.Union(rid, write.MachineIDs)
 		}
 	}

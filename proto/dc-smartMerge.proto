@@ -5,10 +5,12 @@ package proto;
 service AdvRegister {
 	rpc AReadS(Conf) returns (ReadReply) {} 
 	rpc AWriteS(WriteS) returns (WriteSReply) {}
-	rpc AWriteN(AdvWriteN) returns (AdvWriteNReply) {}
+	rpc AWriteN(WriteN) returns (WriteNReply) {}
 	rpc SetCur(NewCur) returns (NewCurReply) {}
 	rpc LAProp(LAProposal) returns (LAReply) {} 
 	rpc SetState(NewState) returns (NewStateReply) {}
+	rpc GetPromise(Prepare) returns (Promise) {}
+	rpc Accept(Propose) returns (Learn) {}
 }
 
 message State {
@@ -80,12 +82,12 @@ message AdvWriteSReply {
 	repeated Blueprint Next = 2;
 }
 
-message AdvWriteN {
+message WriteN {
 	uint32 CurC = 1;
 	Blueprint Next = 2;
 }
 
-message AdvWriteNReply {
+message WriteNReply {
 	Blueprint Cur = 1;
 	State State = 2;
 	repeated Blueprint Next = 3;
@@ -147,15 +149,6 @@ message GetOneReply {
 	Blueprint Cur = 2;
 }
 
-service ConsDisk {
-	rpc CPrepare(Prepare) returns (Promise) {}
-	rpc CAccept(Propose) returns (Learn) {}
-	rpc CReadS(Conf) returns (ReadReply) {} 
-	rpc CWriteN(DRead) returns (AdvReadReply) {}
-	rpc CWriteS(WriteS) returns (WriteSReply) {}
-	rpc CSetState(CNewCur) returns (NewStateReply) {}
-}
-
 message CV {
 	uint32 Rnd = 1;
 	Blueprint Val = 2;
@@ -182,10 +175,4 @@ message Learn {
 	Blueprint Cur = 1;
 	Blueprint Dec = 2;
 	bool Learned = 3;
-}
-
-message CNewCur {
-	Blueprint Cur = 1;
-	uint32 CurC = 2;
-	State State = 3;
 }

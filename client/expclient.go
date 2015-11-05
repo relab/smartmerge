@@ -17,7 +17,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/relab/goxos/kvs/bgen"
-	"github.com/relab/smartMerge/consclient"
+	//"github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
@@ -194,17 +194,13 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 		pb.WithSetCurQuorumFunc(qf.SetCurQF),
 		pb.WithLAPropQuorumFunc(qf.LAPropQF),
 		pb.WithSetStateQuorumFunc(qf.SetStateQF),
+		pb.WithGetPromiseQuorumFunc(qf.GetPromiseQF),
+		pb.WithAcceptQuorumFunc(qf.AcceptQF),
 		pb.WithDReadSQuorumFunc(qf.DReadSQF),
 		pb.WithDWriteSQuorumFunc(qf.DWriteSQF),
 		pb.WithDWriteNSetQuorumFunc(qf.DWriteNSetQF),
 		pb.WithDSetCurQuorumFunc(qf.DSetCurQF),
 		pb.WithGetOneNQuorumFunc(qf.GetOneNQF),
-		pb.WithCReadSQuorumFunc(qf.CReadSQF),
-		pb.WithCWriteSQuorumFunc(qf.CWriteSQF),
-		pb.WithCPrepareQuorumFunc(qf.CPrepareQF),
-		pb.WithCAcceptQuorumFunc(qf.CAcceptQF),
-		pb.WithCSetStateQuorumFunc(qf.CSetStateQF),
-		pb.WithCWriteNQuorumFunc(qf.CWriteNQF),
 	)
 	if err != nil {
 		glog.Errorln("Creating manager returned error: ", err)
@@ -214,11 +210,11 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 	case "", "sm":
 		switch opt {
 		case "", "no":
-			cl, err = smclient.New(initB, mgr, uint32(id))
+			cl, err = smclient.New(initB, mgr, uint32(id), false)
 		case "doreconf":
-			cl, err = smclient.NewSmR(initB, mgr, uint32(id))
+			cl, err = smclient.NewSmR(initB, mgr, uint32(id), false)
 		case "norecontact":
-			cl, err = smclient.NewOpt(initB, mgr, uint32(id))
+			cl, err = smclient.NewOpt(initB, mgr, uint32(id), false)
 		default:
 			glog.Fatalln("optimization recontact not yet supported.")
 		}
@@ -229,11 +225,11 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 	case "cons":
 		switch opt {
 		case "", "no":
-			cl, err = consclient.New(initB, mgr, uint32(id))
+			cl, err = smclient.New(initB, mgr, uint32(id), true)
 		case "doreconf":
-			cl, err = consclient.NewCR(initB, mgr, uint32(id))
+			cl, err = smclient.NewSmR(initB, mgr, uint32(id), true)
 		case "norecontact":
-			cl, err = consclient.NewOpt(initB, mgr, uint32(id))
+			cl, err = smclient.NewOpt(initB, mgr, uint32(id), true)
 		default:
 			glog.Fatalln("optimization recontact not yet supported.")
 		}

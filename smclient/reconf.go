@@ -13,7 +13,12 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		glog.V(3).Infof("C%d: Proposal is already in place.", smc.ID)
 		return 0, nil
 	}
-	_, cnt, err = smc.reconf(prop, true, nil)
+	
+	if smc.doCons {
+		_, cnt, err = smc.consreconf(prop, true, nil)
+	} else {
+		_, cnt, err = smc.reconf(prop, true, nil)
+	}
 	return
 }
 
@@ -27,7 +32,7 @@ func (smc *SmClient) reconf(prop *pb.Blueprint, regular bool, val []byte) (rst *
 		if err != nil {
 			return nil, 0, err
 		}
-		if len(prop.Add) == 0 {
+		if len(prop.Ids()) == 0 {
 			glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
 			return nil, cnt, errors.New("Abort before moving to unacceptable configuration.")
 		}
@@ -43,7 +48,7 @@ forconfiguration:
 
 		if prop.LearnedCompare(smc.Blueps[i]) != -1 {
 			var st *pb.State
-			st, cur, err = smc.doread(cur, i)
+			st, _, cur, err = smc.doread(cur, i)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -64,7 +69,7 @@ forconfiguration:
 		}
 
 		if prop.LearnedCompare(smc.Blueps[i]) == -1 {
-			writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()), prop})
+			writeN, err := smc.Confs[i].AWriteN(&pb.WriteN{uint32(smc.Blueps[i].Len()), prop})
 			if glog.V(3) {
 				glog.Infoln("AWriteN returned")
 			}
@@ -117,87 +122,6 @@ forconfiguration:
 	return rst, cnt, nil
 }
 
-// func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
-// 	if glog.V(2) {
-// 		glog.Infoln("Starting reconfiguration")
-// 	}
-// 	prop, cnt = smc.lagree(prop)
-// 	//fmt.Printf("LA returned Blueprint with %d procs and %d removals.\n", len(prop.Add), len(prop.Rem))
-// 	if glog.V(3) {
-// 		glog.Infof("Needed %d proposals to solv LA.", cnt)
-// 	}
-//
-// 	//Proposed blueprint is already in place, or outdated.
-// 	if prop.LearnedCompare(smc.Blueps[0]) == 0 {
-// 		glog.V(3).Infoln("Proposal is already in place.")
-// 		return cnt, nil
-// 	}
-//
-// 	if prop.Compare(smc.Blueps[0]) == 1 {
-// 		glog.V(3).Infoln("Proposal already outdated.")
-// 		return cnt, nil
-// 	}
-//
-// 	if prop.LearnedCompare(smc.Blueps[len(smc.Blueps)-1]) == 1 {
-// 		prop = smc.Blueps[len(smc.Blueps)-1]
-// 	}
-//
-// 	if len(prop.Add) == 0 {
-// 		glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
-// 		return 0, errors.New("Abort before proposing unacceptable configuration.")
-// 	}
-//
-// 	cur := 0
-// 	las := new(pb.Blueprint)
-// 	rst := new(pb.State)
-// 	for i := 0; i < len(smc.Confs); i++ {
-// 		if i < cur {
-// 			continue
-// 		}
-//
-// 		writeN, err := smc.Confs[i].AWriteN(&pb.AdvWriteN{uint32(smc.Blueps[i].Len()), prop})
-// 		if glog.V(3) {
-// 			glog.Infoln("AWriteN returned")
-// 		}
-// 		cnt++
-// 		if err != nil {
-// 			//Should log this for debugging
-// 			glog.Errorln("AWriteN returned error: ", err)
-// 			return 0, err
-// 		}
-//
-// 		cur = smc.handleOneCur(cur, writeN.Reply.GetCur())
-// 		smc.handleNext(i, writeN.Reply.GetNext())
-// 		las = las.Merge(writeN.Reply.GetLAState())
-// 		if rst.Compare(writeN.Reply.GetState()) == 1 {
-// 			rst = writeN.Reply.GetState()
-// 		}
-//
-// 		prop = smc.Blueps[len(smc.Blueps)-1]
-// 		//fmt.Println("Len Blueps, Confs: ", len(smc.Blueps), len(smc.Confs))
-// 		//fmt.Println("Cur has index ", cur)
-// 	}
-//
-// 	if i := len(smc.Confs) - 1; i > cur {
-// 		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
-// 		if glog.V(3) {
-// 			glog.Infoln("Set State in Configuration with length: ", smc.Blueps[i].Len())
-// 		}
-// 		cnt++
-// 		if err != nil {
-// 			//Not sure what to do:
-// 			glog.Errorln("SetState returned error, not sure what to do")
-// 			return 0, err
-// 		}
-//
-// 		cur = smc.handleOneCur(i, setS.Reply.GetCur())
-// 	}
-//
-// 	smc.Blueps = smc.Blueps[cur:]
-// 	smc.Confs = smc.Confs[cur:]
-//
-// 	return cnt, nil
-// }
 
 func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err error) {
 	cur := 0
@@ -220,7 +144,7 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 
 		cur = smc.handleOneCur(cur, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()
-		if la != nil && !prop.Equals(la) {
+		if la != nil && !prop.LearnedEquals(la) {
 			if glog.V(3) {
 				glog.Infof("C%d: LAProp returned new state, try again.\n", smc.ID)
 			}
@@ -249,11 +173,11 @@ func (smc *SmClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
 	return smc.findorinsert(cur, newCur)
 }
 
-func (smc *SmClient) doread(curin, i int) (st *pb.State, cur int, err error) {
+func (smc *SmClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur int, err error) {
 	read, errx := smc.Confs[i].AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[i].Len())})
 	if errx != nil {
 		glog.Errorf("C%d: error from AReadS: ", errx)
-		return nil, 0, errx
+		return nil, nil, 0, errx
 		//return
 	}
 	if glog.V(6) {
@@ -262,8 +186,13 @@ func (smc *SmClient) doread(curin, i int) (st *pb.State, cur int, err error) {
 	cur = smc.handleNewCur(curin, read.Reply.GetCur())
 
 	smc.handleNext(i, read.Reply.GetNext())
+	
+	if len(read.Reply.GetNext()) == 1 {
+		// Only used in consreconf
+		next = read.Reply.GetNext()[0]
+	}
 
-	return read.Reply.GetState(), cur, nil
+	return read.Reply.GetState(), next, cur, nil
 }
 
 func (smc *SmClient) WriteValue(val []byte, st *pb.State) *pb.State {

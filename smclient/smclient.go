@@ -20,9 +20,10 @@ type SmClient struct {
 	Confs  []*pb.Configuration
 	mgr    *pb.Manager
 	ID     uint32
+	doCons bool
 }
 
-func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*SmClient, error) {
+func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32,cons bool) (*SmClient, error) {
 	conf, err := mgr.NewConfiguration(initBlp.Add, majQuorum(initBlp), ConfTimeout)
 	if err != nil {
 		return nil, err
@@ -40,6 +41,7 @@ func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32) (*SmClient, error) {
 		Confs:  []*pb.Configuration{conf},
 		mgr:    mgr,
 		ID:     id,
+		doCons: cons,
 	}, nil
 }
 

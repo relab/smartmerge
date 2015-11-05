@@ -82,7 +82,7 @@ var AWriteSQF = func(c *pr.Configuration, replies []*pr.WriteSReply) (*pr.WriteS
 	return lastrep, true
 }
 
-var AWriteNQF = func(c *pr.Configuration, replies []*pr.AdvWriteNReply) (*pr.AdvWriteNReply, bool) {
+var AWriteNQF = func(c *pr.Configuration, replies []*pr.WriteNReply) (*pr.WriteNReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -99,7 +99,7 @@ var AWriteNQF = func(c *pr.Configuration, replies []*pr.AdvWriteNReply) (*pr.Adv
 		return nil, false
 	}
 
-	lastrep = new(pr.AdvWriteNReply)
+	lastrep = new(pr.WriteNReply)
 	for i, rep := range replies {
 		if i == len(replies)-1 {
 			break
@@ -194,6 +194,74 @@ var SetStateQF = func(c *pr.Configuration, replies []*pr.NewStateReply) (*pr.New
 
 type NextReport interface {
 	GetNext() []*pr.Blueprint
+}
+
+var GetPromiseQF = func(c *pr.Configuration, replies []*pr.Promise) (*pr.Promise, bool) {
+
+	// Stop RPC if new current configuration reported.
+	lastrep := replies[len(replies)-1]
+	if lastrep.GetCur() != nil {
+		return lastrep, true
+	}
+
+	// Return false, if not enough replies yet.
+	// This rpc is both reading and writing.
+	if len(replies) < c.ReadQuorum() {
+		return nil, false
+	}
+
+	lastrep = new(pr.Promise)
+	for _, rep := range replies {
+		if rep == nil {
+			continue
+		}
+
+		if rep.GetDec() != nil {
+			return rep, true
+		}
+
+		if rep.Rnd > lastrep.Rnd {
+			lastrep.Rnd = rep.Rnd
+		}
+		if rep.Val == nil {
+			continue
+		}
+		if lastrep.Val == nil || rep.Val.Rnd > lastrep.Val.Rnd {
+			lastrep.Val = rep.Val
+		}
+	}
+
+	return lastrep, true
+}
+
+var AcceptQF = func(c *pr.Configuration, replies []*pr.Learn) (*pr.Learn, bool) {
+
+	// Stop RPC if new current configuration reported.
+	lastrep := replies[len(replies)-1]
+	if lastrep.GetCur() != nil {
+		return lastrep, true
+	}
+
+	// Return false, if not enough replies yet.
+	// This rpc is both reading and writing.
+	if len(replies) < c.MaxQuorum() {
+		return nil, false
+	}
+
+	lastrep = new(pr.Learn)
+	lastrep.Learned = true
+	for _, rep := range replies {
+		if rep == nil || !rep.Learned {
+			lastrep.Learned = false
+		}
+
+		if rep.GetDec() != nil {
+			return rep, true
+		}
+	}
+
+	return lastrep, true
+
 }
 
 func GetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {

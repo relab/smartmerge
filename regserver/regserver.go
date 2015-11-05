@@ -17,9 +17,9 @@ type RegServer struct {
 	LAState *pb.Blueprint //Used only for SM-Lattice agreement
 	RState  *pb.State
 	Next    []*pb.Blueprint
-	NextMap   map[uint32]*pb.Blueprint //Used only for Consensus based
-	Rnd    map[uint32]uint32  //Used only for Consensus based
-	Val    map[uint32]*pb.CV  //Used only for Consensus based
+	NextMap map[uint32]*pb.Blueprint //Used only for Consensus based
+	Rnd     map[uint32]uint32        //Used only for Consensus based
+	Val     map[uint32]*pb.CV        //Used only for Consensus based
 }
 
 func (rs *RegServer) PrintState(op string) {
@@ -37,12 +37,12 @@ var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
 func NewRegServer() *RegServer {
 	rs := &RegServer{}
 	rs.RWMutex = sync.RWMutex{}
-	rs.RState =   &pb.State{make([]byte, 0), int32(0), uint32(0)}
-	rs.Next =     make([]*pb.Blueprint, 5)
-	rs.NextMap =  make(map[uint32]*pb.Blueprint, 5)
-	rs.Rnd =      make(map[uint32]uint32, 5)
-	rs.Val =      make(map[uint32]*pb.CV, 5)
-	
+	rs.RState = &pb.State{make([]byte, 0), int32(0), uint32(0)}
+	rs.Next = make([]*pb.Blueprint, 5)
+	rs.NextMap = make(map[uint32]*pb.Blueprint, 5)
+	rs.Rnd = make(map[uint32]uint32, 5)
+	rs.Val = make(map[uint32]*pb.CV, 5)
+
 	return rs
 }
 
@@ -50,7 +50,7 @@ func NewRegServerWithCur(cur *pb.Blueprint, curc uint32) *RegServer {
 	rs := NewRegServer()
 	rs.Cur = cur
 	rs.CurC = curc
-	
+
 	return rs
 }
 
@@ -98,7 +98,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 		// The client is in an outdated configuration.
 		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{rs.Cur, true}, Next: nil}, nil
 	}
-	
+
 	next := make([]*pb.Blueprint, 0, len(rs.Next))
 	this := int(rr.This)
 	for _, nxt := range rs.Next {
@@ -106,7 +106,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 			next = append(next, nxt)
 		}
 	}
-	
+
 	if rr.Cur < rs.CurC {
 		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{rs.Cur, false}, Next: next}, nil
 	}
@@ -143,11 +143,11 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 	rs.Lock()
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
-	
+
 	if wr.CurC < rs.CurC {
 		return &pb.WriteNReply{Cur: rs.Cur}, nil
 	}
-	
+
 	found := false
 	for _, bp := range rs.Next {
 		if bp.LearnedEquals(wr.Next) {
@@ -168,7 +168,6 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 			next = append(next, nxt)
 		}
 	}
-
 
 	return &pb.WriteNReply{State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
 }
@@ -228,7 +227,7 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 		}
 		rs.Next = next
 	}
-	
+
 	next := make([]*pb.Blueprint, len(rs.Next))
 	copy(next, rs.Next)
 	return &pb.NewStateReply{Next: next}, nil
@@ -266,7 +265,7 @@ func (rs *RegServer) Accept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn
 
 	if rs.NextMap[pro.CurC] != nil {
 		// This instance is decided already
-		return &pb.Learn{Dec: rs.Next[pro.CurC]}, nil
+		return &pb.Learn{Dec: rs.NextMap[pro.CurC]}, nil
 	}
 
 	if rs.Rnd[pro.CurC] > pro.Val.Rnd {
@@ -278,4 +277,3 @@ func (rs *RegServer) Accept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn
 	rs.Val[pro.CurC] = pro.Val
 	return &pb.Learn{Learned: true}, nil
 }
-

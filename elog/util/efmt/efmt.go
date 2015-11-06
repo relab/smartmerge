@@ -19,6 +19,8 @@ func main() {
 	var list = flag.Bool("list", false, "print a list or latencies")
 	var debug = flag.Bool("debug", false, "print spike latencies")
 	var norm = flag.Int("normal", 2, "number of accesses in normal case.")
+	var recs = flag.Int("recs", 1, "number of reconfigurations per run.")
+	var cl = flag.Int("clients", 5, "number of clients.")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
@@ -69,19 +71,56 @@ func main() {
 	}
 
 	if *debug {
-		fmt.Fprintf(of, "%v\n", events[0])
+		//fmt.Fprintf(of, "%v\n", events[0])
 		cnt := 0
+		spikes := make([]e.Event, 0)
+		recs := make([]e.Event,0,10)
 		for _, evt := range events {
 			if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
 				fmt.Fprintf(of, "%v\n", evt)
 				cnt++
+				spikes = append(spikes, evt)
+			}
+			if evt.Type == e.ClientReconfLatency {
+				fmt.Fprintf(of, "%v\n", evt)
+				recs = append(recs, evt)
 			}
 		}
-		fmt.Fprintf(of, "%v\n", events[len(events)-1])
+		
+		//fmt.Fprintf(of, "%v\n", events[len(events)-1])
 		fmt.Fprintf(of, "%d spike latencies.\n", cnt)
-		if cnt > 0 {
-			os.Exit(1)
+		
+		if len(recs) > 0 && len(spikes) > 0 {
+			start := recs[0].Time
+			end := recs[0].EndTime
+			for _, rec := range recs {
+				if rec.Time.Before(start) {
+					start = rec.Time
+				}			
+				if rec.EndTime.After(end) {
+					end = rec.EndTime
+				}
+			}
+			end = end.Add(100* time.Millisecond)		
+	
+			problem := false
+			for _, evt := range spikes {
+				if evt.Value > uint64(*norm) {
+					problem = true
+					break
+				}
+				if evt.EndTime.Add(100 * time.Millisecond).After(start) && evt.Time.Before(end) {
+					fmt.Fprintln(of, "Spike during reconfiguration:")
+					fmt.Fprintf(of, "%v end time: %v\n", evt, evt.EndTime)
+					problem = true
+					break
+				} 
+			}
+			if problem {
+				os.Exit(1)
+			}
 		}
+
 		return
 	}
 
@@ -98,16 +137,16 @@ func main() {
 
 	readl, writel, reconfl := sortLatencies(events)
 	// if len(readl) > 0 {
-// 		_, err := fmt.Fprintln(of, "Read Latencies:")
-// 		if err != nil {
-// 			fmt.Println("Error writing to file:", err)
-// 		}
-// 		for k, durs := range readl {
-// 			avg := MeanDuration(durs...)
-// 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
-// 		}
-// 	}
-	
+	// 		_, err := fmt.Fprintln(of, "Read Latencies:")
+	// 		if err != nil {
+	// 			fmt.Println("Error writing to file:", err)
+	// 		}
+	// 		for k, durs := range readl {
+	// 			avg := MeanDuration(durs...)
+	// 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avg)
+	// 		}
+	// 	}
+
 	normal := uint64(*norm)
 	if len(readl) > 0 {
 		var totalaffected time.Duration
@@ -127,15 +166,24 @@ func main() {
 		}
 		if affected > 0 {
 			fmt.Fprintf(of, "Mean latency for reads with more than %d acceses is: %v\n", normal, (totalaffected / affected))
-			nwavg := 2070 * time.Microsecond
+			nwavg := 3806 * time.Microsecond
 			if normal == 4 {
 				nwavg = 5700 * time.Microsecond
-			} 
-			if normal == 1 {
-				nwavg = 1050 * time.Microsecond
 			}
-					
-			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
+			if normal == 1 {
+				nwavg = 1870 * time.Microsecond
+			}
+			overhead := totalaffected - (affected*nwavg)
+			fmt.Fprintf(of, "Total overhead is: %v\n", overhead)
+			runs := 0
+			for _,rslice := range reconfl{
+				runs += len(rslice)
+			}
+			runs = runs / *recs
+			fmt.Fprintf(of, "Number of runs is: %d\n", runs)
+			if runs > 0 {
+				fmt.Fprintf(of, "Overhead per client is: %v\n", (overhead/time.Duration(*cl))/time.Duration(runs))
+			}
 		}
 		maxls := make([]time.Duration,0,len(eventsperc)) 
 		for _,es := range eventsperc {
@@ -158,7 +206,7 @@ func main() {
 		}
 	
 	}
-	
+
 	if len(writel) > 0 {
 		fmt.Println("Processing writes is outdated!")
 		var totalaffected time.Duration
@@ -182,12 +230,10 @@ func main() {
 			if normal == 4 {
 				nwavg = 5700 * time.Microsecond
 			}
-					
+
 			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
 		}
 	}
-
-
 
 	if len(reconfl) > 0 {
 		var total time.Duration
@@ -213,7 +259,7 @@ func sortLatencies(events []e.Event) (readl map[uint64][]time.Duration, writel m
 	writel = make(map[uint64][]time.Duration, 0)
 	reconfl = make(map[uint64][]time.Duration, 0)
 	for _, evt := range events {
-		if evt.EndTime.Sub(evt.Time) > 100 *time.Millisecond {
+		if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
 			fmt.Printf("Discarding event %v.\n", evt)
 			continue
 		}

@@ -2,7 +2,7 @@
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
-SERVS=(9 10 11 12 13 14 15 17)
+SERVS=(9 10 11 12)
 #READS=(25 26 30 31 32)
 
 i=0
@@ -21,7 +21,9 @@ echo starting servers
 for Pi in ${SERVS[@]}
 do
 	echo -n "pitter$Pi "
-	ssh pitter"$Pi" "nohup $SM/server/server -all-cores -alg=cons -port 13000 -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/servlogpi'$Pi' 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -gcoff -alg=cons -port 13000 -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/servlogpi'$Pi' 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -gcoff -alg=cons -port 12000 -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/servlogpi'$Pi' 2>&1 &"
+
 done
 echo " "
 
@@ -36,7 +38,9 @@ for Pi in ${READS[@]}
 
 do
 	echo -n "pitter$Pi "
-ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -nclients=1 -opt=$1 $3 -id='$Pi' -initsize=100 -all-cores -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -gc-off -nclients=1 -opt=$1 $3 -id='$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+
+#ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=cons -mode=bench -contR -gc-off -nclients=1 -opt=$1 $3 -id='1$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi1'$Pi' 2>&1 &"
 done
 echo " "
 

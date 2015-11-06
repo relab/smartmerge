@@ -1,19 +1,19 @@
 #!/bin/sh
 
 cd $SM/client
-go build || exit
+#go build || exit
 cd $SM/server
-go build || exit
+#go build || exit
 
 
 cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
 
-for RMS in 1
+for RMS in 1 2 3
 do
 
 echo "$RMS removal runs"
 
-for Opt in "norecontact"
+for Opt in "doreconf" "no" "norecontact"
 do
 
 #: <<'END'
@@ -23,7 +23,7 @@ mkdir "sm_opt$Opt-rm$RMS$*"
 for i in {1..20} 
 do
 	echo make run $i
-	./scripts/sm-run.sh "$Opt" "$RMS"
+	./scripts/sm-run.sh "$Opt" "sm" "$RMS"
 	mv $SM/exlogs $SM/"sm_opt$Opt-rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
@@ -41,16 +41,11 @@ for R in run*; do
 	cd $SM/"sm_opt$Opt-rm$RMS$*"
 done
 for R in run*; do
-	cd $R
-	$SM/scripts/checkall debug || {
-		cd ..  
-		mv $R problem/
-	}
-	cd $SM/"sm_opt$Opt-rm$RMS$*"
+	$SM/scripts/checkall $R || mv $R problem/
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis
+$SM/scripts/analyzeallsub analysis $RMS 6
 #END
 
 cd $SM
@@ -59,7 +54,7 @@ mkdir "sm_regopt$Opt-rm$RMS"
 for i in {1..20} 
 do
 	echo make run $i
-	./scripts/sm-run.sh "$Opt" "$RMS" "-regular"
+	./scripts/sm-run.sh "$Opt" "sm" "$RMS" "-regular"
 	mv $SM/exlogs $SM/"sm_regopt$Opt-rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
@@ -77,16 +72,11 @@ for R in run*; do
 	cd $SM/"sm_regopt$Opt-rm$RMS$*"
 done
 for R in run*; do
-	cd $R
-	$SM/scripts/checkall debug || {
-		cd ..  
-		mv $R problem/
-	}
-	cd $SM/"sm_regopt$Opt-rm$RMS$*"
+	$SM/scripts/checkall $R 1 || mv $R problem/
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis 1
+$SM/scripts/analyzeallsub analysis $RMS 6 1
 
 
 #echo DynaStore
@@ -129,7 +119,7 @@ mkdir "cons_opt$Opt-rm$RMS$*"
 for i in {1..20} 
 do
 	echo make run $i
-	./scripts/cons-run.sh "$Opt" "$RMS"
+	./scripts/sm-run.sh "$Opt" "cons" "$RMS"
 	mv $SM/exlogs $SM/"cons_opt$Opt-rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
@@ -147,17 +137,12 @@ for R in run*; do
 	cd $SM/"cons_opt$Opt-rm$RMS$*"
 done
 
-for R in run*; do
-	cd $R
-	$SM/scripts/checkall debug || {
-		cd ..  
-		mv $R problem/
-	}
-	cd $SM/"cons_opt$Opt-rm$RMS$*"
+for R in run*; do   
+	$SM/scripts/checkall $R || mv $R problem/
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis
+$SM/scripts/analyzeallsub analysis $RMS 6
 END
 
 echo Consensus Based with optimization $Opt regular
@@ -166,7 +151,7 @@ mkdir "cons_regopt$Opt-rm$RMS$*"
 for i in {1..20} 
 do
 	echo make run $i
-	./scripts/cons-run.sh "$Opt" "$RMS" "-regular"
+	./scripts/sm-run.sh "$Opt" "cons" "$RMS" "-regular"
 	mv $SM/exlogs $SM/"cons_regopt$Opt-rm$RMS$*"/"run$i"
 	echo sleeping 5 seconds
 	sleep 5
@@ -185,16 +170,11 @@ for R in run*; do
 done
 
 for R in run*; do
-	cd $R
-	$SM/scripts/checkall debug || {
-		cd ..  
-		mv $R problem/
-	}
-	cd $SM/"cons_regopt$Opt-rm$RMS$*"
+	$SM/scripts/checkall $R 1 || mv $R problem/
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis 1
+$SM/scripts/analyzeallsub analysis $RMS 6 1
 
 
 done

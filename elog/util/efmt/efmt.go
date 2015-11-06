@@ -53,8 +53,9 @@ func main() {
 
 	infiles := strings.Split(*file, ",")
 	events := make([]e.Event, 0, len(infiles))
+	eventsperc := make([][]e.Event, len(infiles))
 
-	for _, fi := range infiles {
+	for i, fi := range infiles {
 		if fi == "" {
 			continue
 		}
@@ -63,9 +64,8 @@ func main() {
 			fmt.Printf("Error %v  parsing events from %v", err, fi)
 			return
 		}
-		for _, e := range fievents {
-			events = append(events, e)
-		}
+		events = append(events, e...)
+		eventsperc[i]=fievents
 	}
 
 	if *debug {
@@ -137,9 +137,30 @@ func main() {
 					
 			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
 		}
+		maxls := make([]time.Duration,0,len(eventsperc)) 
+		for _,es := range eventsperc {
+			var max time.Duration
+			for _, evt :=  ramge es{
+				if evt.Type != e.ClientReadLatency {
+					break
+				}
+				if evt.Value <= normal {
+					continue
+				}
+				if evt.EndTime.Sub(evt.Time) > max {
+					max = evt.EndTime.Sub(evt.Time)
+				}
+			}
+			maxls = append(maxls, max)
+		}
+		if len(maxls) > 0 {
+			fmt.Fprintf(of, "Mean of maximum read latency: %v\n", MeanDuration(maxls...))
+		}
+	
 	}
 	
 	if len(writel) > 0 {
+		fmt.Println("Processing writes is outdated!")
 		var totalaffected time.Duration
 		var affected time.Duration
 

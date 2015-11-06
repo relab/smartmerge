@@ -59,12 +59,11 @@ func expmain() {
 			go adds(cl, ids, syncchan, *initsize+i, &wg)
 		}
 	}
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	close(syncchan)
 
 	glog.Infoln("waiting for goroutines")
 	wg.Wait()
-	time.Sleep(2 * time.Second)
 	return
 }
 

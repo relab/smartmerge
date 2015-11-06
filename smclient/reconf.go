@@ -71,7 +71,7 @@ forconfiguration:
 		if prop.LearnedCompare(smc.Blueps[i]) == -1 {
 			writeN, err := smc.Confs[i].AWriteN(&pb.WriteN{uint32(smc.Blueps[i].Len()), prop})
 			if glog.V(3) {
-				glog.Infoln("AWriteN returned")
+				glog.Infof("C%d: AWriteN returned\n", smc.ID)
 			}
 			cnt++
 			if err != nil {
@@ -87,7 +87,9 @@ forconfiguration:
 				rst = writeN.Reply.GetState()
 			}
 
-			prop = smc.Blueps[len(smc.Blueps)-1]
+			if prop.LearnedCompare(smc.Blueps[len(smc.Blueps)-1]) == 1 {
+				prop = smc.Blueps[len(smc.Blueps)-1]
+			}
 		}
 	}
 

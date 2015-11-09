@@ -8,7 +8,7 @@ cd $SM/server
 
 cd "$SM/sm_rm2$*" && echo "File sm_rm2$* exists already. Abort." && exit
 
-for RMS in 1 2 3
+for RMS in 4
 do
 
 echo "$RMS removal runs"
@@ -45,7 +45,7 @@ for R in run*; do
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis $RMS 6
+$SM/scripts/analyzeallsub analysis $RMS 5
 #END
 
 cd $SM
@@ -76,7 +76,7 @@ for R in run*; do
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis $RMS 6 1
+$SM/scripts/analyzeallsub analysis $RMS 5 1
 
 
 #echo DynaStore
@@ -142,7 +142,7 @@ for R in run*; do
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis $RMS 6
+$SM/scripts/analyzeallsub analysis $RMS 5
 END
 
 echo Consensus Based with optimization $Opt regular
@@ -174,7 +174,7 @@ for R in run*; do
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis $RMS 6 1
+$SM/scripts/analyzeallsub analysis $RMS 5 1
 
 
 done

@@ -66,7 +66,7 @@ func main() {
 			fmt.Printf("Error %v  parsing events from %v", err, fi)
 			return
 		}
-		events = append(events, e...)
+		events = append(events, fievents...)
 		eventsperc[i]=fievents
 	}
 
@@ -188,7 +188,7 @@ func main() {
 		maxls := make([]time.Duration,0,len(eventsperc)) 
 		for _,es := range eventsperc {
 			var max time.Duration
-			for _, evt :=  ramge es{
+			for _, evt :=  range es {
 				if evt.Type != e.ClientReadLatency {
 					break
 				}

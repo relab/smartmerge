@@ -194,6 +194,7 @@ prepare:
 			next = learn.Reply.GetDec()
 		}
 
+		glog.V(4).Infof("C%d: Did Learn a value.", smc.ID)
 		return
 	}
 }

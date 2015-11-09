@@ -236,6 +236,7 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 func (rs *RegServer) GetPromise(ctx context.Context, pre *pb.Prepare) (*pb.Promise, error) {
 	rs.Lock()
 	defer rs.Unlock()
+	glog.V(5).Infoln("Handling Prepare")
 
 	if pre.CurC < rs.CurC {
 		return &pb.Promise{Cur: rs.Cur}, nil
@@ -258,6 +259,7 @@ func (rs *RegServer) GetPromise(ctx context.Context, pre *pb.Prepare) (*pb.Promi
 func (rs *RegServer) Accept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn, err error) {
 	rs.Lock()
 	defer rs.Unlock()
+	glog.V(5).Infoln("Handling Accept")
 
 	if pro.CurC < rs.CurC {
 		return &pb.Learn{Cur: rs.Cur}, nil

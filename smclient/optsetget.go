@@ -179,7 +179,7 @@ func (smc *SmOptClient) insert(i int, blp *pb.Blueprint, createconf bool) {
 }
 
 func (smc *SmOptClient) create(blp *pb.Blueprint) *pb.Configuration {
-	cnf, err := smc.mgr.NewConfiguration(blp.Add, majQuorum(blp), ConfTimeout)
+	cnf, err := smc.mgr.NewConfiguration(blp.Ids(), blp.Quorum(), ConfTimeout)
 	if err != nil {
 		panic("could not get new config")
 	}

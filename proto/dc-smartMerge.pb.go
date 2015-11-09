@@ -12,6 +12,7 @@ It has these top-level messages:
 	State
 	Conf
 	ConfReply
+	Node
 	Blueprint
 	NewCur
 	NewCurReply
@@ -101,14 +102,31 @@ func (m *ConfReply) GetCur() *Blueprint {
 	return nil
 }
 
+type Node struct {
+	Id      uint32 `protobuf:"varint,1,opt,name=Id" json:"Id,omitempty"`
+	Version uint32 `protobuf:"varint,2,opt,name=Version" json:"Version,omitempty"`
+}
+
+func (m *Node) Reset()         { *m = Node{} }
+func (m *Node) String() string { return proto1.CompactTextString(m) }
+func (*Node) ProtoMessage()    {}
+
 type Blueprint struct {
-	Add []uint32 `protobuf:"varint,1,rep,name=Add" json:"Add,omitempty"`
-	Rem []uint32 `protobuf:"varint,2,rep,name=Rem" json:"Rem,omitempty"`
+	Nodes          []*Node `protobuf:"bytes,1,rep,name=Nodes" json:"Nodes,omitempty"`
+	FaultTolerance uint32  `protobuf:"varint,3,opt,name=FaultTolerance" json:"FaultTolerance,omitempty"`
+	Epoch          uint32  `protobuf:"varint,4,opt,name=Epoch" json:"Epoch,omitempty"`
 }
 
 func (m *Blueprint) Reset()         { *m = Blueprint{} }
 func (m *Blueprint) String() string { return proto1.CompactTextString(m) }
 func (*Blueprint) ProtoMessage()    {}
+
+func (m *Blueprint) GetNodes() []*Node {
+	if m != nil {
+		return m.Nodes
+	}
+	return nil
+}
 
 type NewCur struct {
 	Cur  *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`

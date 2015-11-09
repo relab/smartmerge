@@ -18,7 +18,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/relab/goxos/kvs/bgen"
 	//"github.com/relab/smartMerge/consclient"
-	"github.com/relab/smartMerge/dynaclient"
+	//"github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
@@ -59,6 +59,8 @@ var (
 	//Reconf Exp
 	rm  = flag.Bool("rm", false, "remove nclients servers concurrently.")
 	add = flag.Bool("add", false, "add nclients servers concurrently")
+	cont = flag.Bool("cont", false, "continuously reconfigure")
+	logT = flag.Bool("logThroughput", false, "Log reads per second.")
 )
 
 func Usage() {
@@ -127,11 +129,13 @@ func benchmain() {
 	}
 
 	initBlp := new(pb.Blueprint)
-	if *initsize >= 100 {
-		initBlp.Add = ids
-	} else {
-		initBlp.Add = ids[:*initsize]
+	initBlp.Nodes = make([]*pb.Node,0,len(ids))
+	for i, id := range ids {
+		if i >= *initsize { break }
+		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
 	}
+	initBlp.FaultTolerance = uint32(15)
+
 
 	var wg sync.WaitGroup
 
@@ -153,7 +157,7 @@ func benchmain() {
 		case *contW:
 			go contWrite(cl, *size, stop, &wg)
 		case *contR:
-			go contRead(cl, stop, *regul, &wg)
+			go contRead(cl, stop, *regul, *logT, &wg)
 		case *reads > 0:
 			go doReads(cl, *reads, *regul, &wg)
 		case *writes > 0:
@@ -219,9 +223,11 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 			glog.Fatalln("optimization recontact not yet supported.")
 		}
 	case "dyna":
-		cl, err = dynaclient.New(initB, mgr, uint32(id))
+		glog.Fatalln("this option is outdated an not updated to the new version.")
+		//cl, err = dynaclient.New(initB, mgr, uint32(id))
 	case "odyna":
-		cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
+		glog.Fatalln("this option is outdated an not updated to the new version.")
+		//cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
 	case "cons":
 		switch opt {
 		case "", "no":
@@ -269,15 +275,23 @@ loop:
 	wg.Done()
 }
 
-func contRead(cl RWRer, stop chan struct{}, reg bool, wg *sync.WaitGroup) {
+func contRead(cl RWRer, stop chan struct{}, reg bool, logT bool, wg *sync.WaitGroup) {
 	glog.Infoln("starting continous read")
 	var (
 		c       int
 		cnt     int
 		reqsent time.Time
+		throuput uint64
 	)
 
 	cchan := make(chan int, 1)
+	var tick <-chan time.Time
+
+	if logT {
+		tick = time.Tick(1 * time.Second)
+	}
+
+	
 loop:
 	for {
 		reqsent = time.Now()
@@ -294,7 +308,11 @@ loop:
 			glog.Infoln("received stopping signal")
 			break loop
 		case cnt = <-cchan:
+			throuput++
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
+		case <-tick:
+			elog.Log(e.NewEventWithMetric(e.ThroughputSample, throuput))
+			throuput = 0
 		}
 	}
 	glog.Infoln("finished continous read")

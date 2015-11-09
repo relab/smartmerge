@@ -11,10 +11,6 @@ import (
 
 var ConfTimeout = 1 * time.Second
 
-func majQuorum(bp *pb.Blueprint) int {
-	return len(bp.Add)/2 + 1
-}
-
 type SmClient struct {
 	Blueps []*pb.Blueprint
 	Confs  []*pb.Configuration
@@ -24,7 +20,7 @@ type SmClient struct {
 }
 
 func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32,cons bool) (*SmClient, error) {
-	conf, err := mgr.NewConfiguration(initBlp.Add, majQuorum(initBlp), ConfTimeout)
+	conf, err := mgr.NewConfiguration(initBlp.Ids(), initBlp.Quorum(), ConfTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +108,9 @@ func (smc *SmClient) Write(val []byte) int {
 	return cnt + mcnt
 }
 
+// We should probably only return a copy.
 func (smc *SmClient) GetCur() *pb.Blueprint {
-	if len(smc.Blueps) == 0 {
-		return nil
-	}
-	return smc.Blueps[0]
+	smc.set(nil)
+	b := smc.Blueps[0].Copy()
+	return b
 }

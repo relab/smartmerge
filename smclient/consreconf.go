@@ -147,7 +147,7 @@ prepare:
 				if glog.V(3) {
 					glog.Infof("C%d: Proposing my value.\n", smc.ID)
 				}
-				if len(prop.Add) == 0 {
+				if len(prop.Ids()) == 0 {
 					glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
 					return nil, cnt, cur, errors.New("Abort before proposing unacceptable configuration.")
 				}

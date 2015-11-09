@@ -29,9 +29,15 @@ message ConfReply {
 	bool Abort = 2;
 }
 
+message Node {
+	uint32 Id = 1;
+	uint32 Version = 2;
+}
+
 message Blueprint {
-	repeated uint32 Add = 1;
-	repeated uint32 Rem = 2;
+	repeated Node Nodes = 1;
+	uint32 FaultTolerance = 3;
+	uint32 Epoch = 4;
 } 
 
 message NewCur {

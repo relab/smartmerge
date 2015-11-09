@@ -22,9 +22,15 @@ func usermain() {
 		return
 	}
 
-	initBlp := pb.Blueprint{Add: ids[:*initsize], Rem: nil}
+	initBlp := new(pb.Blueprint)
+	initBlp.Nodes = make([]*pb.Node,0,len(ids))
+	for i, id := range ids {
+		if i >= *initsize { break }
+		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
+	}
+	initBlp.FaultTolerance = uint32(15)
 
-	client, mgr, err := NewClient(addrs, &initBlp, *alg, *opt, *clientid)
+	client, mgr, err := NewClient(addrs, initBlp, *alg, *opt, *clientid)
 	defer PrintErrors(mgr)
 	if err != nil {
 		fmt.Println("Error creating client: ", err)
@@ -115,21 +121,13 @@ func handleReconf(c RWRer, ids []uint32) {
 			fmt.Println(err)
 			return
 		}
-		for _, rid := range cur.Rem {
-			if rid == id {
-				fmt.Println("Id:", id, " was already removed.")
-				return
-			}
+		
+		target := cur.Copy()
+		
+		if !target.Add(id) {
+			fmt.Printf("Node wit id %d was already added.\n", id)
+			return
 		}
-		for _, aid := range cur.Add {
-			if aid == id {
-				fmt.Println("Id:", id, " was already added.")
-				return
-			}
-		}
-
-		target := new(pb.Blueprint)
-		target.Add = []uint32{id}
 
 		fmt.Println("Starting reconfiguration with target ", target)
 		reqsent := time.Now()
@@ -143,7 +141,7 @@ func handleReconf(c RWRer, ids []uint32) {
 		return
 	case 2:
 		fmt.Println("Ids in the current configuration:")
-		for _, id := range cur.Add {
+		for _, id := range cur.Ids() {
 			fmt.Println(id)
 		}
 		fmt.Println("Type the id to be removed.")
@@ -154,26 +152,11 @@ func handleReconf(c RWRer, ids []uint32) {
 			return
 		}
 
-		for _, rid := range cur.Rem {
-			if rid == id {
-				fmt.Println("Id:", id, " was already removed.")
-				return
-			}
-		}
-		found := false
-		for _, aid := range cur.Add {
-			if aid == id {
-				found = true
-			}
-		}
-		if !found {
-			fmt.Println("Id:", id, " was not added yet.")
+		target := cur.Copy()
+		if !target.Rem(uint32(id)) {
+			fmt.Println("Node is not part of current configuration.")
 			return
 		}
-
-		target := new(pb.Blueprint)
-		target.Rem = []uint32{id}
-		target = target.Merge(cur)
 
 		reqsent := time.Now()
 		cnt, err := c.Reconf(target)

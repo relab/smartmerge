@@ -126,7 +126,7 @@ func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
 		smc.Confs[j] = smc.Confs[j-1]
 	}
 
-	if len(smc.Blueps) != i+1 {
+	if len(smc.Blueps) > i {
 		smc.Blueps[i] = blp
 		smc.Confs[i] = cnf
 	}

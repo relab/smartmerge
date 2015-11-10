@@ -75,15 +75,17 @@ func main() {
 		cnt := 0
 		spikes := make([]e.Event, 0)
 		recs := make([]e.Event,0,10)
+		i := 0
 		for _, evt := range events {
 			if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
 				fmt.Fprintf(of, "%v\n", evt)
 				cnt++
 				spikes = append(spikes, evt)
 			}
-			if evt.Type == e.ClientReconfLatency {
+			if evt.Type == e.ClientReconfLatency && i < 20 {
 				fmt.Fprintf(of, "%v\n", evt)
 				recs = append(recs, evt)
+				i++
 			}
 		}
 		

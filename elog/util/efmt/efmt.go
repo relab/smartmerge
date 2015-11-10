@@ -245,7 +245,9 @@ func main() {
 
 
 	if len(tupute) > 0 {
+		
 		tupute = combineTPut(tupute)
+		fmt.Fprintf(of, "Throuputs: %d measurepoints.", len(tupute))
 		PrintTputsAndReconfs(tupute, reconfe, of)
 	}
 
@@ -388,11 +390,10 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 				count++
 				i++
 			} else {
-				fmt.Fprintf(of, "Initialized %d reconfigurations before:\n", count)
-				fmt.Fprintf(of, "%v", tput)
 				break for_rec
 			}
 		}
-		
+		fmt.Fprintf(of, "Initialized %d reconfigurations before:\n", count)
+		fmt.Fprintf(of, "%v", tput)
 	}
 }

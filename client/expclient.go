@@ -254,21 +254,20 @@ func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
 	)
 
 	bgen.GetBytes(value)
-	cchan := make(chan int, 1)
+	
 loop:
 	for {
 		reqsent = time.Now()
-		go func() {
-			cchan <- cl.Write(value)
-		}()
+		cnt = cl.Write(value)
+		elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
+		if cnt > 100 {
+			break
+		}
 		select {
-		case cnt = <-cchan:
-			elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
-			if cnt > 100 {
-				break
-			}
 		case <-stop:
 			break loop
+		default:
+			//Continue
 		}
 	}
 	glog.Infoln("finished continous write")
@@ -304,15 +303,21 @@ loop:
 			cchan <- c
 		}()
 		select {
-		case <-stop:
-			glog.Infoln("received stopping signal")
-			break loop
+		
 		case cnt = <-cchan:
 			throuput++
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 		case <-tick:
 			elog.Log(e.NewEventWithMetric(e.ThroughputSample, throuput))
 			throuput = 0
+		}
+		
+		select {
+		case <-stop:
+			glog.Infoln("received stopping signal")
+			break loop
+		default:
+			// Continue
 		}
 	}
 	glog.Infoln("finished continous read")

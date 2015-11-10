@@ -288,6 +288,8 @@ func contRead(cl RWRer, stop chan struct{}, reg bool, logT bool, wg *sync.WaitGr
 	var tick <-chan time.Time
 
 	if logT {
+		ts := time.Now().Truncate(time.Second).Add(time.Second)
+		time.Sleep(ts.Sub(time.Now()))
 		tick = time.Tick(1 * time.Second)
 	}
 

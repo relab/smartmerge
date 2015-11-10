@@ -81,19 +81,19 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 		return bp
 	}
 	mbp = new(Blueprint)
-	mbp.Nodes = make([]*Node, len(bp.Nodes))	
+	mbp.Nodes = make([]*Node, len(bp.Nodes))
 	copy(mbp.Nodes, bp.Nodes)
-	
-	for _, n := range blpr.Nodes {		
+
+	for _, n := range blpr.Nodes {
 		found := false
-		for_blpr:
+	for_blpr:
 		for _, node := range mbp.Nodes {
 			if n.Id == node.Id {
 				found = true
 				if n.Version >= node.Version {
 					node.Version = n.Version
 				} else {
-						break for_blpr
+					break for_blpr
 				}
 			}
 		}
@@ -101,9 +101,9 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 			mbp.Nodes = append(mbp.Nodes, n)
 		}
 	}
-	
-    switch {
-	case bp.Epoch > blpr.Epoch: 
+
+	switch {
+	case bp.Epoch > blpr.Epoch:
 		mbp.Epoch = bp.Epoch
 		mbp.FaultTolerance = bp.FaultTolerance
 	case blpr.Epoch > blpr.Epoch:
@@ -112,10 +112,10 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 	case bp.FaultTolerance > blpr.FaultTolerance:
 		mbp.Epoch = bp.Epoch
 		mbp.FaultTolerance = bp.FaultTolerance
-	default: 
+	default:
 		mbp.Epoch = blpr.Epoch
 		mbp.FaultTolerance = blpr.FaultTolerance
-    }
+	}
 	return mbp
 }
 
@@ -132,8 +132,8 @@ func (a *Blueprint) Compare(b *Blueprint) int {
 	aleqb := true
 	bleqa := true
 
-    switch {
-	case a.Epoch > b.Epoch: 
+	switch {
+	case a.Epoch > b.Epoch:
 		aleqb = false
 	case b.Epoch > a.Epoch:
 		bleqa = false
@@ -141,14 +141,14 @@ func (a *Blueprint) Compare(b *Blueprint) int {
 		aleqb = false
 	case b.FaultTolerance > a.FaultTolerance:
 		bleqa = false
-    }
+	}
 
 	if aleqb {
-		for_a:
-		for _,na := range a.Nodes {
+	for_a:
+		for _, na := range a.Nodes {
 			found := false
-			for_b:
-			for _,nb := range b.Nodes {
+		for_b:
+			for _, nb := range b.Nodes {
 				if na.Id == nb.Id {
 					found = true
 					if na.Version > nb.Version {
@@ -167,13 +167,13 @@ func (a *Blueprint) Compare(b *Blueprint) int {
 			}
 		}
 	}
-	
+
 	if bleqa {
-		for_B:
-		for _,nb := range b.Nodes {
+	for_B:
+		for _, nb := range b.Nodes {
 			found := false
-			for_A:
-			for _,na := range a.Nodes {
+		for_A:
+			for _, na := range a.Nodes {
 				if nb.Id == na.Id {
 					found = true
 					if nb.Version > na.Version {
@@ -189,7 +189,7 @@ func (a *Blueprint) Compare(b *Blueprint) int {
 			}
 		}
 	}
-	
+
 	if !aleqb && !bleqa {
 		return 0
 	}
@@ -211,15 +211,15 @@ func (bp *Blueprint) Len() int {
 	if bp.FaultTolerance > uint32(15) {
 		panic("Specified Fault tolerance larger than 15. Len nor correct for such values.")
 	}
-	
+
 	sum := uint32(0)
-	for _,n := range bp.Nodes{
+	for _, n := range bp.Nodes {
 		sum += n.Version
 	}
-	
+
 	sum += bp.Epoch * 16
 	sum += bp.FaultTolerance
-	
+
 	return int(sum)
 }
 
@@ -238,10 +238,10 @@ func (bp *Blueprint) LearnedEquals(blpr *Blueprint) bool {
 	return bp.Len() == blpr.Len()
 }
 
-// Oups: Nodes with even version are part of the configuration, those with odd 
+// Oups: Nodes with even version are part of the configuration, those with odd
 // 	version have been removed.
 func (bp *Blueprint) Ids() []uint32 {
-	ids := make([]uint32,0, len(bp.Nodes))
+	ids := make([]uint32, 0, len(bp.Nodes))
 	for _, n := range bp.Nodes {
 		if n.Version%2 == 0 {
 			ids = append(ids, n.Id)
@@ -262,7 +262,7 @@ func (bp *Blueprint) Add(id uint32) bool {
 			return false
 		}
 	}
-	bp.Nodes = append(bp.Nodes, &Node{Id: id,Version: uint32(0)})
+	bp.Nodes = append(bp.Nodes, &Node{Id: id, Version: uint32(0)})
 	return true
 }
 
@@ -283,7 +283,7 @@ func (bp *Blueprint) Rem(id uint32) bool {
 
 func (bp *Blueprint) Quorum() int {
 	n := len(bp.Ids())
-	if q:= n/2 +1; q >= n - int(bp.FaultTolerance) {
+	if q := n/2 + 1; q >= n-int(bp.FaultTolerance) {
 		return q
 	}
 	return n - int(bp.FaultTolerance)
@@ -293,8 +293,8 @@ func (bp *Blueprint) Copy() *Blueprint {
 	b := new(Blueprint)
 	b.Epoch = bp.Epoch
 	b.FaultTolerance = bp.FaultTolerance
-	b.Nodes = make([]*Node,len(bp.Nodes))
-	for i,n := range bp.Nodes {
+	b.Nodes = make([]*Node, len(bp.Nodes))
+	for i, n := range bp.Nodes {
 		b.Nodes[i] = &Node{n.Id, n.Version}
 	}
 	return b

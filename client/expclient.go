@@ -57,8 +57,8 @@ var (
 	regul  = flag.Bool("regular", false, "do only regular reads")
 
 	//Reconf Exp
-	rm  = flag.Bool("rm", false, "remove nclients servers concurrently.")
-	add = flag.Bool("add", false, "add nclients servers concurrently")
+	rm   = flag.Bool("rm", false, "remove nclients servers concurrently.")
+	add  = flag.Bool("add", false, "add nclients servers concurrently")
 	cont = flag.Bool("cont", false, "continuously reconfigure")
 	logT = flag.Bool("logThroughput", false, "Log reads per second.")
 )
@@ -129,13 +129,14 @@ func benchmain() {
 	}
 
 	initBlp := new(pb.Blueprint)
-	initBlp.Nodes = make([]*pb.Node,0,len(ids))
+	initBlp.Nodes = make([]*pb.Node, 0, len(ids))
 	for i, id := range ids {
-		if i >= *initsize { break }
+		if i >= *initsize {
+			break
+		}
 		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
 	}
 	initBlp.FaultTolerance = uint32(15)
-
 
 	var wg sync.WaitGroup
 
@@ -254,7 +255,7 @@ func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
 	)
 
 	bgen.GetBytes(value)
-	
+
 loop:
 	for {
 		reqsent = time.Now()
@@ -277,9 +278,9 @@ loop:
 func contRead(cl RWRer, stop chan struct{}, reg bool, logT bool, wg *sync.WaitGroup) {
 	glog.Infoln("starting continous read")
 	var (
-		c       int
-		cnt     int
-		reqsent time.Time
+		c        int
+		cnt      int
+		reqsent  time.Time
 		throuput uint64
 	)
 
@@ -290,7 +291,6 @@ func contRead(cl RWRer, stop chan struct{}, reg bool, logT bool, wg *sync.WaitGr
 		tick = time.Tick(1 * time.Second)
 	}
 
-	
 loop:
 	for {
 		reqsent = time.Now()
@@ -302,16 +302,17 @@ loop:
 			}
 			cchan <- c
 		}()
+	select_:
 		select {
-		
 		case cnt = <-cchan:
 			throuput++
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 		case <-tick:
 			elog.Log(e.NewEventWithMetric(e.ThroughputSample, throuput))
 			throuput = 0
+			goto select_
 		}
-		
+
 		select {
 		case <-stop:
 			glog.Infoln("received stopping signal")

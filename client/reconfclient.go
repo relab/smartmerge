@@ -26,13 +26,15 @@ func expmain() {
 	}
 
 	initBlp := new(pb.Blueprint)
-	initBlp.Nodes = make([]*pb.Node,0,len(ids))
+	initBlp.Nodes = make([]*pb.Node, 0, len(ids))
 	for i, id := range ids {
-		if i >= *initsize { break }
+		if i >= *initsize {
+			break
+		}
 		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
 	}
 	initBlp.FaultTolerance = uint32(15)
-	
+
 	if *doelog {
 		elog.Enable()
 		defer elog.Flush()
@@ -54,7 +56,7 @@ func expmain() {
 		switch {
 		case *cont:
 			if i%2 == 0 {
-				go contremove(cl, ids, syncchan, (*clientid)+(i/2), &wg)	
+				go contremove(cl, ids, syncchan, (*clientid)+(i/2), &wg)
 			} else {
 				go contadd(cl, ids, syncchan, (*clientid)+(i/2), &wg)
 			}
@@ -64,7 +66,7 @@ func expmain() {
 			go adds(cl, ids, syncchan, *initsize+i, &wg)
 		}
 	}
-	
+
 	if *cont {
 		signalChan := make(chan os.Signal, 1)
 		signal.Notify(signalChan, os.Interrupt, os.Kill, syscall.SIGTERM)
@@ -84,25 +86,20 @@ func expmain() {
 		time.Sleep(1 * time.Second)
 		close(syncchan)
 	}
-	
-	
-	
+
 	glog.Infoln("waiting for goroutines")
 	wg.Wait()
 	glog.Infoln("finished waiting")
 	return
 
-
 }
-
-
 
 func contremove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
 	}
-	
+
 	defer wg.Done()
 	for {
 		target := c.GetCur() //GetCur returns a copy, not the real thing.
@@ -117,9 +114,9 @@ func contremove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGro
 				glog.Errorln("Reconf returned error:", err)
 			}
 		}
-			
+
 		select {
-		case <- sc:
+		case <-sc:
 			return
 		default:
 			continue
@@ -132,7 +129,7 @@ func contadd(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup)
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
 	}
-	
+
 	defer wg.Done()
 	for {
 		target := c.GetCur() //GetCur returns a copy, not the real thing.
@@ -147,18 +144,15 @@ func contadd(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup)
 				glog.Errorln("Reconf returned error:", err)
 			}
 		}
-			
+
 		select {
-		case <- sc:
+		case <-sc:
 			return
 		default:
 			continue
 		}
 	}
 }
-
-
-
 
 func remove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()

@@ -6,7 +6,7 @@ func Union(A, B []uint32) (C []uint32) {
 
 func union(A, B []uint32) (C []uint32) {
 	C = make([]uint32, len(A))
-	copy(C,A)
+	copy(C, A)
 	for _, id := range B {
 		copy := true
 		for _, id2 := range A {
@@ -80,7 +80,9 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 	}
 	mbp = new(Blueprint)
 	mbp.Nodes = make([]*Node, len(bp.Nodes))
-	copy(mbp.Nodes, bp.Nodes)
+	for i,n := range bp.Nodes {
+		mbp.Nodes[i] = &Node{Id: n.Id, Version: n.Version}
+	}
 
 	for _, n := range blpr.Nodes {
 		found := false
@@ -96,7 +98,7 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 			}
 		}
 		if !found {
-			mbp.Nodes = append(mbp.Nodes, n)
+			mbp.Nodes = append(mbp.Nodes, &Node{Id: n.Id, Version: n.Version})
 		}
 	}
 
@@ -201,6 +203,7 @@ func (bp *Blueprint) Equals(blpr *Blueprint) bool {
 	return bp.Compare(blpr) == 1 && blpr.Compare(bp) == 1
 }
 
+// See Ids.
 func (bp *Blueprint) Len() int {
 	if bp == nil {
 		return 0
@@ -239,6 +242,9 @@ func (bp *Blueprint) LearnedEquals(blpr *Blueprint) bool {
 // Oups: Nodes with even version are part of the configuration, those with odd
 // 	version have been removed.
 func (bp *Blueprint) Ids() []uint32 {
+	if bp == nil {
+		return nil
+	}
 	ids := make([]uint32, 0, len(bp.Nodes))
 	for _, n := range bp.Nodes {
 		if n.Version%2 == 0 {

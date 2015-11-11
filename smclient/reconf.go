@@ -13,7 +13,7 @@ func (smc *SmClient) Reconf(prop *pb.Blueprint) (cnt int, err error) {
 		glog.V(3).Infof("C%d: Proposal is already in place.", smc.ID)
 		return 0, nil
 	}
-	
+
 	if smc.doCons {
 		_, cnt, err = smc.consreconf(prop, true, nil)
 	} else {
@@ -96,7 +96,7 @@ forconfiguration:
 	if i := len(smc.Confs) - 1; i > cur || !regular {
 
 		rst = smc.WriteValue(val, rst)
-		
+
 		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
 		cnt++
 		if err != nil {
@@ -124,7 +124,6 @@ forconfiguration:
 	}
 	return rst, cnt, nil
 }
-
 
 func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err error) {
 	cur := 0
@@ -189,7 +188,7 @@ func (smc *SmClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur
 	cur = smc.handleNewCur(curin, read.Reply.GetCur(), true)
 
 	smc.handleNext(i, read.Reply.GetNext(), true)
-	
+
 	if len(read.Reply.GetNext()) == 1 {
 		// Only used in consreconf
 		next = read.Reply.GetNext()[0]

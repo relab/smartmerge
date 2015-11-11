@@ -21,7 +21,7 @@ func (cr *SmRClient) Read() (val []byte, cnt int) {
 	}
 	var st *pb.State
 	var err error
-	
+
 	if cr.doCons {
 		st, cnt, err = cr.consreconf(nil, false, nil)
 	} else {
@@ -51,12 +51,12 @@ func (cr *SmRClient) RRead() (val []byte, cnt int) {
 	}
 	var st *pb.State
 	var err error
-	
+
 	if cr.doCons {
 		st, cnt, err = cr.consreconf(nil, true, nil)
 	} else {
 		st, cnt, err = cr.reconf(nil, true, nil)
-	}	
+	}
 	if err != nil {
 		glog.Errorln("Error during RRead")
 		return nil, 0
@@ -78,7 +78,7 @@ func (cr *SmRClient) Write(val []byte) (cnt int) {
 		glog.Infoln("starting Write")
 	}
 	var err error
-	
+
 	if cr.doCons {
 		_, cnt, err = cr.consreconf(nil, false, val)
 	} else {
@@ -102,7 +102,7 @@ type SmOptClient struct {
 }
 
 func NewOpt(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32, cons bool) (*SmOptClient, error) {
-	cr, err := New(initBlp, mgr, id,cons)
+	cr, err := New(initBlp, mgr, id, cons)
 	return &SmOptClient{cr}, err
 }
 

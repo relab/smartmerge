@@ -66,7 +66,7 @@ forconfiguration:
 			}
 
 			smc.handleNext(i, readS.Reply.GetNext(), true)
-			
+
 			if rst.Compare(readS.Reply.GetState()) == 1 {
 				rst = readS.Reply.GetState()
 			}
@@ -96,7 +96,7 @@ forconfiguration:
 		}
 		cur = smc.handleOneCur(i, setS.Reply.GetCur(), true)
 		smc.handleNext(i, setS.Reply.GetNext(), true)
-		
+
 		if !regular && i < len(smc.Confs)-1 {
 			prop = smc.Blueps[len(smc.Blueps)-1]
 			doconsensus = false

@@ -14,16 +14,16 @@ var TryTimeout = 10 * time.Millisecond
 var MinSize = 3
 
 type SmClient struct {
-	Blueps []*pb.Blueprint
-	Confs  []*pb.Configuration
-	curRead *pb.Configuration
-	curWrite *pb.Configuration	
-	mgr    *pb.Manager
-	ID     uint32
-	doCons bool
+	Blueps   []*pb.Blueprint
+	Confs    []*pb.Configuration
+	curRead  *pb.Configuration
+	curWrite *pb.Configuration
+	mgr      *pb.Manager
+	ID       uint32
+	doCons   bool
 }
 
-func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32,cons bool) (*SmClient, error) {
+func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32, cons bool) (*SmClient, error) {
 	conf, err := mgr.NewConfiguration(initBlp.Ids(), initBlp.Quorum(), ConfTimeout)
 	if err != nil {
 		return nil, err

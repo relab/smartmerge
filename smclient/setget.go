@@ -23,9 +23,9 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 		if glog.V(6) {
 			glog.Infoln("AReadS returned with replies from ", read.MachineIDs)
 		}
-		cur = smc.handleNewCur(cur, read.Reply.GetCur())
+		cur = smc.handleNewCur(cur, read.Reply.GetCur(), true)
 
-		smc.handleNext(i, read.Reply.GetNext())
+		smc.handleNext(i, read.Reply.GetNext(), true)
 
 		if rs.Compare(read.Reply.GetState()) == 1 {
 			rs = read.Reply.GetState()
@@ -56,8 +56,8 @@ func (smc *SmClient) set(rs *pb.State) int {
 			glog.Infoln("AWriteS returned, with replies from ", write.MachineIDs)
 		}
 
-		cur = smc.handleNewCur(cur, write.Reply.GetCur())
-		smc.handleNext(i, write.Reply.GetNext())
+		cur = smc.handleNewCur(cur, write.Reply.GetCur(), true)
+		smc.handleNext(i, write.Reply.GetNext(), true)
 	}
 	if cur > 0 {
 		smc.Blueps = smc.Blueps[cur:]
@@ -66,29 +66,29 @@ func (smc *SmClient) set(rs *pb.State) int {
 	return cnt
 }
 
-func (smc *SmClient) handleNewCur(cur int, newCur *pb.ConfReply) int {
+func (smc *SmClient) handleNewCur(cur int, newCur *pb.ConfReply, createconf bool) int {
 	if newCur == nil {
 		return cur
 	}
 	if glog.V(3) {
 		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), smc.Blueps[cur].Len())
 	}
-	return smc.findorinsert(cur, newCur.Cur)
+	return smc.findorinsert(cur, newCur.Cur, createconf)
 }
 
-func (smc *SmClient) handleNext(i int, next []*pb.Blueprint) {
+func (smc *SmClient) handleNext(i int, next []*pb.Blueprint, createconf bool) {
 	if len(next) == 0 {
 		return
 	}
 
 	for _, nxt := range next {
 		if nxt != nil {
-			i = smc.findorinsert(i, nxt)
+			i = smc.findorinsert(i, nxt, createconf)
 		}
 	}
 }
 
-func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint) int {
+func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint, createconf bool) int {
 	old := true
 	for ; i < len(smc.Blueps); i++ {
 		switch smc.Blueps[i].LearnedCompare(blp) {
@@ -101,33 +101,45 @@ func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint) int {
 			if old { //This is an outdated blueprint.
 				return i
 			}
-			smc.insert(i, blp)
+			smc.insert(i, blp, createconf)
 			return i
 		}
 	}
-	//fmt.Println("Inserting new highest blueprint")
-	smc.insert(i, blp)
+	smc.insert(i, blp, createconf)
 	return i
 }
 
-func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
-	cnf, err := smc.mgr.NewConfiguration(blp.Ids(), blp.Quorum(), ConfTimeout)
-	if err != nil {
-		panic("could not get new config")
+func (smc *SmClient) insert(i int, blp *pb.Blueprint, createconf bool) {
+	if createconf {
+		cnf := smc.create(blp)
+		smc.Confs = append(smc.Confs, cnf)
+
+		for j := len(smc.Blueps) - 1; j > i; j-- {
+			smc.Confs[j] = smc.Confs[j-1]
+		}
+
+		if len(smc.Blueps) != i+1 {
+			smc.Confs[i] = cnf
+		}
 	}
 
 	glog.V(3).Infof("Inserting next configuration with length %d at place %d\n", blp.Len(), i)
 
 	smc.Blueps = append(smc.Blueps, blp)
-	smc.Confs = append(smc.Confs, cnf)
 
 	for j := len(smc.Blueps) - 1; j > i; j-- {
 		smc.Blueps[j] = smc.Blueps[j-1]
-		smc.Confs[j] = smc.Confs[j-1]
 	}
 
-	if len(smc.Blueps) > i {
+	if len(smc.Blueps) != i+1 {
 		smc.Blueps[i] = blp
-		smc.Confs[i] = cnf
 	}
+}
+
+func (smc *SmClient) create(blp *pb.Blueprint) *pb.Configuration {
+	cnf, err := smc.mgr.NewConfiguration(blp.Ids(), blp.Quorum(), ConfTimeout)
+	if err != nil {
+		glog.Fatalln("could not get new config")
+	}
+	return cnf
 }

@@ -58,14 +58,14 @@ forconfiguration:
 				glog.Infof("C%d: CWriteN returned.\n", smc.ID)
 			}
 			cnt++
-			cur = smc.handleOneCur(cur, readS.Reply.GetCur())
+			cur = smc.handleOneCur(cur, readS.Reply.GetCur(), true)
 			if err != nil && cur <= i {
 				glog.Errorf("C%d: error from CReadS: %v\n", smc.ID, err)
 				//No Quorum Available. Retry
 				return nil, 0, err
 			}
 
-			smc.handleNext(i, readS.Reply.GetNext())
+			smc.handleNext(i, readS.Reply.GetNext(), true)
 			
 			if rst.Compare(readS.Reply.GetState()) == 1 {
 				rst = readS.Reply.GetState()
@@ -94,8 +94,8 @@ forconfiguration:
 			glog.Errorf("C%d: SetState returned error, not sure what to do\n", smc.ID)
 			return nil, 0, err
 		}
-		cur = smc.handleOneCur(i, setS.Reply.GetCur())
-		smc.handleNext(i, setS.Reply.GetNext())
+		cur = smc.handleOneCur(i, setS.Reply.GetCur(), true)
+		smc.handleNext(i, setS.Reply.GetNext(), true)
 		
 		if !regular && i < len(smc.Confs)-1 {
 			prop = smc.Blueps[len(smc.Blueps)-1]
@@ -123,7 +123,7 @@ prepare:
 			return nil, 0, i, errx
 		}
 		cnt++
-		cur = smc.handleOneCur(i, promise.Reply.GetCur())
+		cur = smc.handleOneCur(i, promise.Reply.GetCur(), true)
 		if i < cur {
 			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", smc.ID)
 			return nil, cnt, cur, nil
@@ -176,7 +176,7 @@ prepare:
 		}
 
 		cnt++
-		cur = smc.handleOneCur(cur, learn.Reply.GetCur())
+		cur = smc.handleOneCur(cur, learn.Reply.GetCur(), true)
 		if i < cur {
 			glog.V(3).Infof("C%d: Accept returned new current conf.\n", smc.ID)
 			return

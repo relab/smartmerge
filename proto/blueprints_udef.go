@@ -5,10 +5,8 @@ func Union(A, B []uint32) (C []uint32) {
 }
 
 func union(A, B []uint32) (C []uint32) {
-	C = make([]uint32, 0, len(A))
-	for _, id := range A {
-		C = append(C, id)
-	}
+	C = make([]uint32, len(A))
+	copy(C,A)
 	for _, id := range B {
 		copy := true
 		for _, id2 := range A {

@@ -80,8 +80,8 @@ forconfiguration:
 				return nil, 0, err
 			}
 
-			cur = smc.handleOneCur(cur, writeN.Reply.GetCur())
-			smc.handleNext(i, writeN.Reply.GetNext())
+			cur = smc.handleOneCur(cur, writeN.Reply.GetCur(), true)
+			smc.handleNext(i, writeN.Reply.GetNext(), true)
 			las = las.Merge(writeN.Reply.GetLAState())
 			if rst.Compare(writeN.Reply.GetState()) == 1 {
 				rst = writeN.Reply.GetState()
@@ -96,6 +96,7 @@ forconfiguration:
 	if i := len(smc.Confs) - 1; i > cur || !regular {
 
 		rst = smc.WriteValue(val, rst)
+		
 		setS, err := smc.Confs[i].SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
 		cnt++
 		if err != nil {
@@ -109,8 +110,8 @@ forconfiguration:
 			glog.Infoln("Set state returned.")
 		}
 
-		cur = smc.handleOneCur(i, setS.Reply.GetCur())
-		smc.handleNext(i, setS.Reply.GetNext())
+		cur = smc.handleOneCur(i, setS.Reply.GetCur(), true)
+		smc.handleNext(i, setS.Reply.GetNext(), true)
 		if !regular && i+1 < len(smc.Confs) {
 			prop = smc.Blueps[len(smc.Blueps)-1]
 			goto forconfiguration
@@ -144,7 +145,7 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 			glog.Infof("C%d: LAProp returned.\n", smc.ID)
 		}
 
-		cur = smc.handleOneCur(cur, laProp.Reply.GetCur())
+		cur = smc.handleOneCur(cur, laProp.Reply.GetCur(), true)
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.LearnedEquals(la) {
 			if glog.V(3) {
@@ -155,7 +156,7 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 			continue
 		}
 
-		smc.handleNext(i, laProp.Reply.GetNext())
+		smc.handleNext(i, laProp.Reply.GetNext(), true)
 	}
 
 	if cur > 0 {
@@ -165,14 +166,14 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 	return prop, cnt, nil
 }
 
-func (smc *SmClient) handleOneCur(cur int, newCur *pb.Blueprint) int {
+func (smc *SmClient) handleOneCur(cur int, newCur *pb.Blueprint, createconf bool) int {
 	if newCur == nil {
 		return cur
 	}
 	if glog.V(3) {
 		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), smc.Blueps[cur].Len())
 	}
-	return smc.findorinsert(cur, newCur)
+	return smc.findorinsert(cur, newCur, createconf)
 }
 
 func (smc *SmClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur int, err error) {
@@ -185,9 +186,9 @@ func (smc *SmClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur
 	if glog.V(6) {
 		glog.Infof("C%d: AReadS returned with replies from \n", smc.ID, read.MachineIDs)
 	}
-	cur = smc.handleNewCur(curin, read.Reply.GetCur())
+	cur = smc.handleNewCur(curin, read.Reply.GetCur(), true)
 
-	smc.handleNext(i, read.Reply.GetNext())
+	smc.handleNext(i, read.Reply.GetNext(), true)
 	
 	if len(read.Reply.GetNext()) == 1 {
 		// Only used in consreconf
@@ -201,5 +202,7 @@ func (smc *SmClient) WriteValue(val []byte, st *pb.State) *pb.State {
 	if val == nil {
 		return st
 	}
-	return &pb.State{Value: val, Timestamp: st.Timestamp + 1, Writer: smc.ID}
+	st = &pb.State{Value: val, Timestamp: st.Timestamp + 1, Writer: smc.ID}
+	val = nil
+	return st
 }

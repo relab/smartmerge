@@ -23,9 +23,11 @@ func usermain() {
 	}
 
 	initBlp := new(pb.Blueprint)
-	initBlp.Nodes = make([]*pb.Node,0,len(ids))
+	initBlp.Nodes = make([]*pb.Node, 0, len(ids))
 	for i, id := range ids {
-		if i >= *initsize { break }
+		if i >= *initsize {
+			break
+		}
 		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
 	}
 	initBlp.FaultTolerance = uint32(15)
@@ -121,9 +123,9 @@ func handleReconf(c RWRer, ids []uint32) {
 			fmt.Println(err)
 			return
 		}
-		
+
 		target := cur.Copy()
-		
+
 		if !target.Add(id) {
 			fmt.Printf("Node wit id %d was already added.\n", id)
 			return

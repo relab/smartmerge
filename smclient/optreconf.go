@@ -84,7 +84,10 @@ forconfiguration:
 			writeN := new(pb.AWriteNReply)
 
 			for j := 0; cnf != nil; j++ {
-				writeN, err = cnf.AWriteN(&pb.WriteN{uint32(smc.Blueps[i].Len()), prop})
+				writeN, err = cnf.AWriteN(&pb.WriteN{
+						CurC: uint32(smc.Blueps[i].Len()), 
+						Next: prop
+					})
 				cnt++
 
 				if err != nil && j == 0 {
@@ -124,7 +127,11 @@ forconfiguration:
 			setS := new(pb.SetStateReply)
 
 			for j := 0; cnf != nil; j++ {
-				setS, err = cnf.SetState(&pb.NewState{CurC: uint32(smc.Blueps[i].Len()), Cur: smc.Blueps[i], State: rst, LAState: las})
+				setS, err = cnf.SetState(&pb.NewState{
+					CurC: uint32(smc.Blueps[i].Len()),
+					Cur: smc.Blueps[i],
+					State: rst,
+					LAState: las})
 				cnt++
 
 				if err != nil && j == 0 {
@@ -152,9 +159,10 @@ forconfiguration:
 			cur = smc.handleOneCur(i, setS.Reply.GetCur(), false)
 			smc.handleNext(i, setS.Reply.GetNext(), true)
 
-			if setS.Reply.GetCur() == nil {
-				rid = pb.Union(rid, setS.MachineIDs)
-			}
+			//The following would require, that SetState returns a value.
+			//if setS.Reply.GetCur() == nil {
+			//	rid = pb.Union(rid, setS.MachineIDs)
+			//}
 
 		}
 	}
@@ -181,7 +189,11 @@ func (smc *SmOptClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, 
 		var err error
 
 		for j := 0; cnf != nil; j++ {
-			laProp, err = cnf.LAProp(&pb.LAProposal{uint32(smc.Blueps[i].Len()), prop})
+			laProp, err = cnf.LAProp(&pb.LAProposal{
+				Conf: &pb.Conf{
+					This: uint32(smc.Blueps[i].Len()),
+					Cur:  uint32(smc.Blueps[cur].Len())},
+				Prop: prop})
 			cnt++
 
 			if err != nil && j == 0 {

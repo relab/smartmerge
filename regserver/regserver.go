@@ -20,6 +20,7 @@ type RegServer struct {
 	NextMap map[uint32]*pb.Blueprint //Used only for Consensus based
 	Rnd     map[uint32]uint32        //Used only for Consensus based
 	Val     map[uint32]*pb.CV        //Used only for Consensus based
+	noabort bool
 }
 
 func (rs *RegServer) PrintState(op string) {
@@ -34,7 +35,7 @@ func (rs *RegServer) PrintState(op string) {
 
 var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
 
-func NewRegServer() *RegServer {
+func NewRegServer(noabort bool) *RegServer {
 	rs := &RegServer{}
 	rs.RWMutex = sync.RWMutex{}
 	rs.RState = &pb.State{make([]byte, 0), int32(0), uint32(0)}
@@ -42,12 +43,12 @@ func NewRegServer() *RegServer {
 	rs.NextMap = make(map[uint32]*pb.Blueprint, 5)
 	rs.Rnd = make(map[uint32]uint32, 5)
 	rs.Val = make(map[uint32]*pb.CV, 5)
-
+	rs.noabort = noabort
 	return rs
 }
 
-func NewRegServerWithCur(cur *pb.Blueprint, curc uint32) *RegServer {
-	rs := NewRegServer()
+func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *RegServer {
+	rs := NewRegServer(noabort)
 	rs.Cur = cur
 	rs.CurC = curc
 
@@ -94,7 +95,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 	defer rs.RUnlock()
 	glog.V(5).Infoln("Handling ReadS")
 
-	if rr.This < rs.CurC {
+	if rr.This < rs.CurC && !rs.noabort {
 		// The client is in an outdated configuration.
 		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{rs.Cur, true}, Next: nil}, nil
 	}
@@ -122,7 +123,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 		rs.RState = wr.State
 	}
 
-	if wr.Conf.This < rs.CurC {
+	if wr.Conf.This < rs.CurC && !rs.noabort {
 		// The client is in an outdated configuration.
 		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
 	}
@@ -144,8 +145,12 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
+	var cur *pb.ConfReply
 	if wr.CurC < rs.CurC {
-		return &pb.WriteNReply{Cur: rs.Cur}, nil
+		if !rs.noabort {
+			return &pb.WriteNReply{Cur: &pb.ConfReply{rs.Cur,true}}, nil
+		}
+		cur = &pb.ConfReply{rs.Cur, false}
 	}
 
 	found := false
@@ -169,7 +174,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 		}
 	}
 
-	return &pb.WriteNReply{State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
+	return &pb.WriteNReply{Cur: cur, State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
 }
 
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
@@ -178,12 +183,16 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	glog.V(5).Infoln("Handling LAProp")
 	//defer rs.PrintState("LAProp")
 	if lap == nil {
-		return &pb.LAReply{Cur: rs.Cur, LAState: rs.LAState, Next: rs.Next}, nil
+		return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur,false}, LAState: rs.LAState, Next: rs.Next}, nil
 	}
 
-	var c *pb.Blueprint
-	if lap.CurC < rs.CurC {
-		c = rs.Cur
+	if lap.Conf.This < rs.CurC && !noabort{
+			return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur, true}}
+	}
+
+	var c *pb.ConfReply
+	if lap.Conf.Cur < rs.CurC {
+		c = &ob.ConfReply{rs.Cur, false}
 	}
 
 	if rs.LAState.Compare(lap.Prop) == 1 {

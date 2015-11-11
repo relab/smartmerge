@@ -94,19 +94,19 @@ message WriteN {
 }
 
 message WriteNReply {
-	Blueprint Cur = 1;
+	ConfReply Cur = 1;
 	State State = 2;
 	repeated Blueprint Next = 3;
 	Blueprint LAState = 4;
 }
 
 message LAProposal {
-	uint32 CurC = 1;
+	Conf Conf = 1;
 	Blueprint Prop = 2;
 }
 
 message LAReply {
-	Blueprint Cur = 1;
+	ConfReply Cur = 1;
 	Blueprint LAState = 2;
 	repeated Blueprint Next = 3;
 }

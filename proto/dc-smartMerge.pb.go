@@ -48,11 +48,6 @@ import fmt "fmt"
 import math "math"
 
 import (
-	context "golang.org/x/net/context"
-	grpc "google.golang.org/grpc"
-)
-
-import (
 	"encoding/binary"
 	"hash/fnv"
 	"sort"
@@ -60,6 +55,11 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+)
+
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -339,7 +339,7 @@ func (m *WriteN) GetNext() *Blueprint {
 }
 
 type WriteNReply struct {
-	Cur     *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Cur     *ConfReply   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
 	State   *State       `protobuf:"bytes,2,opt,name=State" json:"State,omitempty"`
 	Next    []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
 	LAState *Blueprint   `protobuf:"bytes,4,opt,name=LAState" json:"LAState,omitempty"`
@@ -349,7 +349,7 @@ func (m *WriteNReply) Reset()         { *m = WriteNReply{} }
 func (m *WriteNReply) String() string { return proto1.CompactTextString(m) }
 func (*WriteNReply) ProtoMessage()    {}
 
-func (m *WriteNReply) GetCur() *Blueprint {
+func (m *WriteNReply) GetCur() *ConfReply {
 	if m != nil {
 		return m.Cur
 	}
@@ -378,13 +378,20 @@ func (m *WriteNReply) GetLAState() *Blueprint {
 }
 
 type LAProposal struct {
-	CurC uint32     `protobuf:"varint,1,opt,name=CurC" json:"CurC,omitempty"`
+	Conf *Conf      `protobuf:"bytes,1,opt,name=Conf" json:"Conf,omitempty"`
 	Prop *Blueprint `protobuf:"bytes,2,opt,name=Prop" json:"Prop,omitempty"`
 }
 
 func (m *LAProposal) Reset()         { *m = LAProposal{} }
 func (m *LAProposal) String() string { return proto1.CompactTextString(m) }
 func (*LAProposal) ProtoMessage()    {}
+
+func (m *LAProposal) GetConf() *Conf {
+	if m != nil {
+		return m.Conf
+	}
+	return nil
+}
 
 func (m *LAProposal) GetProp() *Blueprint {
 	if m != nil {
@@ -394,7 +401,7 @@ func (m *LAProposal) GetProp() *Blueprint {
 }
 
 type LAReply struct {
-	Cur     *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Cur     *ConfReply   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
 	LAState *Blueprint   `protobuf:"bytes,2,opt,name=LAState" json:"LAState,omitempty"`
 	Next    []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
 }
@@ -403,7 +410,7 @@ func (m *LAReply) Reset()         { *m = LAReply{} }
 func (m *LAReply) String() string { return proto1.CompactTextString(m) }
 func (*LAReply) ProtoMessage()    {}
 
-func (m *LAReply) GetCur() *Blueprint {
+func (m *LAReply) GetCur() *ConfReply {
 	if m != nil {
 		return m.Cur
 	}
@@ -662,419 +669,38 @@ func (m *Learn) GetDec() *Blueprint {
 	return nil
 }
 
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
-
-// Client API for AdvRegister service
-
-type AdvRegisterClient interface {
-	AReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error)
-	AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error)
-	AWriteN(ctx context.Context, in *WriteN, opts ...grpc.CallOption) (*WriteNReply, error)
-	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
-	LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error)
-	SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error)
-	GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error)
-	Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error)
-}
-
-type advRegisterClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewAdvRegisterClient(cc *grpc.ClientConn) AdvRegisterClient {
-	return &advRegisterClient{cc}
-}
-
-func (c *advRegisterClient) AReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error) {
-	out := new(ReadReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/AReadS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *advRegisterClient) AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error) {
-	out := new(WriteSReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/AWriteS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *advRegisterClient) AWriteN(ctx context.Context, in *WriteN, opts ...grpc.CallOption) (*WriteNReply, error) {
-	out := new(WriteNReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/AWriteN", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *advRegisterClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
-	out := new(NewCurReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/SetCur", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *advRegisterClient) LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error) {
-	out := new(LAReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/LAProp", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *advRegisterClient) SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error) {
-	out := new(NewStateReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/SetState", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *advRegisterClient) GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error) {
-	out := new(Promise)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/GetPromise", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *advRegisterClient) Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error) {
-	out := new(Learn)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/Accept", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for AdvRegister service
-
-type AdvRegisterServer interface {
-	AReadS(context.Context, *Conf) (*ReadReply, error)
-	AWriteS(context.Context, *WriteS) (*WriteSReply, error)
-	AWriteN(context.Context, *WriteN) (*WriteNReply, error)
-	SetCur(context.Context, *NewCur) (*NewCurReply, error)
-	LAProp(context.Context, *LAProposal) (*LAReply, error)
-	SetState(context.Context, *NewState) (*NewStateReply, error)
-	GetPromise(context.Context, *Prepare) (*Promise, error)
-	Accept(context.Context, *Propose) (*Learn, error)
-}
-
-func RegisterAdvRegisterServer(s *grpc.Server, srv AdvRegisterServer) {
-	s.RegisterService(&_AdvRegister_serviceDesc, srv)
-}
-
-func _AdvRegister_AReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(Conf)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).AReadS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _AdvRegister_AWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(WriteS)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).AWriteS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _AdvRegister_AWriteN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(WriteN)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).AWriteN(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _AdvRegister_SetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(NewCur)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).SetCur(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _AdvRegister_LAProp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(LAProposal)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).LAProp(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _AdvRegister_SetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(NewState)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).SetState(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _AdvRegister_GetPromise_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(Prepare)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).GetPromise(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _AdvRegister_Accept_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(Propose)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AdvRegisterServer).Accept(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-var _AdvRegister_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.AdvRegister",
-	HandlerType: (*AdvRegisterServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "AReadS",
-			Handler:    _AdvRegister_AReadS_Handler,
-		},
-		{
-			MethodName: "AWriteS",
-			Handler:    _AdvRegister_AWriteS_Handler,
-		},
-		{
-			MethodName: "AWriteN",
-			Handler:    _AdvRegister_AWriteN_Handler,
-		},
-		{
-			MethodName: "SetCur",
-			Handler:    _AdvRegister_SetCur_Handler,
-		},
-		{
-			MethodName: "LAProp",
-			Handler:    _AdvRegister_LAProp_Handler,
-		},
-		{
-			MethodName: "SetState",
-			Handler:    _AdvRegister_SetState_Handler,
-		},
-		{
-			MethodName: "GetPromise",
-			Handler:    _AdvRegister_GetPromise_Handler,
-		},
-		{
-			MethodName: "Accept",
-			Handler:    _AdvRegister_Accept_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{},
-}
-
-// Client API for DynaDisk service
-
-type DynaDiskClient interface {
-	DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error)
-	DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
-	DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error)
-	GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error)
-	DSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
-}
-
-type dynaDiskClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewDynaDiskClient(cc *grpc.ClientConn) DynaDiskClient {
-	return &dynaDiskClient{cc}
-}
-
-func (c *dynaDiskClient) DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
-	out := new(AdvReadReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/DReadS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dynaDiskClient) DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error) {
-	out := new(AdvWriteSReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dynaDiskClient) DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error) {
-	out := new(DWriteNReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteNSet", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dynaDiskClient) GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error) {
-	out := new(GetOneReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/GetOneN", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dynaDiskClient) DSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
-	out := new(NewCurReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/DSetCur", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for DynaDisk service
-
-type DynaDiskServer interface {
-	DReadS(context.Context, *DRead) (*AdvReadReply, error)
-	DWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
-	DWriteNSet(context.Context, *DWriteN) (*DWriteNReply, error)
-	GetOneN(context.Context, *GetOne) (*GetOneReply, error)
-	DSetCur(context.Context, *NewCur) (*NewCurReply, error)
-}
-
-func RegisterDynaDiskServer(s *grpc.Server, srv DynaDiskServer) {
-	s.RegisterService(&_DynaDisk_serviceDesc, srv)
-}
-
-func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DRead)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).DReadS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _DynaDisk_DWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AdvWriteS)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).DWriteS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DWriteN)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).DWriteNSet(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(GetOne)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).GetOneN(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _DynaDisk_DSetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(NewCur)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).DSetCur(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-var _DynaDisk_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.DynaDisk",
-	HandlerType: (*DynaDiskServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "DReadS",
-			Handler:    _DynaDisk_DReadS_Handler,
-		},
-		{
-			MethodName: "DWriteS",
-			Handler:    _DynaDisk_DWriteS_Handler,
-		},
-		{
-			MethodName: "DWriteNSet",
-			Handler:    _DynaDisk_DWriteNSet_Handler,
-		},
-		{
-			MethodName: "GetOneN",
-			Handler:    _DynaDisk_GetOneN_Handler,
-		},
-		{
-			MethodName: "DSetCur",
-			Handler:    _DynaDisk_DSetCur_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{},
+func init() {
+	proto1.RegisterType((*State)(nil), "proto.State")
+	proto1.RegisterType((*Conf)(nil), "proto.Conf")
+	proto1.RegisterType((*ConfReply)(nil), "proto.ConfReply")
+	proto1.RegisterType((*Node)(nil), "proto.Node")
+	proto1.RegisterType((*Blueprint)(nil), "proto.Blueprint")
+	proto1.RegisterType((*NewCur)(nil), "proto.NewCur")
+	proto1.RegisterType((*NewCurReply)(nil), "proto.NewCurReply")
+	proto1.RegisterType((*Read)(nil), "proto.Read")
+	proto1.RegisterType((*ReadReply)(nil), "proto.ReadReply")
+	proto1.RegisterType((*WriteS)(nil), "proto.WriteS")
+	proto1.RegisterType((*WriteSReply)(nil), "proto.WriteSReply")
+	proto1.RegisterType((*AdvRead)(nil), "proto.AdvRead")
+	proto1.RegisterType((*AdvReadReply)(nil), "proto.AdvReadReply")
+	proto1.RegisterType((*AdvWriteS)(nil), "proto.AdvWriteS")
+	proto1.RegisterType((*AdvWriteSReply)(nil), "proto.AdvWriteSReply")
+	proto1.RegisterType((*WriteN)(nil), "proto.WriteN")
+	proto1.RegisterType((*WriteNReply)(nil), "proto.WriteNReply")
+	proto1.RegisterType((*LAProposal)(nil), "proto.LAProposal")
+	proto1.RegisterType((*LAReply)(nil), "proto.LAReply")
+	proto1.RegisterType((*NewState)(nil), "proto.NewState")
+	proto1.RegisterType((*NewStateReply)(nil), "proto.NewStateReply")
+	proto1.RegisterType((*DRead)(nil), "proto.DRead")
+	proto1.RegisterType((*DWriteN)(nil), "proto.DWriteN")
+	proto1.RegisterType((*DWriteNReply)(nil), "proto.DWriteNReply")
+	proto1.RegisterType((*GetOne)(nil), "proto.GetOne")
+	proto1.RegisterType((*GetOneReply)(nil), "proto.GetOneReply")
+	proto1.RegisterType((*CV)(nil), "proto.CV")
+	proto1.RegisterType((*Prepare)(nil), "proto.Prepare")
+	proto1.RegisterType((*Promise)(nil), "proto.Promise")
+	proto1.RegisterType((*Propose)(nil), "proto.Propose")
+	proto1.RegisterType((*Learn)(nil), "proto.Learn")
 }
 
 /* Manager quorum functions specific */
@@ -2044,9 +1670,9 @@ func (m *Manager) aReadS(configID uint32, args *Conf) (*AReadSReply, error) {
 		replyChan   = make(chan aReadSReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*ReadReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &AReadSReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2060,7 +1686,7 @@ func (m *Manager) aReadS(configID uint32, args *Conf) (*AReadSReply, error) {
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/AReadS",
 					args,
 					reply,
@@ -2082,49 +1708,29 @@ func (m *Manager) aReadS(configID uint32, args *Conf) (*AReadSReply, error) {
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &AReadSReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.aReadSqf(c, replyValues); ok {
-				return &AReadSReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.aReadSqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.aReadSqf(c, replyValues)
-			return &AReadSReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2145,9 +1751,9 @@ func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) 
 		replyChan   = make(chan aWriteSReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*WriteSReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &AWriteSReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2161,7 +1767,7 @@ func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) 
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/AWriteS",
 					args,
 					reply,
@@ -2183,49 +1789,29 @@ func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) 
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &AWriteSReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.aWriteSqf(c, replyValues); ok {
-				return &AWriteSReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.aWriteSqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.aWriteSqf(c, replyValues)
-			return &AWriteSReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2246,9 +1832,9 @@ func (m *Manager) aWriteN(configID uint32, args *WriteN) (*AWriteNReply, error) 
 		replyChan   = make(chan aWriteNReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*WriteNReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &AWriteNReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2262,7 +1848,7 @@ func (m *Manager) aWriteN(configID uint32, args *WriteN) (*AWriteNReply, error) 
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/AWriteN",
 					args,
 					reply,
@@ -2284,49 +1870,29 @@ func (m *Manager) aWriteN(configID uint32, args *WriteN) (*AWriteNReply, error) 
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &AWriteNReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.aWriteNqf(c, replyValues); ok {
-				return &AWriteNReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.aWriteNqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.aWriteNqf(c, replyValues)
-			return &AWriteNReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2347,9 +1913,9 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 		replyChan   = make(chan setCurReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &SetCurReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2363,7 +1929,7 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/SetCur",
 					args,
 					reply,
@@ -2385,49 +1951,29 @@ func (m *Manager) setCur(configID uint32, args *NewCur) (*SetCurReply, error) {
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &SetCurReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.setCurqf(c, replyValues); ok {
-				return &SetCurReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.setCurqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.setCurqf(c, replyValues)
-			return &SetCurReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2448,9 +1994,9 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 		replyChan   = make(chan lAPropReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*LAReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &LAPropReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2464,7 +2010,7 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/LAProp",
 					args,
 					reply,
@@ -2486,49 +2032,29 @@ func (m *Manager) lAProp(configID uint32, args *LAProposal) (*LAPropReply, error
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &LAPropReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.lAPropqf(c, replyValues); ok {
-				return &LAPropReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.lAPropqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.lAPropqf(c, replyValues)
-			return &LAPropReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2549,9 +2075,9 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 		replyChan   = make(chan setStateReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewStateReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &SetStateReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2565,7 +2091,7 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/SetState",
 					args,
 					reply,
@@ -2587,49 +2113,29 @@ func (m *Manager) setState(configID uint32, args *NewState) (*SetStateReply, err
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &SetStateReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.setStateqf(c, replyValues); ok {
-				return &SetStateReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.setStateqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.setStateqf(c, replyValues)
-			return &SetStateReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2650,9 +2156,9 @@ func (m *Manager) getPromise(configID uint32, args *Prepare) (*GetPromiseReply, 
 		replyChan   = make(chan getPromiseReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Promise, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &GetPromiseReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2666,7 +2172,7 @@ func (m *Manager) getPromise(configID uint32, args *Prepare) (*GetPromiseReply, 
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/GetPromise",
 					args,
 					reply,
@@ -2688,49 +2194,29 @@ func (m *Manager) getPromise(configID uint32, args *Prepare) (*GetPromiseReply, 
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &GetPromiseReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.getPromiseqf(c, replyValues); ok {
-				return &GetPromiseReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.getPromiseqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.getPromiseqf(c, replyValues)
-			return &GetPromiseReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2751,9 +2237,9 @@ func (m *Manager) accept(configID uint32, args *Propose) (*AcceptReply, error) {
 		replyChan   = make(chan acceptReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*Learn, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &AcceptReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2767,7 +2253,7 @@ func (m *Manager) accept(configID uint32, args *Propose) (*AcceptReply, error) {
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.AdvRegister/Accept",
 					args,
 					reply,
@@ -2789,49 +2275,29 @@ func (m *Manager) accept(configID uint32, args *Propose) (*AcceptReply, error) {
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &AcceptReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.acceptqf(c, replyValues); ok {
-				return &AcceptReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.acceptqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.acceptqf(c, replyValues)
-			return &AcceptReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2852,9 +2318,9 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 		replyChan   = make(chan dReadSReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvReadReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &DReadSReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2868,7 +2334,7 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.DynaDisk/DReadS",
 					args,
 					reply,
@@ -2890,49 +2356,29 @@ func (m *Manager) dReadS(configID uint32, args *DRead) (*DReadSReply, error) {
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &DReadSReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.dReadSqf(c, replyValues); ok {
-				return &DReadSReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.dReadSqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.dReadSqf(c, replyValues)
-			return &DReadSReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -2953,9 +2399,9 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 		replyChan   = make(chan dWriteSReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &DWriteSReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -2969,7 +2415,7 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.DynaDisk/DWriteS",
 					args,
 					reply,
@@ -2991,49 +2437,29 @@ func (m *Manager) dWriteS(configID uint32, args *AdvWriteS) (*DWriteSReply, erro
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &DWriteSReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.dWriteSqf(c, replyValues); ok {
-				return &DWriteSReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.dWriteSqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.dWriteSqf(c, replyValues)
-			return &DWriteSReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -3054,9 +2480,9 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 		replyChan   = make(chan dWriteNSetReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*DWriteNReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &DWriteNSetReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -3070,7 +2496,7 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.DynaDisk/DWriteNSet",
 					args,
 					reply,
@@ -3092,49 +2518,29 @@ func (m *Manager) dWriteNSet(configID uint32, args *DWriteN) (*DWriteNSetReply, 
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &DWriteNSetReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.dWriteNSetqf(c, replyValues); ok {
-				return &DWriteNSetReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.dWriteNSetqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.dWriteNSetqf(c, replyValues)
-			return &DWriteNSetReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -3155,9 +2561,9 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 		replyChan   = make(chan getOneNReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*GetOneReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &GetOneNReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -3171,7 +2577,7 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.DynaDisk/GetOneN",
 					args,
 					reply,
@@ -3193,49 +2599,29 @@ func (m *Manager) getOneN(configID uint32, args *GetOne) (*GetOneNReply, error) 
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &GetOneNReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.getOneNqf(c, replyValues); ok {
-				return &GetOneNReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.getOneNqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.getOneNqf(c, replyValues)
-			return &GetOneNReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -3256,9 +2642,9 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 		replyChan   = make(chan dSetCurReply, c.quorum)
 		stopSignal  = make(chan struct{})
 		replyValues = make([]*NewCurReply, 0, c.quorum)
-		mids        = make([]uint32, 0, c.quorum)
-		ctx         = context.Background()
 		errCount    int
+		quorum      bool
+		reply       = &DSetCurReply{MachineIDs: make([]uint32, 0, c.quorum)}
 	)
 
 	for _, mid := range c.machines {
@@ -3272,7 +2658,7 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 			start := time.Now()
 			go func() {
 				ce <- grpc.Invoke(
-					ctx,
+					c.defCtx,
 					"/proto.DynaDisk/DSetCur",
 					args,
 					reply,
@@ -3294,49 +2680,29 @@ func (m *Manager) dSetCur(configID uint32, args *NewCur) (*DSetCurReply, error) 
 		}()
 	}
 
-	defer func() {
-		close(stopSignal)
-		//cancel()
-	}()
+	defer close(stopSignal)
 
 	for {
-	select_:
+
 		select {
 		case r := <-replyChan:
 			if r.err != nil {
-				if grpc.Code(r.err) == codes.Aborted {
-					return &DSetCurReply{
-						MachineIDs: []uint32{r.mid},
-						Reply:      r.reply,
-					}, AbortRPCError(grpc.ErrorDesc(r.err))
-				}
 				errCount++
-				if errCount > len(c.machines)-c.Quorum() {
-					return nil, IncompleteRPCError{
-						errCount, len(replyValues),
-					}
-				}
-				break select_
+				goto terminationCheck
 			}
 
 			replyValues = append(replyValues, r.reply)
-			mids = append(mids, r.mid)
-			if pickedReply, ok := m.dSetCurqf(c, replyValues); ok {
-				return &DSetCurReply{
-					mids,
-					pickedReply,
-				}, nil
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.dSetCurqf(c, replyValues); quorum {
+				return reply, nil
 			}
 		case <-time.After(c.timeout):
-			pickedReply, _ := m.dSetCurqf(c, replyValues)
-			return &DSetCurReply{
-				mids,
-				pickedReply,
-			}, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
 		}
 
+	terminationCheck:
 		if errCount+len(replyValues) == c.Size() {
-			return nil, IncompleteRPCError{errCount, len(replyValues)}
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
 		}
 	}
 }
@@ -3351,6 +2717,7 @@ type Configuration struct {
 	mgr      *Manager
 	quorum   int
 	timeout  time.Duration
+	defCtx   context.Context
 }
 
 // ID reports the unique identifier for the configuration.
@@ -3420,14 +2787,6 @@ func (e TimeoutRPCError) Error() string {
 		"rpc timed out: waited %v (errors: %d, replies: %d)",
 		e.Waited, e.ErrCount, e.RepliesCount,
 	)
-}
-
-// An AbortRPCError reports that a single machine signaled to abort the quorum
-// RPC call.
-type AbortRPCError string
-
-func (e AbortRPCError) Error() string {
-	return "single rpc reply signaled abort: " + string(e)
 }
 
 // An IllegalConfigError reports that a specified configuration could not be
@@ -3700,6 +3059,7 @@ func (m *Manager) NewConfiguration(ids []uint32, quorumSize int, timeout time.Du
 		mgr:      m,
 		quorum:   quorumSize,
 		timeout:  timeout,
+		defCtx:   context.Background(),
 	}
 	m.configs[cid] = c
 
@@ -3744,4 +3104,419 @@ func WithGrpcDialOptions(opts ...grpc.DialOption) ManagerOption {
 	return func(o *managerOptions) {
 		o.grpcDialOpts = opts
 	}
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// Client API for AdvRegister service
+
+type AdvRegisterClient interface {
+	AReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error)
+	AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error)
+	AWriteN(ctx context.Context, in *WriteN, opts ...grpc.CallOption) (*WriteNReply, error)
+	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
+	LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error)
+	SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error)
+	GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error)
+	Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error)
+}
+
+type advRegisterClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewAdvRegisterClient(cc *grpc.ClientConn) AdvRegisterClient {
+	return &advRegisterClient{cc}
+}
+
+func (c *advRegisterClient) AReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error) {
+	out := new(ReadReply)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/AReadS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *advRegisterClient) AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error) {
+	out := new(WriteSReply)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/AWriteS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *advRegisterClient) AWriteN(ctx context.Context, in *WriteN, opts ...grpc.CallOption) (*WriteNReply, error) {
+	out := new(WriteNReply)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/AWriteN", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *advRegisterClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
+	out := new(NewCurReply)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/SetCur", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *advRegisterClient) LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error) {
+	out := new(LAReply)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/LAProp", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *advRegisterClient) SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error) {
+	out := new(NewStateReply)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/SetState", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *advRegisterClient) GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error) {
+	out := new(Promise)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/GetPromise", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *advRegisterClient) Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error) {
+	out := new(Learn)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/Accept", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for AdvRegister service
+
+type AdvRegisterServer interface {
+	AReadS(context.Context, *Conf) (*ReadReply, error)
+	AWriteS(context.Context, *WriteS) (*WriteSReply, error)
+	AWriteN(context.Context, *WriteN) (*WriteNReply, error)
+	SetCur(context.Context, *NewCur) (*NewCurReply, error)
+	LAProp(context.Context, *LAProposal) (*LAReply, error)
+	SetState(context.Context, *NewState) (*NewStateReply, error)
+	GetPromise(context.Context, *Prepare) (*Promise, error)
+	Accept(context.Context, *Propose) (*Learn, error)
+}
+
+func RegisterAdvRegisterServer(s *grpc.Server, srv AdvRegisterServer) {
+	s.RegisterService(&_AdvRegister_serviceDesc, srv)
+}
+
+func _AdvRegister_AReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(Conf)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).AReadS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _AdvRegister_AWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(WriteS)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).AWriteS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _AdvRegister_AWriteN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(WriteN)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).AWriteN(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _AdvRegister_SetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(NewCur)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).SetCur(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _AdvRegister_LAProp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(LAProposal)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).LAProp(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _AdvRegister_SetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(NewState)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).SetState(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _AdvRegister_GetPromise_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(Prepare)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).GetPromise(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _AdvRegister_Accept_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(Propose)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).Accept(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _AdvRegister_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.AdvRegister",
+	HandlerType: (*AdvRegisterServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AReadS",
+			Handler:    _AdvRegister_AReadS_Handler,
+		},
+		{
+			MethodName: "AWriteS",
+			Handler:    _AdvRegister_AWriteS_Handler,
+		},
+		{
+			MethodName: "AWriteN",
+			Handler:    _AdvRegister_AWriteN_Handler,
+		},
+		{
+			MethodName: "SetCur",
+			Handler:    _AdvRegister_SetCur_Handler,
+		},
+		{
+			MethodName: "LAProp",
+			Handler:    _AdvRegister_LAProp_Handler,
+		},
+		{
+			MethodName: "SetState",
+			Handler:    _AdvRegister_SetState_Handler,
+		},
+		{
+			MethodName: "GetPromise",
+			Handler:    _AdvRegister_GetPromise_Handler,
+		},
+		{
+			MethodName: "Accept",
+			Handler:    _AdvRegister_Accept_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for DynaDisk service
+
+type DynaDiskClient interface {
+	DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error)
+	DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
+	DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error)
+	GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error)
+	DSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
+}
+
+type dynaDiskClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewDynaDiskClient(cc *grpc.ClientConn) DynaDiskClient {
+	return &dynaDiskClient{cc}
+}
+
+func (c *dynaDiskClient) DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
+	out := new(AdvReadReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DReadS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error) {
+	out := new(AdvWriteSReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error) {
+	out := new(DWriteNReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteNSet", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error) {
+	out := new(GetOneReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/GetOneN", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
+	out := new(NewCurReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DSetCur", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for DynaDisk service
+
+type DynaDiskServer interface {
+	DReadS(context.Context, *DRead) (*AdvReadReply, error)
+	DWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
+	DWriteNSet(context.Context, *DWriteN) (*DWriteNReply, error)
+	GetOneN(context.Context, *GetOne) (*GetOneReply, error)
+	DSetCur(context.Context, *NewCur) (*NewCurReply, error)
+}
+
+func RegisterDynaDiskServer(s *grpc.Server, srv DynaDiskServer) {
+	s.RegisterService(&_DynaDisk_serviceDesc, srv)
+}
+
+func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DRead)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DReadS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(AdvWriteS)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DWriteS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DWriteN)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DWriteNSet(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(GetOne)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).GetOneN(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DSetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(NewCur)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DSetCur(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _DynaDisk_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.DynaDisk",
+	HandlerType: (*DynaDiskServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DReadS",
+			Handler:    _DynaDisk_DReadS_Handler,
+		},
+		{
+			MethodName: "DWriteS",
+			Handler:    _DynaDisk_DWriteS_Handler,
+		},
+		{
+			MethodName: "DWriteNSet",
+			Handler:    _DynaDisk_DWriteNSet_Handler,
+		},
+		{
+			MethodName: "GetOneN",
+			Handler:    _DynaDisk_GetOneN_Handler,
+		},
+		{
+			MethodName: "DSetCur",
+			Handler:    _DynaDisk_DSetCur_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
 }

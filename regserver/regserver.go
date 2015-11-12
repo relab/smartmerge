@@ -123,7 +123,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 		rs.RState = wr.State
 	}
 
-	if wr.Conf.This < rs.CurC && !rs.noabort {
+	if wr.Conf == nil || (wr.Conf.This < rs.CurC && !rs.noabort) {
 		// The client is in an outdated configuration.
 		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
 	}
@@ -186,13 +186,13 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 		return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur,false}, LAState: rs.LAState, Next: rs.Next}, nil
 	}
 
-	if lap.Conf.This < rs.CurC && !noabort{
-			return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur, true}}
+	if lap.Conf.This < rs.CurC && !rs.noabort{
+			return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
 	}
 
 	var c *pb.ConfReply
 	if lap.Conf.Cur < rs.CurC {
-		c = &ob.ConfReply{rs.Cur, false}
+		c = &pb.ConfReply{rs.Cur, false}
 	}
 
 	if rs.LAState.Compare(lap.Prop) == 1 {

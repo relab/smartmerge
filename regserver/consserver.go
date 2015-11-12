@@ -12,15 +12,15 @@ type ConsServer struct {
 	*RegServer
 }
 
-func NewConsServer() *ConsServer {
+func NewConsServer(noabort bool) *ConsServer {
 	return &ConsServer{
-		NewRegServer(),
+		NewRegServer(noabort),
 	}
 }
 
-func NewConsServerWithCur(cur *pb.Blueprint, curc uint32) *ConsServer {
+func NewConsServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *ConsServer {
 	return &ConsServer{
-		NewRegServerWithCur(cur, curc),
+		NewRegServerWithCur(cur, curc, noabort),
 	}
 }
 
@@ -75,8 +75,12 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 	defer cs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
+	var cur *pb.ConfReply
 	if wr.CurC < cs.CurC {
-		return &pb.WriteNReply{Cur: cs.Cur}, nil
+		if !cs.noabort {
+			return &pb.WriteNReply{Cur: &pb.ConfReply{cs.Cur,true}}, nil
+		}
+		cur = &pb.ConfReply{cs.Cur, false}
 	}
 
 	cs.NextMap[wr.CurC] = wr.Next
@@ -85,7 +89,7 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 		next = []*pb.Blueprint{wr.Next}
 	}
 
-	return &pb.WriteNReply{State: cs.RState, Next: next}, nil
+	return &pb.WriteNReply{Cur: cur,State: cs.RState, Next: next}, nil
 }
 
 func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {

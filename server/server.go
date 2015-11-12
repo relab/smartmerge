@@ -44,7 +44,7 @@ func main() {
 	case "dyna":
 		_, err = regserver.StartDyna(*port)
 	case "cons":
-		_, err = regserver.StartCons(*port)
+		_, err = regserver.StartCons(*port, *noabort)
 	}
 
 	if err != nil {

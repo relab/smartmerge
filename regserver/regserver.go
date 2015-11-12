@@ -39,7 +39,7 @@ func NewRegServer(noabort bool) *RegServer {
 	rs := &RegServer{}
 	rs.RWMutex = sync.RWMutex{}
 	rs.RState = &pb.State{make([]byte, 0), int32(0), uint32(0)}
-	rs.Next = make([]*pb.Blueprint, 5)
+	rs.Next = make([]*pb.Blueprint,0,5)
 	rs.NextMap = make(map[uint32]*pb.Blueprint, 5)
 	rs.Rnd = make(map[uint32]uint32, 5)
 	rs.Val = make(map[uint32]*pb.CV, 5)
@@ -174,7 +174,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 		}
 	}
 
-	return &pb.WriteNReply{Cur: cur, State: rs.RState, Next: rs.Next, LAState: rs.LAState}, nil
+	return &pb.WriteNReply{Cur: cur, State: rs.RState, Next: next, LAState: rs.LAState}, nil
 }
 
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
@@ -186,7 +186,7 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 		return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur,false}, LAState: rs.LAState, Next: rs.Next}, nil
 	}
 
-	if lap.Conf.This < rs.CurC && !rs.noabort{
+	if lap.Conf == nil || (lap.Conf.This < rs.CurC && !rs.noabort) {
 			return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
 	}
 
@@ -199,7 +199,14 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 		glog.V(6).Infoln("LAState Accepted")
 		//Accept
 		rs.LAState = lap.Prop
-		return &pb.LAReply{Cur: c, Next: rs.Next}, nil
+		next := make([]*pb.Blueprint, 0, len(rs.Next))
+		this := int(lap.Conf.This)
+		for _, nxt := range rs.Next {
+			if nxt.Len() > this {
+				next = append(next, nxt)
+			}
+		}
+		return &pb.LAReply{Cur: c, Next: next}, nil
 	}
 
 	//Not Accepted, try again.

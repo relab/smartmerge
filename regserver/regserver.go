@@ -153,7 +153,11 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 
 	//Not Accepted, try again.
 	rs.LAState = rs.LAState.Merge(lap.Prop)
-	return &pb.LAReply{Cur: cr, LAState: rs.LAState}, nil // It is not realy necessary to include the next blueprints here. But does it hurt?
+	if cr != nil {
+		// In this case, we don't need to send the next values, since the client first has to solve LA in this configuration.
+		cr.Next = nil
+	}
+	return &pb.LAReply{Cur: cr, LAState: rs.LAState}, nil
 }
 
 func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {

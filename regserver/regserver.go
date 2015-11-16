@@ -35,6 +35,7 @@ func (rs *RegServer) PrintState(op string) {
 
 var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
 
+
 func NewRegServer(noabort bool) *RegServer {
 	rs := &RegServer{}
 	rs.RWMutex = sync.RWMutex{}
@@ -55,61 +56,42 @@ func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *RegServe
 	return rs
 }
 
-// Used to set the current configuration. Currenlty only used at startup.
-func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
-	glog.V(5).Infoln("Handling Set Cur")
-	rs.Lock()
-	defer rs.Unlock()
-	//defer rs.PrintState("SetCur")
-
-	if nc.CurC == rs.CurC {
-		return &pb.NewCurReply{false}, nil
-	}
-
-	if nc.Cur.LearnedCompare(rs.Cur) >= 0 {
-		return &pb.NewCurReply{false}, nil
-	}
-
-	// This could be removed. Not sure this is necessary.
-	if rs.Cur.Compare(nc.Cur) == 0 {
-		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
-	}
-
-	glog.V(3).Infoln("New Current Conf: ", nc.GetCur())
-	rs.Cur = nc.Cur
-	rs.CurC = nc.CurC
-
-	newNext := make([]*pb.Blueprint, 0, len(rs.Next))
-	for _, blp := range rs.Next {
-		if blp.LearnedCompare(rs.Cur) == -1 {
-			newNext = append(newNext, blp)
-		}
-	}
-	rs.Next = newNext
-
-	return &pb.NewCurReply{true}, nil
-}
-
-func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
-	rs.RLock()
-	defer rs.RUnlock()
-	glog.V(5).Infoln("Handling ReadS")
-
-	if rr.This < rs.CurC && !rs.noabort {
-		// The client is in an outdated configuration.
-		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{rs.Cur, true}, Next: nil}, nil
+func (rs *RegServer) handleConf(conf *pb.Conf) (cr *pb.ConfReply) {
+	if conf == nil || (conf.This < rs.CurC && !rs.noabort) {
+		//The client is using an outdated configuration, abort.
+		return &pb.ConfReply{Cur: rs.Cur, Abort: false}
 	}
 
 	next := make([]*pb.Blueprint, 0, len(rs.Next))
-	this := int(rr.This)
+	this := int(conf.This)
 	for _, nxt := range rs.Next {
 		if nxt.Len() > this {
 			next = append(next, nxt)
 		}
 	}
 
-	if rr.Cur < rs.CurC {
-		return &pb.ReadReply{State: rs.RState, Cur: &pb.ConfReply{rs.Cur, false}, Next: next}, nil
+	if conf.Cur < rs.CurC {
+		// Inform the client of the new current configuration
+		return &pb.ConfReply{Cur: rs.Cur, Abort: false, Next: next}
+	}
+	if len(next) > 0 {
+		// Inform the client of the next configurations
+		return &pb.ConfReply{Next: next}
+	}
+	return nil
+}
+
+
+
+
+func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
+	rs.RLock()
+	defer rs.RUnlock()
+	glog.V(5).Infoln("Handling ReadS")
+
+	cr := rs.handleConf(rr)
+	if cr != nil && cr.Abort {
+		return &pb.ReadReply{Cur: cr}, nil
 	}
 
 	return &pb.ReadReply{State: rs.RState, Next: next}, nil
@@ -119,25 +101,11 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSRepl
 	rs.Lock()
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteS")
-	if rs.RState.Compare(wr.State) == 1 {
-		rs.RState = wr.State
+	if rs.RState.Compare(wr.GetState()) == 1 {
+		rs.RState = wr.GetState()
 	}
 
-	if wr.Conf == nil || (wr.Conf.This < rs.CurC && !rs.noabort) {
-		// The client is in an outdated configuration.
-		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
-	}
-	next := make([]*pb.Blueprint, 0, len(rs.Next))
-	this := int(wr.Conf.This)
-	for _, nxt := range rs.Next {
-		if nxt.Len() > this {
-			next = append(next, nxt)
-		}
-	}
-	if wr.Conf.Cur < rs.CurC {
-		return &pb.WriteSReply{Cur: &pb.ConfReply{rs.Cur, false}, Next: next}, nil
-	}
-	return &pb.WriteSReply{Next: next}, nil
+	return rs.handleConf(wr.GetConf()), nil
 }
 
 func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNReply, error) {
@@ -145,12 +113,9 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	var cur *pb.ConfReply
-	if wr.CurC < rs.CurC {
-		if !rs.noabort {
-			return &pb.WriteNReply{Cur: &pb.ConfReply{rs.Cur,true}}, nil
-		}
-		cur = &pb.ConfReply{rs.Cur, false}
+	cr := rs.handleConf(wr.GetConf())
+	if cr != nil && cr.Abort {
+		return &pb.WriteNReply{Cur: cr}, nil
 	}
 
 	found := false
@@ -166,52 +131,29 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 
 	rs.NextMap[wr.CurC] = wr.Next
 
-	next := make([]*pb.Blueprint, 0, len(rs.Next))
-	this := int(wr.CurC)
-	for _, nxt := range rs.Next {
-		if nxt.Len() > this {
-			next = append(next, nxt)
-		}
-	}
-
-	return &pb.WriteNReply{Cur: cur, State: rs.RState, Next: next, LAState: rs.LAState}, nil
+	return &pb.WriteNReply{Cur: cr, State: rs.RState, LAState: rs.LAState}, nil
 }
 
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
 	rs.Lock()
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling LAProp")
-	//defer rs.PrintState("LAProp")
-	if lap == nil {
-		return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur,false}, LAState: rs.LAState, Next: rs.Next}, nil
-	}
 
-	if lap.Conf == nil || (lap.Conf.This < rs.CurC && !rs.noabort) {
-			return &pb.LAReply{Cur: &pb.ConfReply{rs.Cur, true}}, nil
-	}
-
-	var c *pb.ConfReply
-	if lap.Conf.Cur < rs.CurC {
-		c = &pb.ConfReply{rs.Cur, false}
+	cr := rs.handleConf(rr)
+	if cr != nil && cr.Abort {
+		return &pb.LAReply{Cur: cr}, nil
 	}
 
 	if rs.LAState.Compare(lap.Prop) == 1 {
 		glog.V(6).Infoln("LAState Accepted")
 		//Accept
 		rs.LAState = lap.Prop
-		next := make([]*pb.Blueprint, 0, len(rs.Next))
-		this := int(lap.Conf.This)
-		for _, nxt := range rs.Next {
-			if nxt.Len() > this {
-				next = append(next, nxt)
-			}
-		}
-		return &pb.LAReply{Cur: c, Next: next}, nil
+		return &pb.LAReply{Cur: cr}, nil
 	}
 
 	//Not Accepted, try again.
 	rs.LAState = rs.LAState.Merge(lap.Prop)
-	return &pb.LAReply{Cur: c, LAState: rs.LAState}, nil
+	return &pb.LAReply{Cur: cr, LAState: rs.LAState}, nil // It is not realy necessary to include the next blueprints here. But does it hurt?
 }
 
 func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
@@ -295,3 +237,40 @@ func (rs *RegServer) Accept(ctx context.Context, pro *pb.Propose) (lrn *pb.Learn
 	rs.Val[pro.CurC] = pro.Val
 	return &pb.Learn{Learned: true}, nil
 }
+
+// Used to set the current configuration. Currenlty only used at startup.
+func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
+	glog.V(5).Infoln("Handling Set Cur")
+	rs.Lock()
+	defer rs.Unlock()
+	//defer rs.PrintState("SetCur")
+
+	if nc.CurC == rs.CurC {
+		return &pb.NewCurReply{false}, nil
+	}
+
+	if nc.Cur.LearnedCompare(rs.Cur) >= 0 {
+		return &pb.NewCurReply{false}, nil
+	}
+
+	// This could be removed. Not sure this is necessary.
+	if rs.Cur.Compare(nc.Cur) == 0 {
+		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
+	}
+
+	glog.V(3).Infoln("New Current Conf: ", nc.GetCur())
+	rs.Cur = nc.Cur
+	rs.CurC = nc.CurC
+
+	newNext := make([]*pb.Blueprint, 0, len(rs.Next))
+	for _, blp := range rs.Next {
+		if blp.LearnedCompare(rs.Cur) == -1 {
+			newNext = append(newNext, blp)
+		}
+	}
+	rs.Next = newNext
+
+	return &pb.NewCurReply{true}, nil
+}
+
+

@@ -19,7 +19,6 @@ It has these top-level messages:
 	Read
 	ReadReply
 	WriteS
-	WriteSReply
 	AdvRead
 	AdvReadReply
 	AdvWriteS
@@ -87,8 +86,9 @@ func (m *Conf) String() string { return proto1.CompactTextString(m) }
 func (*Conf) ProtoMessage()    {}
 
 type ConfReply struct {
-	Cur   *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-	Abort bool       `protobuf:"varint,2,opt,name=Abort" json:"Abort,omitempty"`
+	Cur   *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Abort bool         `protobuf:"varint,2,opt,name=Abort" json:"Abort,omitempty"`
+	Next  []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
 }
 
 func (m *ConfReply) Reset()         { *m = ConfReply{} }
@@ -98,6 +98,13 @@ func (*ConfReply) ProtoMessage()    {}
 func (m *ConfReply) GetCur() *Blueprint {
 	if m != nil {
 		return m.Cur
+	}
+	return nil
+}
+
+func (m *ConfReply) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
 	}
 	return nil
 }
@@ -168,9 +175,8 @@ func (m *Read) GetConf() *Conf {
 }
 
 type ReadReply struct {
-	State *State       `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
-	Cur   *ConfReply   `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
-	Next  []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
+	State *State     `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
+	Cur   *ConfReply `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
 }
 
 func (m *ReadReply) Reset()         { *m = ReadReply{} }
@@ -187,13 +193,6 @@ func (m *ReadReply) GetState() *State {
 func (m *ReadReply) GetCur() *ConfReply {
 	if m != nil {
 		return m.Cur
-	}
-	return nil
-}
-
-func (m *ReadReply) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
 	}
 	return nil
 }
@@ -217,29 +216,6 @@ func (m *WriteS) GetState() *State {
 func (m *WriteS) GetConf() *Conf {
 	if m != nil {
 		return m.Conf
-	}
-	return nil
-}
-
-type WriteSReply struct {
-	Cur  *ConfReply   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
-}
-
-func (m *WriteSReply) Reset()         { *m = WriteSReply{} }
-func (m *WriteSReply) String() string { return proto1.CompactTextString(m) }
-func (*WriteSReply) ProtoMessage()    {}
-
-func (m *WriteSReply) GetCur() *ConfReply {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-func (m *WriteSReply) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
 	}
 	return nil
 }
@@ -339,10 +315,9 @@ func (m *WriteN) GetNext() *Blueprint {
 }
 
 type WriteNReply struct {
-	Cur     *ConfReply   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-	State   *State       `protobuf:"bytes,2,opt,name=State" json:"State,omitempty"`
-	Next    []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
-	LAState *Blueprint   `protobuf:"bytes,4,opt,name=LAState" json:"LAState,omitempty"`
+	Cur     *ConfReply `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	State   *State     `protobuf:"bytes,2,opt,name=State" json:"State,omitempty"`
+	LAState *Blueprint `protobuf:"bytes,3,opt,name=LAState" json:"LAState,omitempty"`
 }
 
 func (m *WriteNReply) Reset()         { *m = WriteNReply{} }
@@ -359,13 +334,6 @@ func (m *WriteNReply) GetCur() *ConfReply {
 func (m *WriteNReply) GetState() *State {
 	if m != nil {
 		return m.State
-	}
-	return nil
-}
-
-func (m *WriteNReply) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
 	}
 	return nil
 }
@@ -401,9 +369,8 @@ func (m *LAProposal) GetProp() *Blueprint {
 }
 
 type LAReply struct {
-	Cur     *ConfReply   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-	LAState *Blueprint   `protobuf:"bytes,2,opt,name=LAState" json:"LAState,omitempty"`
-	Next    []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
+	Cur     *ConfReply `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	LAState *Blueprint `protobuf:"bytes,2,opt,name=LAState" json:"LAState,omitempty"`
 }
 
 func (m *LAReply) Reset()         { *m = LAReply{} }
@@ -420,13 +387,6 @@ func (m *LAReply) GetCur() *ConfReply {
 func (m *LAReply) GetLAState() *Blueprint {
 	if m != nil {
 		return m.LAState
-	}
-	return nil
-}
-
-func (m *LAReply) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
 	}
 	return nil
 }
@@ -680,7 +640,6 @@ func init() {
 	proto1.RegisterType((*Read)(nil), "proto.Read")
 	proto1.RegisterType((*ReadReply)(nil), "proto.ReadReply")
 	proto1.RegisterType((*WriteS)(nil), "proto.WriteS")
-	proto1.RegisterType((*WriteSReply)(nil), "proto.WriteSReply")
 	proto1.RegisterType((*AdvRead)(nil), "proto.AdvRead")
 	proto1.RegisterType((*AdvReadReply)(nil), "proto.AdvReadReply")
 	proto1.RegisterType((*AdvWriteS)(nil), "proto.AdvWriteS")
@@ -744,7 +703,7 @@ func (m *Manager) setDefaultQuorumFuncs() {
 	if m.opts.aWriteSqf != nil {
 		m.aWriteSqf = m.opts.aWriteSqf
 	} else {
-		m.aWriteSqf = func(c *Configuration, replies []*WriteSReply) (*WriteSReply, bool) {
+		m.aWriteSqf = func(c *Configuration, replies []*ConfReply) (*ConfReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -995,7 +954,7 @@ type AReadSQuorumFn func(c *Configuration, replies []*ReadReply) (*ReadReply, bo
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
-type AWriteSQuorumFn func(c *Configuration, replies []*WriteSReply) (*WriteSReply, bool)
+type AWriteSQuorumFn func(c *Configuration, replies []*ConfReply) (*ConfReply, bool)
 
 // AWriteNQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
@@ -1117,7 +1076,7 @@ func (f *AReadSFuture) Get() (*AReadSReply, error) {
 // reply.
 type AWriteSReply struct {
 	MachineIDs []uint32
-	Reply      *WriteSReply
+	Reply      *ConfReply
 }
 
 func (r AWriteSReply) String() string {
@@ -1737,7 +1696,7 @@ func (m *Manager) aReadS(configID uint32, args *Conf) (*AReadSReply, error) {
 
 type aWriteSReply struct {
 	mid   uint32
-	reply *WriteSReply
+	reply *ConfReply
 	err   error
 }
 
@@ -1750,7 +1709,7 @@ func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) 
 	var (
 		replyChan   = make(chan aWriteSReply, c.quorum)
 		stopSignal  = make(chan struct{})
-		replyValues = make([]*WriteSReply, 0, c.quorum)
+		replyValues = make([]*ConfReply, 0, c.quorum)
 		errCount    int
 		quorum      bool
 		reply       = &AWriteSReply{MachineIDs: make([]uint32, 0, c.quorum)}
@@ -1762,7 +1721,7 @@ func (m *Manager) aWriteS(configID uint32, args *WriteS) (*AWriteSReply, error) 
 			return nil, err
 		}
 		go func() {
-			reply := new(WriteSReply)
+			reply := new(ConfReply)
 			ce := make(chan error, 1)
 			start := time.Now()
 			go func() {
@@ -3114,7 +3073,7 @@ var _ grpc.ClientConn
 
 type AdvRegisterClient interface {
 	AReadS(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error)
-	AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error)
+	AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*ConfReply, error)
 	AWriteN(ctx context.Context, in *WriteN, opts ...grpc.CallOption) (*WriteNReply, error)
 	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
 	LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error)
@@ -3140,8 +3099,8 @@ func (c *advRegisterClient) AReadS(ctx context.Context, in *Conf, opts ...grpc.C
 	return out, nil
 }
 
-func (c *advRegisterClient) AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*WriteSReply, error) {
-	out := new(WriteSReply)
+func (c *advRegisterClient) AWriteS(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*ConfReply, error) {
+	out := new(ConfReply)
 	err := grpc.Invoke(ctx, "/proto.AdvRegister/AWriteS", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -3207,7 +3166,7 @@ func (c *advRegisterClient) Accept(ctx context.Context, in *Propose, opts ...grp
 
 type AdvRegisterServer interface {
 	AReadS(context.Context, *Conf) (*ReadReply, error)
-	AWriteS(context.Context, *WriteS) (*WriteSReply, error)
+	AWriteS(context.Context, *WriteS) (*ConfReply, error)
 	AWriteN(context.Context, *WriteN) (*WriteNReply, error)
 	SetCur(context.Context, *NewCur) (*NewCurReply, error)
 	LAProp(context.Context, *LAProposal) (*LAReply, error)

@@ -58,7 +58,7 @@ forconfiguration:
 				// If atomic: Need to read before writing.
 				var st *pb.State
 				var c int
-				st, _, cur, c, err = smc.doread(cur, i, rid)
+				st, cur, c, err = smc.doread(cur, i, rid)
 				if err != nil {
 					return nil, 0, err
 				}
@@ -86,7 +86,7 @@ forconfiguration:
 			for j := 0; cnf != nil; j++ {
 				writeN, err = cnf.AWriteN(&pb.WriteN{
 						CurC: uint32(smc.Blueps[i].Len()), 
-						Next: prop
+						Next: prop,
 					})
 				cnt++
 
@@ -106,8 +106,7 @@ forconfiguration:
 				}
 			}
 
-			cur = smc.handleOneCur(cur, writeN.Reply.GetCur(), false)
-			smc.handleNext(i, writeN.Reply.GetNext(), true)
+			cur = smc.handleNewCur(cur, writeN.Reply.GetCur(), false)
 			las = las.Merge(writeN.Reply.GetLAState())
 			if rst.Compare(writeN.Reply.GetState()) == 1 {
 				rst = writeN.Reply.GetState()
@@ -157,7 +156,7 @@ forconfiguration:
 			}
 
 			cur = smc.handleOneCur(i, setS.Reply.GetCur(), false)
-			smc.handleNext(i, setS.Reply.GetNext(), true)
+			smc.handleNext(i, setS.Reply.GetNext(), false)
 
 			//The following would require, that SetState returns a value.
 			//if setS.Reply.GetCur() == nil {
@@ -216,7 +215,7 @@ func (smc *SmOptClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, 
 			glog.Infof("C%d: LAProp returned.\n", smc.ID)
 		}
 
-		cur = smc.handleOneCur(cur, laProp.Reply.GetCur(), false)
+		cur = smc.handleNewCur(cur, laProp.Reply.GetCur(), false)
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.LearnedEquals(la) {
 			if glog.V(3) {
@@ -228,8 +227,6 @@ func (smc *SmOptClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, 
 			continue
 		}
 
-		smc.handleNext(i, laProp.Reply.GetNext(), false)
-
 		if len(smc.Blueps) > i+1 && laProp.Reply.GetCur() == nil {
 			rid = pb.Union(rid, laProp.MachineIDs)
 		}
@@ -239,7 +236,7 @@ func (smc *SmOptClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, 
 	return prop, cnt, nil
 }
 
-func (smc *SmOptClient) doread(curin, i int, rid []uint32) (st *pb.State, next *pb.Blueprint, cur, cnt int, err error) {
+func (smc *SmOptClient) doread(curin, i int, rid []uint32) (st *pb.State, cur, cnt int, err error) {
 	cnf := smc.getReadC(i, rid)
 
 	read := new(pb.AReadSReply)
@@ -256,7 +253,7 @@ func (smc *SmOptClient) doread(curin, i int, rid []uint32) (st *pb.State, next *
 
 		if err != nil && j == Retry {
 			glog.Errorf("C%d: error %v from ReadS after %d retries: ", smc.ID, err, Retry)
-			return nil, nil, 0, 0, err
+			return nil, 0, 0, err
 		}
 
 		if err == nil {
@@ -269,12 +266,5 @@ func (smc *SmOptClient) doread(curin, i int, rid []uint32) (st *pb.State, next *
 	}
 	cur = smc.handleNewCur(curin, read.Reply.GetCur(), false)
 
-	smc.handleNext(i, read.Reply.GetNext(), false)
-
-	if len(read.Reply.GetNext()) == 1 {
-		// Only used in consreconf
-		next = read.Reply.GetNext()[0]
-	}
-
-	return read.Reply.GetState(), next, cur, cnt, nil
+	return read.Reply.GetState(), cur, cnt, nil
 }

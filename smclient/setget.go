@@ -25,8 +25,6 @@ func (smc *SmClient) get() (rs *pb.State, cnt int) {
 		}
 		cur = smc.handleNewCur(cur, read.Reply.GetCur(), true)
 
-		smc.handleNext(i, read.Reply.GetNext(), true)
-
 		if rs.Compare(read.Reply.GetState()) == 1 {
 			rs = read.Reply.GetState()
 		}
@@ -56,8 +54,7 @@ func (smc *SmClient) set(rs *pb.State) int {
 			glog.Infoln("AWriteS returned, with replies from ", write.MachineIDs)
 		}
 
-		cur = smc.handleNewCur(cur, write.Reply.GetCur(), true)
-		smc.handleNext(i, write.Reply.GetNext(), true)
+		cur = smc.handleNewCur(cur, write.Reply, true)
 	}
 	if cur > 0 {
 		smc.Blueps = smc.Blueps[cur:]
@@ -70,9 +67,14 @@ func (smc *SmClient) handleNewCur(cur int, newCur *pb.ConfReply, createconf bool
 	if newCur == nil {
 		return cur
 	}
+	smc.handleNext(cur, newCur.Next, createconf)
+	if newCur.Cur == nil {
+		return cur
+	}
 	if glog.V(3) {
 		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), smc.Blueps[cur].Len())
 	}
+	
 	return smc.findorinsert(cur, newCur.Cur, createconf)
 }
 

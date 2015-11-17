@@ -39,9 +39,12 @@ forconfiguration:
 		case 1:
 			// No proposal
 			var st *pb.State
-			st, next, cur, err = smc.doread(cur, i)
+			st, cur, err = smc.doread(cur, i)
 			if err != nil {
 				return nil, 0, err
+			}
+			if i+1 < len(smc.Blueps) {
+				next = smc.Blueps[i+1]
 			}
 			cnt++
 			if rst.Compare(st) == 1 {
@@ -58,14 +61,13 @@ forconfiguration:
 				glog.Infof("C%d: CWriteN returned.\n", smc.ID)
 			}
 			cnt++
-			cur = smc.handleOneCur(cur, readS.Reply.GetCur(), true)
 			if err != nil && cur <= i {
 				glog.Errorf("C%d: error from CReadS: %v\n", smc.ID, err)
 				//No Quorum Available. Retry
 				return nil, 0, err
 			}
 
-			smc.handleNext(i, readS.Reply.GetNext(), true)
+			cur = smc.handleNewCur(cur, readS.Reply.GetCur(), true)
 
 			if rst.Compare(readS.Reply.GetState()) == 1 {
 				rst = readS.Reply.GetState()

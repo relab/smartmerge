@@ -46,8 +46,6 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 
 		cur = smc.handleNewCur(cur, read.Reply.GetCur(), false)
 
-		smc.handleNext(i, read.Reply.GetNext(), false)
-
 		if rs.Compare(read.Reply.GetState()) == 1 {
 			rs = read.Reply.GetState()
 		}
@@ -99,11 +97,9 @@ func (smc *SmOptClient) set(rs *pb.State) (cnt int) {
 			glog.Infoln("AWriteS returned, with replies from ", write.MachineIDs)
 		}
 
-		cur = smc.handleNewCur(cur, write.Reply.GetCur(), false)
+		cur = smc.handleNewCur(cur, write.Reply, false)
 
-		smc.handleNext(i, write.Reply.GetNext(), false)
-
-		if len(smc.Blueps) > i+1 && (write.Reply.GetCur() == nil || !write.Reply.Cur.Abort) {
+		if len(smc.Blueps) > i+1 && (write.Reply == nil || !write.Reply.Abort) {
 			rid = pb.Union(rid, write.MachineIDs)
 		}
 

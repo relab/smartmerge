@@ -48,7 +48,7 @@ forconfiguration:
 
 		if prop.LearnedCompare(smc.Blueps[i]) != -1 {
 			var st *pb.State
-			st, _, cur, err = smc.doread(cur, i)
+			st, cur, err = smc.doread(cur, i)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -80,8 +80,7 @@ forconfiguration:
 				return nil, 0, err
 			}
 
-			cur = smc.handleOneCur(cur, writeN.Reply.GetCur(), true)
-			smc.handleNext(i, writeN.Reply.GetNext(), true)
+			cur = smc.handleNewCur(cur, writeN.Reply.GetCur(), true)
 			las = las.Merge(writeN.Reply.GetLAState())
 			if rst.Compare(writeN.Reply.GetState()) == 1 {
 				rst = writeN.Reply.GetState()
@@ -134,7 +133,13 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 			continue
 		}
 
-		laProp, err := smc.Confs[i].LAProp(&pb.LAProposal{uint32(smc.Blueps[i].Len()), prop})
+		laProp, err := smc.Confs[i].LAProp(
+			&pb.LAProposal{
+				Conf: &pb.Conf{
+					Cur: uint32(smc.Blueps[cur].Len()),
+					This: uint32(smc.Blueps[i].Len())}, 
+				Prop: prop,
+			})
 		cnt++
 		if err != nil {
 			glog.Errorln("LA prop returned error: ", err)
@@ -144,7 +149,7 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 			glog.Infof("C%d: LAProp returned.\n", smc.ID)
 		}
 
-		cur = smc.handleOneCur(cur, laProp.Reply.GetCur(), true)
+		cur = smc.handleNewCur(cur, laProp.Reply.GetCur(), true)
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.LearnedEquals(la) {
 			if glog.V(3) {
@@ -154,8 +159,6 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 			i--
 			continue
 		}
-
-		smc.handleNext(i, laProp.Reply.GetNext(), true)
 	}
 
 	if cur > 0 {
@@ -175,11 +178,11 @@ func (smc *SmClient) handleOneCur(cur int, newCur *pb.Blueprint, createconf bool
 	return smc.findorinsert(cur, newCur, createconf)
 }
 
-func (smc *SmClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur int, err error) {
+func (smc *SmClient) doread(curin, i int) (st *pb.State, cur int, err error) {
 	read, errx := smc.Confs[i].AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[i].Len())})
 	if errx != nil {
 		glog.Errorf("C%d: error from AReadS: ", errx)
-		return nil, nil, 0, errx
+		return nil, 0, errx
 		//return
 	}
 	if glog.V(6) {
@@ -187,14 +190,7 @@ func (smc *SmClient) doread(curin, i int) (st *pb.State, next *pb.Blueprint, cur
 	}
 	cur = smc.handleNewCur(curin, read.Reply.GetCur(), true)
 
-	smc.handleNext(i, read.Reply.GetNext(), true)
-
-	if len(read.Reply.GetNext()) == 1 {
-		// Only used in consreconf
-		next = read.Reply.GetNext()[0]
-	}
-
-	return read.Reply.GetState(), next, cur, nil
+	return read.Reply.GetState(), cur, nil
 }
 
 func (smc *SmClient) WriteValue(val []byte, st *pb.State) *pb.State {

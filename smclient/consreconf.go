@@ -8,23 +8,26 @@ import (
 	pb "github.com/relab/smartMerge/proto"
 )
 
-func (smc *SmClient) consreconf(prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
+func (smc ConfigProvider) consreconf(prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconfiguration\n", smc.ID)
 	}
 
 	doconsensus := true
 	cur := 0
+	var rid []uint32
+	
 forconfiguration:
-	for i := 0; i < len(smc.Confs); i++ {
+	for i := 0; i < smc.getNBlueps(); i++ {
 		if i < cur {
 			continue
 		}
 
 		var next *pb.Blueprint
 
-		switch prop.Compare(smc.Blueps[i]) {
+		switch prop.Compare(smc.getBluep(i)) {
 		case 0, -1:
+			//There exists a new proposal
 			if doconsensus {
 				//Need to agree on new proposal
 				var cs int
@@ -43,8 +46,8 @@ forconfiguration:
 			if err != nil {
 				return nil, 0, err
 			}
-			if i+1 < len(smc.Blueps) {
-				next = smc.Blueps[i+1]
+			if i+1 < smc.getNBlueps() {
+				next = smc.getBluep(i+1)
 			}
 			cnt++
 			if rst.Compare(st) == 1 {
@@ -55,57 +58,100 @@ forconfiguration:
 			continue forconfiguration
 		}
 
-		if smc.Blueps[i].LearnedCompare(next) == 1 {
-			readS, err := smc.Confs[i].AWriteN(&pb.WriteN{CurC: uint32(smc.Blueps[i].Len()), Next: next})
+		if smc.getBluep(i).LearnedCompare(next) == 1 {
+			
+			cnf := smc.getWriteC(i, nil)
+
+			writeN := new(pb.AWriteNReply)
+
+			for j := 0; cnf != nil; j++ {
+				writeN, err = cnf.AWriteN(&pb.WriteN{
+						CurC: uint32(smc.getLenBluep(i)), 
+						Next: next,
+					})
+				cnt++
+
+				if err != nil && j == 0 {
+					glog.Errorf("C%d: error from OptimizedWriteN: %v\n", smc.getId(), err)
+					// Try again with full configuration.
+					cnf = smc.getFullC(i)
+				}
+
+				if err != nil && j == Retry {
+					glog.Errorf("C%d: error %v from WriteN after %d retries: ", smc.getId(), err, Retry)
+					return nil, 0, err
+				}
+
+				if err == nil {
+					break
+				}
+			}
+			
+			
 			if glog.V(3) {
-				glog.Infof("C%d: CWriteN returned.\n", smc.ID)
-			}
-			cnt++
-			if err != nil && cur <= i {
-				glog.Errorf("C%d: error from CReadS: %v\n", smc.ID, err)
-				//No Quorum Available. Retry
-				return nil, 0, err
+				glog.Infof("C%d: CWriteN returned.\n", smc.getId())
 			}
 
-			cur = smc.handleNewCur(cur, readS.Reply.GetCur(), true)
+			cur = smc.handleNewCur(cur, writeN.Reply.GetCur())
 
-			if rst.Compare(readS.Reply.GetState()) == 1 {
-				rst = readS.Reply.GetState()
+			if rst.Compare(writeN.Reply.GetState()) == 1 {
+				rst = writeN.Reply.GetState()
+			}
+			
+			if c := writeN.Reply.GetCur(); c == nil || !c.Abort {
+				rid = pb.Union(rid, writeN.MachineIDs)
 			}
 
-		} else if next != nil {
-			glog.Errorln("This case should never happen. There might be a bug in the code.")
+		} else if i > cur || ! regular {
+			//Establish new cur, or write value in write, atomic read.
+	
+			rst = smc.WriteValue(val, rst)
+	
+			cnf := smc.getWriteC(i, nil)
+
+			var setS *pb.SetStateReply
+
+			for j := 0; ; j++ {
+				setS, err = cnf.SetState(&pb.NewState{
+					CurC: uint32(smc.getLenBluep(i)),
+					Cur: smc.getBluep(i),
+					State: rst,
+				})
+				cnt++
+
+				if err != nil && j == 0 {
+					glog.Errorf("C%d: error from OptimizedSetState: %v\n", smc.getId(), err)
+					// Try again with full configuration.
+					cnf = smc.getFullC(i)
+				}
+
+				if err != nil && j == Retry {
+					glog.Errorf("C%d: error %v from SetState after %d retries: ", smc.getId(), err, Retry)
+					return nil, 0, err
+				}
+
+				if err == nil {
+					break
+				}
+			}
+	
+			if i > 0 && glog.V(3) {
+				glog.Infof("C%d: Set state in configuration of size %d.\n", smc.ID, smc.Blueps[i].Len())
+			} else if glog.V(6) {
+				glog.Infof("Set state returned.")
+			}
+	
+			cur = smc.handleOneCur(i, setS.Reply.GetCur())
+			smc.handleNext(i, setS.Reply.GetNext())
+	
+			if !regular && i < len(smc.Confs)-1 {
+				prop = smc.Blueps[len(smc.Blueps)-1]
+				doconsensus = false
+				goto forconfiguration
+			}
 		}
-
 	}
-
-	if i := len(smc.Confs) - 1; i > cur || !regular {
-
-		rst = smc.WriteValue(val, rst)
-
-		setS, err := smc.Confs[i].SetState(&pb.NewState{Cur: smc.Blueps[i], CurC: uint32(smc.Blueps[i].Len()), State: rst})
-		if i > 0 && glog.V(3) {
-			glog.Infof("C%d: Set state in configuration of size %d.\n", smc.ID, smc.Blueps[i].Len())
-		} else if glog.V(6) {
-			glog.Infof("Set state returned.")
-		}
-
-		cnt++
-		if err != nil {
-			//Not sure what to do:
-			glog.Errorf("C%d: SetState returned error, not sure what to do\n", smc.ID)
-			return nil, 0, err
-		}
-		cur = smc.handleOneCur(i, setS.Reply.GetCur(), true)
-		smc.handleNext(i, setS.Reply.GetNext(), true)
-
-		if !regular && i < len(smc.Confs)-1 {
-			prop = smc.Blueps[len(smc.Blueps)-1]
-			doconsensus = false
-			goto forconfiguration
-		}
-	}
-
+	
 	smc.Blueps = smc.Blueps[cur:]
 	smc.Confs = smc.Confs[cur:]
 

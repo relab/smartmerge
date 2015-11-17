@@ -193,7 +193,7 @@ func (smc *SmClient) doread(curin, i int) (st *pb.State, cur int, err error) {
 	return read.Reply.GetState(), cur, nil
 }
 
-func (smc *SmClient) WriteValue(val []byte, st *pb.State) *pb.State {
+func (smc *SmClient) getWriteValue(val []byte, st *pb.State) *pb.State {
 	if val == nil {
 		return st
 	}

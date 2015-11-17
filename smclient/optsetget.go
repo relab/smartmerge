@@ -7,10 +7,29 @@ import (
 
 const Retry = 1
 
-func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
+type ConfigProvider interface {
+	getNBlueps() int
+	getLenBluep(int) int
+	getBluep(int) *pb.Blueprint
+	
+	getReadC(int,[]uint32) *pb.Configuration
+	getWriteC(int,[]uint32) *pb.Configuration
+	getFullC(int) *pb.Configuration
+	setNewCur(int)
+	
+	handleNewCur(int,*pb.ConfReply) int
+	handleOneCur(int, *pb.Blueprint) int
+	handleNext(int, []*pb.Blueprint)
+	handleValue(*pb.State)
+	
+	getWriteValue([]byte, *pb.State) *pb.State //This should instead be a method on the interface.
+	getId() uint32
+}
+
+func (smc ConfigProvider) get() (rs *pb.State, cnt int) {
 	cur := 0
 	var rid []uint32
-	for i := 0; i < len(smc.Blueps); i++ {
+	for i := 0; i < smc.getNBlueps(); i++ {
 		if i < cur {
 			continue
 		}
@@ -21,7 +40,10 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 		var err error
 
 		for j := 0; cnf != nil; j++ {
-			read, err = cnf.AReadS(&pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())})
+			read, err = cnf.AReadS(&pb.Conf{
+				This: uint32(smc.getLenBluep(i)), 
+				Cur: uint32(smc.getLenBluep(cur))
+			})
 			cnt++
 
 			if err != nil && j == 0 {
@@ -44,13 +66,13 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 			glog.Infoln("AReadS returned with replies from ", read.MachineIDs)
 		}
 
-		cur = smc.handleNewCur(cur, read.Reply.GetCur(), false)
+		cur = smc.handleNewCur(cur, read.Reply.GetCur())
 
 		if rs.Compare(read.Reply.GetState()) == 1 {
 			rs = read.Reply.GetState()
 		}
 
-		if len(smc.Blueps) > i+1 && (read.Reply.GetCur() == nil || !read.Reply.Cur.Abort) {
+		if smc.getNBlueps() > i+1 && (read.Reply.GetCur() == nil || !read.Reply.Cur.Abort) {
 			rid = pb.Union(rid, read.MachineIDs)
 		}
 
@@ -60,10 +82,10 @@ func (smc *SmOptClient) get() (rs *pb.State, cnt int) {
 	return
 }
 
-func (smc *SmOptClient) set(rs *pb.State) (cnt int) {
+func (smc ConfigProvider) set(rs *pb.State) (cnt int) {
 	cur := 0
 	var rid []uint32
-	for i := 0; i < len(smc.Blueps); i++ {
+	for i := 0; i < smc.getNBlueps(); i++ {
 		if i < cur {
 			continue
 		}
@@ -74,7 +96,13 @@ func (smc *SmOptClient) set(rs *pb.State) (cnt int) {
 		var err error
 
 		for j := 0; cnf != nil; j++ {
-			write, err = cnf.AWriteS(&pb.WriteS{rs, &pb.Conf{uint32(smc.Blueps[i].Len()), uint32(smc.Blueps[cur].Len())}})
+			write, err = cnf.AWriteS(&pb.WriteS{
+				State: rs, 
+				Conf: &pb.Conf{
+					This: uint32(smc.getLenBluep(i)),
+					Cur: uint32(smc.getLenBluep(cur)),
+				}
+			})
 			cnt++
 
 			if err != nil && j == 0 {
@@ -97,9 +125,9 @@ func (smc *SmOptClient) set(rs *pb.State) (cnt int) {
 			glog.Infoln("AWriteS returned, with replies from ", write.MachineIDs)
 		}
 
-		cur = smc.handleNewCur(cur, write.Reply, false)
+		cur = smc.handleNewCur(cur, write.Reply)
 
-		if len(smc.Blueps) > i+1 && (write.Reply == nil || !write.Reply.Abort) {
+		if len(smc.getNBlueps()) > i+1 && (write.Reply == nil || !write.Reply.Abort) {
 			rid = pb.Union(rid, write.MachineIDs)
 		}
 

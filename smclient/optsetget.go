@@ -11,18 +11,17 @@ type ConfigProvider interface {
 	getNBlueps() int
 	getLenBluep(int) int
 	getBluep(int) *pb.Blueprint
-	
-	getReadC(int,[]uint32) *pb.Configuration
-	getWriteC(int,[]uint32) *pb.Configuration
+
+	getReadC(int, []uint32) *pb.Configuration
+	getWriteC(int, []uint32) *pb.Configuration
 	getFullC(int) *pb.Configuration
 	setNewCur(int)
-	
-	handleNewCur(int,*pb.ConfReply) int
+
+	handleNewCur(int, *pb.ConfReply) int
 	handleOneCur(int, *pb.Blueprint) int
 	handleNext(int, []*pb.Blueprint)
 	handleValue(*pb.State)
-	
-	getWriteValue([]byte, *pb.State) *pb.State //This should instead be a method on the interface.
+
 	getId() uint32
 }
 
@@ -41,8 +40,8 @@ func (smc ConfigProvider) get() (rs *pb.State, cnt int) {
 
 		for j := 0; cnf != nil; j++ {
 			read, err = cnf.AReadS(&pb.Conf{
-				This: uint32(smc.getLenBluep(i)), 
-				Cur: uint32(smc.getLenBluep(cur))
+				This: uint32(smc.getLenBluep(i)),
+				Cur:  uint32(smc.getLenBluep(cur)),
 			})
 			cnt++
 
@@ -97,11 +96,11 @@ func (smc ConfigProvider) set(rs *pb.State) (cnt int) {
 
 		for j := 0; cnf != nil; j++ {
 			write, err = cnf.AWriteS(&pb.WriteS{
-				State: rs, 
+				State: rs,
 				Conf: &pb.Conf{
 					This: uint32(smc.getLenBluep(i)),
-					Cur: uint32(smc.getLenBluep(cur)),
-				}
+					Cur:  uint32(smc.getLenBluep(cur)),
+				},
 			})
 			cnt++
 

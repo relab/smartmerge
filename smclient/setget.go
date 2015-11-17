@@ -74,7 +74,7 @@ func (smc *SmClient) handleNewCur(cur int, newCur *pb.ConfReply, createconf bool
 	if glog.V(3) {
 		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Cur.Len(), smc.Blueps[cur].Len())
 	}
-	
+
 	return smc.findorinsert(cur, newCur.Cur, createconf)
 }
 

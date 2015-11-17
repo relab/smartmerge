@@ -136,8 +136,8 @@ func (smc *SmClient) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err
 		laProp, err := smc.Confs[i].LAProp(
 			&pb.LAProposal{
 				Conf: &pb.Conf{
-					Cur: uint32(smc.Blueps[cur].Len()),
-					This: uint32(smc.Blueps[i].Len())}, 
+					Cur:  uint32(smc.Blueps[cur].Len()),
+					This: uint32(smc.Blueps[i].Len())},
 				Prop: prop,
 			})
 		cnt++

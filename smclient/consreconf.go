@@ -16,7 +16,7 @@ func (smc ConfigProvider) consreconf(prop *pb.Blueprint, regular bool, val []byt
 	doconsensus := true
 	cur := 0
 	var rid []uint32
-	
+
 forconfiguration:
 	for i := 0; i < smc.getNBlueps(); i++ {
 		if i < cur {
@@ -42,14 +42,14 @@ forconfiguration:
 		case 1:
 			// No proposal
 			var st *pb.State
-			st, cur, err = smc.doread(cur, i)
+			st, cur, c, err = smc.doread(cur, i, rid)
 			if err != nil {
 				return nil, 0, err
 			}
 			if i+1 < smc.getNBlueps() {
-				next = smc.getBluep(i+1)
+				next = smc.getBluep(i + 1)
 			}
-			cnt++
+			cnt =+ c
 			if rst.Compare(st) == 1 {
 				rst = st
 			}
@@ -59,16 +59,16 @@ forconfiguration:
 		}
 
 		if smc.getBluep(i).LearnedCompare(next) == 1 {
-			
+
 			cnf := smc.getWriteC(i, nil)
 
 			writeN := new(pb.AWriteNReply)
 
 			for j := 0; cnf != nil; j++ {
 				writeN, err = cnf.AWriteN(&pb.WriteN{
-						CurC: uint32(smc.getLenBluep(i)), 
-						Next: next,
-					})
+					CurC: uint32(smc.getLenBluep(i)),
+					Next: next,
+				})
 				cnt++
 
 				if err != nil && j == 0 {
@@ -86,8 +86,7 @@ forconfiguration:
 					break
 				}
 			}
-			
-			
+
 			if glog.V(3) {
 				glog.Infof("C%d: CWriteN returned.\n", smc.getId())
 			}
@@ -97,24 +96,24 @@ forconfiguration:
 			if rst.Compare(writeN.Reply.GetState()) == 1 {
 				rst = writeN.Reply.GetState()
 			}
-			
+
 			if c := writeN.Reply.GetCur(); c == nil || !c.Abort {
 				rid = pb.Union(rid, writeN.MachineIDs)
 			}
 
-		} else if i > cur || ! regular {
+		} else if i > cur || !regular {
 			//Establish new cur, or write value in write, atomic read.
-	
+
 			rst = smc.WriteValue(val, rst)
-	
+
 			cnf := smc.getWriteC(i, nil)
 
 			var setS *pb.SetStateReply
 
 			for j := 0; ; j++ {
 				setS, err = cnf.SetState(&pb.NewState{
-					CurC: uint32(smc.getLenBluep(i)),
-					Cur: smc.getBluep(i),
+					CurC:  uint32(smc.getLenBluep(i)),
+					Cur:   smc.getBluep(i),
 					State: rst,
 				})
 				cnt++
@@ -134,46 +133,61 @@ forconfiguration:
 					break
 				}
 			}
-	
+
 			if i > 0 && glog.V(3) {
 				glog.Infof("C%d: Set state in configuration of size %d.\n", smc.ID, smc.Blueps[i].Len())
 			} else if glog.V(6) {
 				glog.Infof("Set state returned.")
 			}
-	
+
 			cur = smc.handleOneCur(i, setS.Reply.GetCur())
 			smc.handleNext(i, setS.Reply.GetNext())
-	
-			if !regular && i < len(smc.Confs)-1 {
-				prop = smc.Blueps[len(smc.Blueps)-1]
+
+			if i < smc.getNBlueps()-1 {
+				prop = smc.getBluep(smc.getNBlueps()-1)
 				doconsensus = false
-				goto forconfiguration
 			}
 		}
 	}
-	
-	smc.Blueps = smc.Blueps[cur:]
-	smc.Confs = smc.Confs[cur:]
 
+	smc.setNewCur(cur)
 	return rst, cnt, nil
 }
 
-func (smc *SmClient) getconsensus(i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt, cur int, err error) {
+func (smc ConfigProvider) getconsensus(i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt, cur int, err error) {
 	ms := 1 * time.Millisecond
-	rnd := smc.ID
+	rnd := smc.getId()
 prepare:
 	for {
 		//Send Prepare:
-		promise, errx := smc.Confs[i].GetPromise(&pb.Prepare{CurC: uint32(smc.Blueps[i].Len()), Rnd: rnd})
-		if errx != nil {
-			//Should log this for debugging
-			glog.Errorf("C%d: Prepare returned error: %v\n", smc.ID, errx)
-			return nil, 0, i, errx
+		cnf := smc.getReadC(i,nil)
+
+		var promise *pb.GetPromiseReply
+
+		for j := 0; ; j++ {
+			promise, err = cnf.GetPromise(&pb.Prepare{
+				CurC: uint32(smc.getLenBluep(i)),
+				Rnd: rnd})
+			if err != nil && j == 0 {
+				glog.Errorf("C%d: error from Optimized Prepare: %v\n", smc.getId(), err)
+				//Try again with full configuration.
+				cnf = smc.getFullC(i)
+			}
+			cnt++
+
+			if err != nil && j == Retry {
+				glog.Errof("C%d: error %v from Prepare after %d retries.\n", smc.getId(), err, Retry)
+				return nil, 0,0,err
+			}
+
+			if err == nil {
+				break
+			}
 		}
-		cnt++
-		cur = smc.handleOneCur(i, promise.Reply.GetCur(), true)
+
+		cur = smc.handleOneCur(i, promise.Reply.GetCur())
 		if i < cur {
-			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", smc.ID)
+			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", smc.getId())
 			return nil, cnt, cur, nil
 		}
 
@@ -182,34 +196,35 @@ prepare:
 		case promise.Reply.GetDec() != nil:
 			next = promise.Reply.GetDec()
 			if glog.V(3) {
-				glog.Infof("C%d: Promise reported decided value.\n", smc.ID)
+				glog.Infof("C%d: Promise reported decided value.\n", smc.getId())
 			}
 			return
 		case rrnd <= rnd:
+			// Find the right value to propose, then procede to Accept.
 			if promise.Reply.GetVal() != nil {
 				next = promise.Reply.Val.Val
 				if glog.V(3) {
-					glog.Infof("C%d: Re-propose a value.\n", smc.ID)
+					glog.Infof("C%d: Re-propose a value.\n", smc.getId())
 				}
 			} else {
 				if glog.V(3) {
-					glog.Infof("C%d: Proposing my value.\n", smc.ID)
+					glog.Infof("C%d: Proposing my value.\n", smc.getId())
 				}
 				if len(prop.Ids()) == 0 {
 					glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
 					return nil, cnt, cur, errors.New("Abort before proposing unacceptable configuration.")
 				}
-				next = prop.Merge(smc.Blueps[i])
+				next = prop.Merge(smc.getBluep(i)) // This could have side effects on prop. Is this a problem?
 			}
 		case rrnd > rnd:
 			// Increment round, sleep then return to prepare.
 			if glog.V(3) {
-				glog.Infof("C%d: Conflict, sleeping %v.\n", smc.ID, ms)
+				glog.Infof("C%d: Conflict, sleeping %v.\n", smc.getId(), ms)
 			}
-			if rrid := rrnd % 256; rrid < smc.ID {
-				rnd = rrnd - rrid + smc.ID
+			if rrid := rrnd % 256; rrid < smc.getId() {
+				rnd = rrnd - rrid + smc.getId()
 			} else {
-				rnd = rrnd - rrid + 256 + smc.ID
+				rnd = rrnd - rrid + 256 + smc.getId()
 			}
 			time.Sleep(ms)
 			ms = 2 * ms
@@ -217,7 +232,14 @@ prepare:
 
 		}
 
-		learn, errx := smc.Confs[i].Accept(&pb.Propose{CurC: uint32(smc.Blueps[i].Len()), Val: &pb.CV{rnd, next}})
+		cnf = smc.getWriteC(i,nil)
+
+		var learn *pb.AcceptReply
+
+		for j := 0; ; j++ {
+			learn, err = cnf.Accept(&pb.Propose{
+				CurC: uint32(smc.getLemBluep(i)), 
+				Val: &pb.CV{rnd, next}})
 		if err != nil {
 			glog.Errorf("C%d: Accept returned error: %v\n", smc.ID, errx)
 			return nil, 0, cur, errx

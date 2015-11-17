@@ -51,7 +51,7 @@ forconfiguration:
 
 		if prop.LearnedCompare(smc.getBluep(i)) != -1 {
 			if len(smc.Blueps) > i+1 {
-				prop = smc.getBluep(smc.getNBlueps()-1)
+				prop = smc.getBluep(smc.getNBlueps() - 1)
 				rid = nil // Empty rid on new Write Value.
 			} else if cur == i || !regular {
 				// We are in the current configuration, do a read, to check for next configurations. No need to recontact.
@@ -85,9 +85,9 @@ forconfiguration:
 
 			for j := 0; cnf != nil; j++ {
 				writeN, err = cnf.AWriteN(&pb.WriteN{
-						CurC: uint32(smc.getLenBluep(i)), 
-						Next: prop,
-					})
+					CurC: uint32(smc.getLenBluep(i)),
+					Next: prop,
+				})
 				cnt++
 
 				if err != nil && j == 0 {
@@ -125,9 +125,9 @@ forconfiguration:
 
 			for j := 0; ; j++ {
 				setS, err = cnf.SetState(&pb.NewState{
-					CurC: uint32(smc.getLenBluep(i)),
-					Cur: smc.getBluep(i),
-					State: rst,
+					CurC:    uint32(smc.getLenBluep(i)),
+					Cur:     smc.getBluep(i),
+					State:   rst,
 					LAState: las})
 				cnt++
 
@@ -235,7 +235,7 @@ func (smc ConfigProvider) doread(curin, i int, rid []uint32) (st *pb.State, cur,
 	for j := 0; cnf != nil; j++ {
 		read, err = cnf.AReadS(&pb.Conf{
 			This: uint32(smc.getLenBluep(i)),
-			Cur: uint32(smc.getLenBluep(i)),
+			Cur:  uint32(smc.getLenBluep(i)),
 		})
 		cnt++
 
@@ -261,4 +261,13 @@ func (smc ConfigProvider) doread(curin, i int, rid []uint32) (st *pb.State, cur,
 	cur = smc.handleNewCur(curin, read.Reply.GetCur())
 
 	return read.Reply.GetState(), cur, cnt, nil
+}
+
+func (smc ConfigProvider) getWriteValue(val []byte, st *pb.State) *pb.State {
+	if val == nil {
+		return st
+	}
+	st = &pb.State{Value: val, Timestamp: st.Timestamp + 1, Writer: smc.getId()}
+	val = nil
+	return st
 }

@@ -94,10 +94,10 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 		return &pb.ReadReply{Cur: cr}, nil
 	}
 
-	return &pb.ReadReply{State: rs.RState, Next: next}, nil
+	return &pb.ReadReply{State: rs.RState, Cur: cr}, nil
 }
 
-func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
+func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply, error) {
 	rs.Lock()
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteS")
@@ -113,7 +113,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	cr := rs.handleConf(wr.GetConf())
+	cr := rs.handleConf(&pb.Conf{wr.CurC, wr.CurC})
 	if cr != nil && cr.Abort {
 		return &pb.WriteNReply{Cur: cr}, nil
 	}
@@ -139,7 +139,7 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling LAProp")
 
-	cr := rs.handleConf(rr)
+	cr := rs.handleConf(lap.GetConf())
 	if cr != nil && cr.Abort {
 		return &pb.LAReply{Cur: cr}, nil
 	}

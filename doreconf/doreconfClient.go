@@ -3,30 +3,24 @@ package doreconf
 import (
 	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
-	confP "github.com/relab/smartMerge/confProvider"
+	conf "github.com/relab/smartMerge/confProvider"
 	smc "github.com/relab/smartMerge/smclient"
 	cc "github.com/relab/smartMerge/consclient"
 )
 
 type Reconfer interface {
-	Doreconf(confP.ConfigProvider, *pb.Blueprint, bool, []byte) (*pb.State, int, error)
-	Reconf(confP.ConfigProvider, *pb.Blueprint) (int, error) 
-	GetCur(confP.ConfigProvider) *pb.Blueprint
+	Doreconf(conf.Provider, *pb.Blueprint, bool, []byte) (*pb.State, int, error)
+	Reconf(conf.Provider, *pb.Blueprint) (int, error) 
+	GetCur(conf.Provider) *pb.Blueprint
 }
 
 type DoreconfClient struct {
 	Reconfer
 }
 
-func New(initBlp *pb.Blueprint, id uint32, cp confP.ConfigProvider, cons bool) (*DoreconfClient, error) {
-	var rec Reconfer
-	var err error
-	
-	if cons {
-		rec, err = cc.New(initBlp, id, cp)
-	} else {
-		rec, err = smc.New(initBlp, id, cp)
-	}
+func NewSM(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
+
+	rec, err := smc.New(initBlp, id, cp)
 	
 	if err != nil {
 		return nil, err
@@ -35,8 +29,20 @@ func New(initBlp *pb.Blueprint, id uint32, cp confP.ConfigProvider, cons bool) (
 	return &DoreconfClient{rec}, nil
 }
 
+func NewCons(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
+
+	rec, err := cc.New(initBlp, id, cp)
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	return &DoreconfClient{rec}, nil
+}
+
+
 //Atomic read
-func (drc *DoreconfClient) Read(cp confP.ConfigProvider) (val []byte, cnt int) {
+func (drc *DoreconfClient) Read(cp conf.Provider) (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting Read")
 	}
@@ -62,7 +68,7 @@ func (drc *DoreconfClient) Read(cp confP.ConfigProvider) (val []byte, cnt int) {
 }
 
 //Regular read
-func (drc *DoreconfClient) RRead(cp confP.ConfigProvider) (val []byte, cnt int) {
+func (drc *DoreconfClient) RRead(cp conf.Provider) (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting regular Read")
 	}
@@ -87,7 +93,7 @@ func (drc *DoreconfClient) RRead(cp confP.ConfigProvider) (val []byte, cnt int) 
 	return st.Value, cnt
 }
 
-func (drc *DoreconfClient) Write(cp confP.ConfigProvider, val []byte) (cnt int) {
+func (drc *DoreconfClient) Write(cp conf.Provider, val []byte) (cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting Write")
 	}

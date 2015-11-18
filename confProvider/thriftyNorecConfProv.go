@@ -11,15 +11,19 @@ import (
 var ConfTimeout = 1 * time.Second
 var TryTimeout = 10 * time.Millisecond
 
-type ConfigProvider interface {
+type Provider interface {
 	FullC(*pb.Blueprint) *pb.Configuration
 	ReadC(*pb.Blueprint, []uint32) *pb.Configuration
 	WriteC(*pb.Blueprint, []uint32) *pb.Configuration
 }
 
 type ThriftyNorecConfP struct {
-	mgr pb.Manager
-	id 	uint32
+	mgr *pb.Manager
+	id 	int
+}
+
+func NewProvider(mgr *pb.Manager, id int) *ThriftyNorecConfP {
+	return &ThriftyNorecConfP{mgr, id}
 }
 
 func (cp *ThriftyNorecConfP) chooseQ(ids []uint32, q int) (quorum []uint32) {
@@ -28,7 +32,7 @@ func (cp *ThriftyNorecConfP) chooseQ(ids []uint32, q int) (quorum []uint32) {
 	}
 
 	quorum = make([]uint32, q)
-	start := int(cp.id) % len(ids)
+	start := cp.id % len(ids)
 	if start+q <= len(ids) {
 		copy(quorum, ids[start:])
 		return quorum

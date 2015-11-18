@@ -5,11 +5,11 @@ import (
 
 	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
-	confP "github.com/relab/smartMerge/confProvider"
+	conf "github.com/relab/smartMerge/confProvider"
 	
 )
 
-func (smc *SmClient) Reconf(cp confP.ConfigProvider, prop *pb.Blueprint) (cnt int, err error) {
+func (smc *SmClient) Reconf(cp conf.Provider, prop *pb.Blueprint) (cnt int, err error) {
 	//Proposed blueprint is already in place, or outdated.
 	if prop.Compare(smc.Blueps[0]) == 1 {
 		glog.V(3).Infof("C%d: Proposal is already in place.", smc.Id)
@@ -20,7 +20,7 @@ func (smc *SmClient) Reconf(cp confP.ConfigProvider, prop *pb.Blueprint) (cnt in
 	return
 }
 
-func (smc *SmClient) Doreconf(cp confP.ConfigProvider, prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
+func (smc *SmClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconf\n", smc.Id)
 	}
@@ -158,7 +158,7 @@ forconfiguration:
 	return rst, cnt, nil
 }
 
-func (smc *SmClient) lagree(cp confP.ConfigProvider, prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err error) {
+func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err error) {
 	cur := 0
 	var rid []uint32
 	prop = prop.Merge(smc.Blueps[0])
@@ -223,7 +223,7 @@ func (smc *SmClient) lagree(cp confP.ConfigProvider, prop *pb.Blueprint) (dec *p
 	return prop, cnt, nil
 }
 
-func (smc *SmClient) Doread(cp confP.ConfigProvider, curin, i int, rid []uint32) (st *pb.State, cur, cnt int, err error) {
+func (smc *SmClient) Doread(cp conf.Provider, curin, i int, rid []uint32) (st *pb.State, cur, cnt int, err error) {
 	cnf := cp.ReadC(smc.Blueps[i], rid)
 
 	read := new(pb.AReadSReply)

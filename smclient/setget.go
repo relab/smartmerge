@@ -3,10 +3,10 @@ package smclient
 import (
 	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
-	confP "github.com/relab/smartMerge/confProvider"
+	conf "github.com/relab/smartMerge/confProvider"
 )
 
-func (smc *SmClient) get(cp confP.ConfigProvider) (rs *pb.State, cnt int) {
+func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 	cur := 0
 	var rid []uint32
 	for i := 0; i < len(smc.Blueps); i++ {
@@ -62,7 +62,7 @@ func (smc *SmClient) get(cp confP.ConfigProvider) (rs *pb.State, cnt int) {
 	return
 }
 
-func (smc *SmClient) set(cp confP.ConfigProvider, rs *pb.State) (cnt int) {
+func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 	cur := 0
 	var rid []uint32
 	for i := 0; i < len(smc.Blueps); i++ {

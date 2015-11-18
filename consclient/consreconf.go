@@ -6,11 +6,11 @@ import (
 
 	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
-	confP "github.com/relab/smartMerge/confProvider"
+	conf "github.com/relab/smartMerge/confProvider"
 	smc "github.com/relab/smartMerge/smclient"
 )
 
-func (cc *ConsClient) Doreconf(cp confP.ConfigProvider, prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
+func (cc *ConsClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconfiguration\n", cc.Id)
 	}
@@ -152,7 +152,7 @@ forconfiguration:
 	return rst, cnt, nil
 }
 
-func (cc *ConsClient) getconsensus(cp confP.ConfigProvider, i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt, cur int, err error) {
+func (cc *ConsClient) getconsensus(cp conf.Provider, i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt, cur int, err error) {
 	ms := 1 * time.Millisecond
 	rnd := cc.Id
 	// The 24 higher bits of rnd (uint32) are a counter, the lower 8 bits the client id. Should separate the two in the future, to simplify things

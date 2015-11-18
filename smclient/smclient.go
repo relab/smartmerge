@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/glog"
 
-	confP "github.com/relab/smartMerge/confProvider"
+	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
 )
 
@@ -17,7 +17,7 @@ type SmClient struct {
 	Id		 uint32
 }
 
-func New(initBlp *pb.Blueprint, id uint32, cp confP.ConfigProvider) (*SmClient, error) {
+func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*SmClient, error) {
 	cnf := cp.FullC(initBlp)
 
 	glog.Infof("New Client with Id: %d\n", id)
@@ -34,7 +34,7 @@ func New(initBlp *pb.Blueprint, id uint32, cp confP.ConfigProvider) (*SmClient, 
 }
 
 //Atomic read
-func (smc *SmClient) Read(cp confP.ConfigProvider) (val []byte, cnt int) {
+func (smc *SmClient) Read(cp conf.Provider) (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting Read")
 	}
@@ -57,7 +57,7 @@ func (smc *SmClient) Read(cp confP.ConfigProvider) (val []byte, cnt int) {
 }
 
 //Regular read
-func (smc *SmClient) RRead(cp confP.ConfigProvider) (val []byte, cnt int) {
+func (smc *SmClient) RRead(cp conf.Provider) (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting regular Read")
 	}
@@ -73,7 +73,7 @@ func (smc *SmClient) RRead(cp confP.ConfigProvider) (val []byte, cnt int) {
 	return rs.Value, cnt
 }
 
-func (smc *SmClient) Write(cp confP.ConfigProvider, val []byte) int {
+func (smc *SmClient) Write(cp conf.Provider, val []byte) int {
 	if glog.V(5) {
 		glog.Infoln("starting Write")
 	}
@@ -110,7 +110,7 @@ func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {
 	return st
 }
 
-func (smc *SmClient) GetCur(cp confP.ConfigProvider) *pb.Blueprint {
+func (smc *SmClient) GetCur(cp conf.Provider) *pb.Blueprint {
 	smc.set(cp, nil)
 	return smc.Blueps[0].Copy()
 }

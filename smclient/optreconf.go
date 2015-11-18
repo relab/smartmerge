@@ -174,7 +174,6 @@ func (smc ConfigProvider) lagree(prop *pb.Blueprint) (dec *pb.Blueprint, cnt int
 		cnf := smc.getWriteC(i, rid)
 
 		laProp := new(pb.LAPropReply)
-		var err error
 
 		for j := 0; cnf != nil; j++ {
 			laProp, err = cnf.LAProp(&pb.LAProposal{

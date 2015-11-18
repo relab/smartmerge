@@ -12,6 +12,7 @@ import (
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
+	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -45,7 +46,12 @@ func expmain() {
 
 	for i := 0; i < *nclients; i++ {
 		glog.Infoln("starting client number: ", i)
-		cl, mgr, err := NewClient(addrs, initBlp, *alg, *opt, (*clientid)+i)
+		cp, mgr, err := NewConfP(addrs, *cprov, (*clientid)+i)
+		if err != nil {
+			glog.Errorln("Error creating confProvider: ", err)
+			continue
+		}
+		cl, err := NewClient(initBlp, *alg, *opt, (*clientid)+i, cp)
 		if err != nil {
 			glog.Errorln("Error creating client: ", err)
 			continue
@@ -56,14 +62,14 @@ func expmain() {
 		switch {
 		case *cont:
 			if i%2 == 0 {
-				go contremove(cl, ids, syncchan, (*clientid)+(i/2), &wg)
+				go contremove(cl,cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			} else {
-				go contadd(cl, ids, syncchan, (*clientid)+(i/2), &wg)
+				go contadd(cl,cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			}
 		case *rm:
-			go remove(cl, ids, syncchan, (*clientid)+i, &wg)
+			go remove(cl,cp, ids, syncchan, (*clientid)+i, &wg)
 		case *add:
-			go adds(cl, ids, syncchan, *initsize+i, &wg)
+			go adds(cl,cp, ids, syncchan, *initsize+i, &wg)
 		}
 	}
 
@@ -94,7 +100,7 @@ func expmain() {
 
 }
 
-func contremove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+func contremove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
@@ -102,12 +108,12 @@ func contremove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGro
 
 	defer wg.Done()
 	for {
-		target := c.GetCur() //GetCur returns a copy, not the real thing.
+		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
 		if !target.Rem(ids[i]) {
 			glog.Infoln("Could not remove %v\n.", ids[i])
 		} else {
 			reqsent := time.Now()
-			cnt, err := c.Reconf(target)
+			cnt, err := c.Reconf(cp, target)
 			if err == nil || cnt == 0 {
 				elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			} else {
@@ -124,7 +130,7 @@ func contremove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGro
 	}
 }
 
-func contadd(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+func contadd(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
@@ -132,12 +138,12 @@ func contadd(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup)
 
 	defer wg.Done()
 	for {
-		target := c.GetCur() //GetCur returns a copy, not the real thing.
+		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
 		if !target.Add(ids[i]) {
 			glog.V(4).Infoln("Could not add %v\n.", ids[i])
 		} else {
 			reqsent := time.Now()
-			cnt, err := c.Reconf(target)
+			cnt, err := c.Reconf(cp,target)
 			if err == nil || cnt == 0 {
 				elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			} else {
@@ -154,9 +160,9 @@ func contadd(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup)
 	}
 }
 
-func remove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+func remove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	cur := c.GetCur()
+	cur := c.GetCur(cp)
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
@@ -168,7 +174,7 @@ func remove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) 
 
 	<-sc
 	reqsent := time.Now()
-	cnt, err := c.Reconf(target)
+	cnt, err := c.Reconf(cp, target)
 	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 	if err != nil {
@@ -177,9 +183,9 @@ func remove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) 
 	return
 }
 
-func adds(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+func adds(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	cur := c.GetCur()
+	cur := c.GetCur(cp)
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
@@ -194,7 +200,7 @@ func adds(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	<-sc
 
 	reqsent := time.Now()
-	cnt, err := c.Reconf(target)
+	cnt, err := c.Reconf(cp,target)
 	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 	if err != nil {

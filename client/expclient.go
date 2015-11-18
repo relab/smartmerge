@@ -23,7 +23,10 @@ import (
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
 	qf "github.com/relab/smartMerge/qfuncs"
-	"github.com/relab/smartMerge/smclient"
+	smc "github.com/relab/smartMerge/smclient"
+	cc "github.com/relab/smartMerge/consclient"
+	"github.com/relab/smartMerge/doreconf"
+	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/util"
 	grpc "google.golang.org/grpc"
 )
@@ -39,7 +42,8 @@ var (
 	// Mode
 	mode   = flag.String("mode", "", "run mode: (user | bench | exp )")
 	alg    = flag.String("alg", "", "algorithm to be used: (sm | dyna | odyna | cons )")
-	opt    = flag.String("opt", "", "which optimization to use: ( no | doreconf | norecontact)")
+	opt    = flag.String("opt", "", "which optimization to use: ( no | doreconf )")
+	cprov  = flag.String("cprov", "normal", "which configuration provider: (normal | thrifty | norecontact ) ")
 	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
 
 	//Config
@@ -146,7 +150,13 @@ func benchmain() {
 
 	for i := 0; i < *nclients; i++ {
 		glog.Infof("starting client number:  %d at time %v\n", i, time.Now())
-		cl, mgr, err := NewClient(addrs, initBlp, *alg, *opt, (*clientid)+i)
+		cp, mgr, err := NewConfP(addrs, *cprov, (*clientid)+i)
+		if err != nil {
+			glog.Errorln("Error creating confProvider: ", err)
+			continue
+		}
+
+		cl, err := NewClient(initBlp, *alg, *opt, (*clientid)+i, cp)
 		if err != nil {
 			glog.Errorln("Error creating client: ", err)
 			continue
@@ -156,13 +166,13 @@ func benchmain() {
 		wg.Add(1)
 		switch {
 		case *contW:
-			go contWrite(cl, *size, stop, &wg)
+			go contWrite(cl, cp, *size, stop, &wg)
 		case *contR:
-			go contRead(cl, stop, *regul, *logT, &wg)
+			go contRead(cl, cp, stop, *regul, *logT, &wg)
 		case *reads > 0:
-			go doReads(cl, *reads, *regul, &wg)
+			go doReads(cl, cp, *reads, *regul, &wg)
 		case *writes > 0:
-			go doWrites(cl, *size, *writes, &wg)
+			go doWrites(cl, cp, *size, *writes, &wg)
 		}
 	}
 
@@ -188,7 +198,7 @@ func benchmain() {
 	return
 }
 
-func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id int) (cl RWRer, mgr *pb.Manager, err error) {
+func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.Manager, err error) {
 	mgr, err = pb.NewManager(addrs, pb.WithGrpcDialOptions(
 		grpc.WithBlock(),
 		grpc.WithTimeout(1000*time.Millisecond),
@@ -211,20 +221,35 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 		glog.Errorln("Creating manager returned error: ", err)
 		return
 	}
+
+	cp = conf.NewProvider(mgr, id)
+	switch cprov {
+	case "norecontact":
+		break
+	case "thrifty":
+		cp = &conf.ThriftyConfP{cp}
+	case "normal", "":
+		cp = &conf.NormalConfP{cp}
+	default:
+		glog.Fatalf("confprovider %v is not supported.\n", cprov)
+	}
+	return
+}
+
+
+func NewClient(initB *pb.Blueprint, alg string, opt string, id int, cp conf.Provider) (cl RWRer, err error) {
 	switch alg {
 	case "", "sm":
 		switch opt {
 		case "", "no":
-			cl, err = smclient.New(initB, mgr, uint32(id), false)
+			cl, err = smc.New(initB, uint32(id), cp)
 		case "doreconf":
-			cl, err = smclient.NewSmR(initB, mgr, uint32(id), false)
-		case "norecontact":
-			cl, err = smclient.NewOpt(initB, mgr, uint32(id), false)
+			cl, err = doreconf.NewSM(initB, uint32(id), cp)
 		default:
-			glog.Fatalln("optimization recontact not yet supported.")
+			glog.Fatalf("optimization %v not supported.\n", opt)
 		}
 	case "dyna":
-		glog.Fatalln("this option is outdated an not updated to the new version.")
+		glog.Fatalln("this option is outdated and not updated to the new version.")
 		//cl, err = dynaclient.New(initB, mgr, uint32(id))
 	case "odyna":
 		glog.Fatalln("this option is outdated an not updated to the new version.")
@@ -232,11 +257,9 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 	case "cons":
 		switch opt {
 		case "", "no":
-			cl, err = smclient.New(initB, mgr, uint32(id), true)
+			cl, err = cc.New(initB, uint32(id), cp)
 		case "doreconf":
-			cl, err = smclient.NewSmR(initB, mgr, uint32(id), true)
-		case "norecontact":
-			cl, err = smclient.NewOpt(initB, mgr, uint32(id), true)
+			cl, err = doreconf.NewCons(initB, uint32(id), cp)
 		default:
 			glog.Fatalln("optimization recontact not yet supported.")
 		}
@@ -246,7 +269,7 @@ func NewClient(addrs []string, initB *pb.Blueprint, alg string, opt string, id i
 	return
 }
 
-func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
+func contWrite(cl RWRer, cp conf.Provider, size int, stop chan struct{}, wg *sync.WaitGroup) {
 	glog.Infoln("starting continous write")
 	var (
 		value   = make([]byte, size)
@@ -259,7 +282,7 @@ func contWrite(cl RWRer, size int, stop chan struct{}, wg *sync.WaitGroup) {
 loop:
 	for {
 		reqsent = time.Now()
-		cnt = cl.Write(value)
+		cnt = cl.Write(cp, value)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
 		if cnt > 100 {
 			break
@@ -275,7 +298,7 @@ loop:
 	wg.Done()
 }
 
-func contRead(cl RWRer, stop chan struct{}, reg bool, logT bool, wg *sync.WaitGroup) {
+func contRead(cl RWRer, cp conf.Provider, stop chan struct{}, reg bool, logT bool, wg *sync.WaitGroup) {
 	glog.Infoln("starting continous read")
 	var (
 		c        int
@@ -298,9 +321,9 @@ loop:
 		reqsent = time.Now()
 		go func() {
 			if reg {
-				_, c = cl.RRead()
+				_, c = cl.RRead(cp)
 			} else {
-				_, c = cl.Read()
+				_, c = cl.Read(cp)
 			}
 			cchan <- c
 		}()
@@ -327,7 +350,7 @@ loop:
 	wg.Done()
 }
 
-func doWrites(cl RWRer, size int, writes int, wg *sync.WaitGroup) {
+func doWrites(cl RWRer, cp conf.Provider, size int, writes int, wg *sync.WaitGroup) {
 	var (
 		value   = make([]byte, size)
 		cnt     int
@@ -337,7 +360,7 @@ func doWrites(cl RWRer, size int, writes int, wg *sync.WaitGroup) {
 	bgen.GetBytes(value)
 	for i := 0; i < writes; i++ {
 		reqsent = time.Now()
-		cnt = cl.Write(value)
+		cnt = cl.Write(cp, value)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientWriteLatency, reqsent, uint64(cnt)))
 	}
 	glog.Infoln("finished writes")
@@ -346,7 +369,7 @@ func doWrites(cl RWRer, size int, writes int, wg *sync.WaitGroup) {
 	}
 }
 
-func doReads(cl RWRer, reads int, reg bool, wg *sync.WaitGroup) {
+func doReads(cl RWRer, cp conf.Provider, reads int, reg bool, wg *sync.WaitGroup) {
 	var (
 		cnt     int
 		reqsent time.Time
@@ -355,9 +378,9 @@ func doReads(cl RWRer, reads int, reg bool, wg *sync.WaitGroup) {
 	for i := 0; i < reads; i++ {
 		reqsent = time.Now()
 		if reg {
-			_, cnt = cl.RRead()
+			_, cnt = cl.RRead(cp)
 		} else {
-			_, cnt = cl.Read()
+			_, cnt = cl.Read(cp)
 		}
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReadLatency, reqsent, uint64(cnt)))
 	}
@@ -386,11 +409,11 @@ func handleSignal(signal os.Signal) bool {
 }
 
 type RWRer interface {
-	RRead() ([]byte, int)
-	Read() ([]byte, int)
-	Write(val []byte) int
-	Reconf(prop *pb.Blueprint) (int, error)
-	GetCur() *pb.Blueprint
+	RRead(conf.Provider) ([]byte, int)
+	Read(conf.Provider) ([]byte, int)
+	Write(cp conf.Provider, val []byte) int
+	Reconf(cp conf.Provider, prop *pb.Blueprint) (int, error)
+	GetCur(conf.Provider) *pb.Blueprint
 }
 
 func LogErrors(mgr *pb.Manager) {

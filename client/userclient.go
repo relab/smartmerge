@@ -9,6 +9,7 @@ import (
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
+	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -32,7 +33,12 @@ func usermain() {
 	}
 	initBlp.FaultTolerance = uint32(15)
 
-	client, mgr, err := NewClient(addrs, initBlp, *alg, *opt, *clientid)
+	cp, mgr, err := NewConfP(addrs, *cprov, (*clientid))
+	if err != nil {
+		fmt.Println("Error creating confProvider: ", err)
+		return
+	}
+	client, err := NewClient(initBlp, *alg, *opt, *clientid, cp)
 	defer PrintErrors(mgr)
 	if err != nil {
 		fmt.Println("Error creating client: ", err)
@@ -63,7 +69,7 @@ func usermain() {
 		switch op {
 		case 1:
 			reqsent := time.Now()
-			bytes, cnt := client.Read()
+			bytes, cnt := client.Read(cp)
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			state := string(bytes)
 			fmt.Println("Current value is: ", state)
@@ -74,26 +80,26 @@ func usermain() {
 			fmt.Print("Insert string to write: ")
 			fmt.Scanln(&str)
 			reqsent := time.Now()
-			cnt := client.Write([]byte(str))
+			cnt := client.Write(cp,[]byte(str))
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			fmt.Printf("Did %d accesses.\n", cnt)
 		case 3:
 			reqsent := time.Now()
-			bytes, cnt := client.RRead()
+			bytes, cnt := client.RRead(cp)
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			state := string(bytes)
 			fmt.Println("Current value is: ", state)
 			fmt.Printf("Has %d bytes.\n", len(bytes))
 			fmt.Printf("Did %d accesses.\n", cnt)
 		case 4:
-			handleReconf(client, ids)
+			handleReconf(client,cp, ids)
 		case 5:
 			var size, writes int
 			fmt.Println("Enter size:")
 			fmt.Scanln(&size)
 			fmt.Println("Enter writes:")
 			fmt.Scanln(&writes)
-			doWrites(client, size, writes, nil)
+			doWrites(client,cp, size, writes, nil)
 		default:
 			return
 		}
@@ -101,8 +107,8 @@ func usermain() {
 
 }
 
-func handleReconf(c RWRer, ids []uint32) {
-	cur := c.GetCur()
+func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
+	cur := c.GetCur(cp)
 	fmt.Println("Current Blueprint is: ", cur)
 	fmt.Println("Type 1 or 2 for add or remove?")
 	fmt.Println("  1: Add")
@@ -133,13 +139,13 @@ func handleReconf(c RWRer, ids []uint32) {
 
 		fmt.Println("Starting reconfiguration with target ", target)
 		reqsent := time.Now()
-		cnt, err := c.Reconf(target)
+		cnt, err := c.Reconf(cp,target)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)
 		}
 		fmt.Printf("did %d accesses.\n", cnt)
-		fmt.Println("new blueprint is ", c.GetCur())
+		fmt.Println("new blueprint is ", c.GetCur(cp))
 		return
 	case 2:
 		fmt.Println("Ids in the current configuration:")
@@ -161,7 +167,7 @@ func handleReconf(c RWRer, ids []uint32) {
 		}
 
 		reqsent := time.Now()
-		cnt, err := c.Reconf(target)
+		cnt, err := c.Reconf(cp,target)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 		if err != nil {
@@ -169,7 +175,7 @@ func handleReconf(c RWRer, ids []uint32) {
 		}
 
 		fmt.Printf("did %d accesses.\n", cnt)
-		fmt.Println("new blueprint is ", c.GetCur())
+		fmt.Println("new blueprint is ", c.GetCur(cp))
 		return
 	default:
 		return

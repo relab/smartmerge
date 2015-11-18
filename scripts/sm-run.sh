@@ -2,6 +2,15 @@
 
 #Arguements: $1: reader optimization $2:alg  $3: number of removals, $4: more reader option, e.g. -regular, 
 
+if [ $1 == "help" ]; then
+	echo Arguments:
+	echo "1 reader optimization: no | doreconf | norecontact"
+	echo "2 alg: sm | cons"
+	echo "3 reconfiguration: -rm -add -cont"
+	echo "4 number of reconfiguration clients"
+	echo "5 more reader options, e.g. -regular | -logThroughput"
+	exit
+fi
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
@@ -42,13 +51,13 @@ sleep 1
 
 
 echo single write
-$SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=bench -writes=1 -size=4000 -nclients=1 -id=5 -initsize=100 
+$SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=bench -writes=1 -size=1000 -nclients=1 -id=5 -initsize=100 
 
 echo starting Readers on
 for Pi in ${READS[@]}
 do
 	echo -n "pitter$Pi "
-ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -opt=$1 $4 -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -opt=$1 $5 -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
 
 #ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=sm -opt=$1 $3 -mode=bench -contR -gc-off -nclients=1 -id='1$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi1'$Pi' 2>&1 &"
 done
@@ -60,13 +69,26 @@ sleep 1
 
 if ! [ "$3" == "" ]; then
 	echo starting Reconfigurers
-	$SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=exp -rm -nclients="$3" -initsize=100 -elog -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
+	nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=exp $3 -nclients="$4" -initsize=100 -elog -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &
 else
 	echo no reconfiguration, waiting 10 seconds
 	sleep 10
 fi
 
+if [ "$3" == "-cont" ]; then
+	echo sleeping 30 seconds
+	sleep 30
+fi
+
+
 sleep 1
+
+
+echo stopping reconfigurers
+cd $SM/client && killall client
+cd -
+
+
 echo stopping Readers
 
 for Pi in ${READS[@]}
@@ -91,3 +113,22 @@ do
 	ssh pitter"$Pi" "cd $SM/server && killall server" 
 	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
 done
+
+echo safety stop reconfigurer:
+cd $SM/client && killall -9 client
+cd -
+
+echo safety stop readers
+for Pi in ${READS[@]}
+do
+	echo -n "pitter$Pi "
+	ssh pitter"$Pi" "cd $SM/client && killall -9 client" 
+done
+
+echo safety stop servers
+for Pi in ${SERVS[@]}
+do
+	ssh pitter"$Pi" "cd $SM/server && killall -9 server" 
+done
+
+

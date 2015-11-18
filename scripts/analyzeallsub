@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ "$1" == "help" ]; then
+	echo "arg1: outfile, arg2: #recs, arg3: #clients, arg4: normal steps"
+	exit
+fi
+
+Files=""
+for log in */client.*.*.elog 
+do 
+	Files="$Files,$log"
+done
+#echo $Files
+if [ "$4" == "" ]; then  
+	echo Using default value for normal
+	efmt -file="$Files" -outfile="$1" -recs="$2" -clients="$3"
+else
+	echo Using normal=$4
+	efmt -file="$Files" -outfile="$1" -recs="$2" -clients="$3" -normal="$4"
+fi

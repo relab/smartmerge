@@ -67,14 +67,14 @@ func main() {
 			return
 		}
 		events = append(events, fievents...)
-		eventsperc[i]=fievents
+		eventsperc[i] = fievents
 	}
 
 	if *debug {
 		//fmt.Fprintf(of, "%v\n", events[0])
 		cnt := 0
 		spikes := make([]e.Event, 0)
-		recs := make([]e.Event,0,10)
+		recs := make([]e.Event, 0, 10)
 		i := 0
 		for _, evt := range events {
 			if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
@@ -88,35 +88,35 @@ func main() {
 				i++
 			}
 		}
-		
+
 		//fmt.Fprintf(of, "%v\n", events[len(events)-1])
 		fmt.Fprintf(of, "%d spike latencies.\n", cnt)
-		
+
 		if len(recs) > 0 && len(spikes) > 0 {
 			start := recs[0].Time
 			end := recs[0].EndTime
 			for _, rec := range recs {
 				if rec.Time.Before(start) {
 					start = rec.Time
-				}			
+				}
 				if rec.EndTime.After(end) {
 					end = rec.EndTime
 				}
 			}
-			end = end.Add(100* time.Millisecond)		
-	
+			end = end.Add(100 * time.Millisecond)
+
 			problem := false
 			for _, evt := range spikes {
 				if evt.Value > uint64(*norm) {
 					problem = true
 					break
 				}
-				if evt.EndTime.Add(100 * time.Millisecond).After(start) && evt.Time.Before(end) {
+				if evt.EndTime.Add(100*time.Millisecond).After(start) && evt.Time.Before(end) {
 					fmt.Fprintln(of, "Spike during reconfiguration:")
 					fmt.Fprintf(of, "%v end time: %v\n", evt, evt.EndTime)
 					problem = true
 					break
-				} 
+				}
 			}
 			if problem {
 				os.Exit(1)
@@ -143,7 +143,7 @@ func main() {
 	if len(reade) > 0 {
 		var totalaffected time.Duration
 		var affected time.Duration
-		
+
 		_, err := fmt.Fprintln(of, "Read Latencies:")
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
@@ -166,7 +166,7 @@ func main() {
 			if normal == 1 {
 				nwavg = 1870 * time.Microsecond
 			}
-			overhead := totalaffected - (affected*nwavg)
+			overhead := totalaffected - (affected * nwavg)
 			fmt.Fprintf(of, "Total overhead is: %v\n", overhead)
 			runs := 0
 			runs += len(reconfe)
@@ -176,10 +176,10 @@ func main() {
 				fmt.Fprintf(of, "Overhead per client is: %v\n", (overhead/time.Duration(*cl))/time.Duration(runs))
 			}
 		}
-		maxls := make([]time.Duration,0,len(eventsperc)) 
-		for _,es := range eventsperc {
+		maxls := make([]time.Duration, 0, len(eventsperc))
+		for _, es := range eventsperc {
 			var max time.Duration
-			for _, evt :=  range es {
+			for _, evt := range es {
 				if evt.Type != e.ClientReadLatency {
 					break
 				}
@@ -195,36 +195,36 @@ func main() {
 		if len(maxls) > 0 {
 			fmt.Fprintf(of, "Mean of maximum read latency: %v\n", MeanDuration(maxls...))
 		}
-	
+
 	}
 
 	if len(writee) > 0 {
 		fmt.Println("Processing writes is outdated!")
 		/*
-		var totalaffected time.Duration
-		var affected time.Duration
+			var totalaffected time.Duration
+			var affected time.Duration
 
-		_, err := fmt.Fprintln(of, "Write Latencies:")
-		if err != nil {
-			fmt.Println("Error writing to file:", err)
-		}
-		avgWrites := computeAverageDurations(writel)
-		for k, durs := range writel {
-			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
-			if k != normal {
-				affected += time.Duration(len(durs))
-				totalaffected += time.Duration(len(durs)) * avgWrites[k]
+			_, err := fmt.Fprintln(of, "Write Latencies:")
+			if err != nil {
+				fmt.Println("Error writing to file:", err)
 			}
-		}
-		if affected > 0 {
-			fmt.Fprintf(of, "Mean latency for writes with more than %d acceses is: %v\n", normal, (totalaffected / affected))
-			nwavg := 3300 * time.Microsecond
-			if normal == 4 {
-				nwavg = 5700 * time.Microsecond
+			avgWrites := computeAverageDurations(writel)
+			for k, durs := range writel {
+				fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
+				if k != normal {
+					affected += time.Duration(len(durs))
+					totalaffected += time.Duration(len(durs)) * avgWrites[k]
+				}
 			}
+			if affected > 0 {
+				fmt.Fprintf(of, "Mean latency for writes with more than %d acceses is: %v\n", normal, (totalaffected / affected))
+				nwavg := 3300 * time.Microsecond
+				if normal == 4 {
+					nwavg = 5700 * time.Microsecond
+				}
 
-			fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
-		}*/
+				fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
+			}*/
 	}
 
 	if len(reconfe) > 0 {
@@ -245,30 +245,27 @@ func main() {
 		fmt.Fprintf(of, "In total: %d reconfigurations\n", number)
 	}
 
-
 	if len(tupute) > 0 {
-		
+
 		tupute = combineTPut(tupute)
 		fmt.Fprintf(of, "Throuputs: %d measurepoints.", len(tupute))
 		PrintTputsAndReconfs(tupute, reconfe, of)
 	}
 
-
 }
 
-
 func sortLatencies(events []e.Event) (reade, writee, reconfe, tupute []e.Event) {
-	reade = make([]e.Event,0,100)
-	writee = make([]e.Event,0,100)
-	reconfe = make([]e.Event,0,100)
-	tupute = make([]e.Event,0,100)
-	
+	reade = make([]e.Event, 0, 100)
+	writee = make([]e.Event, 0, 100)
+	reconfe = make([]e.Event, 0, 100)
+	tupute = make([]e.Event, 0, 100)
+
 	for _, evt := range events {
 		if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
 			fmt.Printf("Discarding event %v.\n", evt)
 			continue
 		}
-	
+
 		switch evt.Type {
 		case e.ClientReadLatency:
 			reade = append(reade, evt)
@@ -283,7 +280,6 @@ func sortLatencies(events []e.Event) (reade, writee, reconfe, tupute []e.Event) 
 	return
 }
 
-
 func makeMap(events []e.Event) (dmap map[uint64][]time.Duration) {
 	dmap = make(map[uint64][]time.Duration, 0)
 	for _, evt := range events {
@@ -295,7 +291,6 @@ func makeMap(events []e.Event) (dmap map[uint64][]time.Duration) {
 	}
 	return
 }
-
 
 func computeAverageDurations(durs map[uint64][]time.Duration) map[uint64]time.Duration {
 	if durs == nil {
@@ -351,16 +346,15 @@ func MeanDuration(v ...time.Duration) time.Duration {
 
 type evtarr []e.Event
 
-func (a evtarr) Len() int { return len(a)}
+func (a evtarr) Len() int           { return len(a) }
 func (a evtarr) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a evtarr) Less(i, j int) bool { return a[i].Time.Before(a[j].Time) }
-
 
 func combineTPut(events []e.Event) (tputs []e.Event) {
 	if len(events) == 0 {
 		return nil
 	}
-	
+
 	evts := evtarr(events)
 	sort.Sort(evts)
 	tputs = []e.Event{events[0]}
@@ -368,9 +362,9 @@ func combineTPut(events []e.Event) (tputs []e.Event) {
 		if events[i].Type != e.ThroughputSample {
 			return nil
 		}
-		
-		if events[i].Time.Sub(tputs[len(tputs)-1].Time) < 100 * time.Millisecond {
-			tputs[len(tputs) - 1].Value += events[i].Value
+
+		if events[i].Time.Sub(tputs[len(tputs)-1].Time) < 100*time.Millisecond {
+			tputs[len(tputs)-1].Value += events[i].Value
 		} else {
 			tputs = append(tputs, events[i])
 		}
@@ -381,13 +375,12 @@ func combineTPut(events []e.Event) (tputs []e.Event) {
 func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 	rar := evtarr(reconfe)
 	sort.Sort(rar)
-	
-	
+
 	i := 0
 	for _, tput := range tpute {
 		count := 0
-		for_rec:
-		for ; i < len(reconfe); {
+	for_rec:
+		for i < len(reconfe) {
 			if reconfe[i].Time.Before(tput.Time) {
 				count++
 				i++
@@ -396,6 +389,6 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 			}
 		}
 		fmt.Fprintf(of, "Initialized %d reconfigurations before:\n", count)
-		fmt.Fprintf(of, "%v", tput)
+		fmt.Fprintf(of, "%v\n", tput)
 	}
 }

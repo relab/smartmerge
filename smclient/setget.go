@@ -8,7 +8,7 @@ import (
 
 func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 	cur := 0
-	var rid []uint32
+	var rid []int
 	for i := 0; i < len(smc.Blueps); i++ {
 		if i < cur {
 			continue
@@ -64,7 +64,7 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 
 func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 	cur := 0
-	var rid []uint32
+	var rid []int
 	for i := 0; i < len(smc.Blueps); i++ {
 		if i < cur {
 			continue

@@ -1,11 +1,11 @@
 package proto
 
-func Union(A, B []uint32) (C []uint32) {
+func Union(A, B []int) (C []int) {
 	return union(A, B)
 }
 
-func union(A, B []uint32) (C []uint32) {
-	C = make([]uint32, len(A))
+func union(A, B []int) (C []int) {
+	C = make([]int, len(A))
 	copy(C, A)
 	for _, id := range B {
 		copy := true
@@ -22,6 +22,7 @@ func union(A, B []uint32) (C []uint32) {
 	return C
 }
 
+// I think this can be removed. Is not used.
 func Intersection(A, B []uint32) (C []uint32) {
 	C = make([]uint32, 0, len(A))
 	for _, id := range A {
@@ -35,11 +36,11 @@ func Intersection(A, B []uint32) (C []uint32) {
 	return C
 }
 
-func Difference(A, B []uint32) (C []uint32) {
+func Difference(A, B []int) (C []int) {
 	return difference(A, B)
 }
-func difference(A, B []uint32) (C []uint32) {
-	C = make([]uint32, 0, len(A))
+func difference(A, B []int) (C []int) {
+	C = make([]int, 0, len(A))
 	for _, id := range A {
 		copy := true
 		for _, id2 := range B {

@@ -17,10 +17,18 @@ func (c *Configuration) MaxQuorum() int {
 
 func (m *Manager) GetErrors() map[uint32]error {
 	err := make(map[uint32]error, len(m.machines))
-	for id, ma := range m.machines {
+	for _, ma := range m.machines {
 		if ma.lastErr != nil {
-			err[id] = ma.lastErr
+			err[ma.gid] = ma.lastErr
 		}
 	}
 	return err
+}
+
+func (m *Manager) ToIds(gids []uint32) (ids []int) {
+	ids = make([]int,len(gids))
+	for i, gid := range gids {
+		ids[i] = m.machineGidToID[gid]
+	}
+	return ids
 }

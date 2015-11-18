@@ -38,8 +38,8 @@ func (smc *SmClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular bool
 
 	cur := 0
 	las := new(pb.Blueprint)
-	var wid []uint32 // Did already write to these processes.
-	var rid []uint32 // Did already read from these processes.
+	var wid []int // Did already write to these processes.
+	var rid []int // Did already read from these processes.
 
 forconfiguration:
 	for i := 0; i < len(smc.Blueps); i++ {
@@ -159,7 +159,7 @@ forconfiguration:
 
 func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err error) {
 	cur := 0
-	var rid []uint32
+	var rid []int
 	prop = prop.Merge(smc.Blueps[0])
 	for i := 0; i < len(smc.Blueps); i++ {
 		if i < cur {
@@ -221,7 +221,7 @@ func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Bluep
 	return prop, cnt, nil
 }
 
-func (smc *SmClient) Doread(cp conf.Provider, curin, i int, rid []uint32) (st *pb.State, cur, cnt int, err error) {
+func (smc *SmClient) Doread(cp conf.Provider, curin, i int, rid []int) (st *pb.State, cur, cnt int, err error) {
 	cnf := cp.ReadC(smc.Blueps[i], rid)
 
 	read := new(pb.AReadSReply)

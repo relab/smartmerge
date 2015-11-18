@@ -13,8 +13,8 @@ var TryTimeout = 10 * time.Millisecond
 
 type Provider interface {
 	FullC(*pb.Blueprint) *pb.Configuration
-	ReadC(*pb.Blueprint, []uint32) *pb.Configuration
-	WriteC(*pb.Blueprint, []uint32) *pb.Configuration
+	ReadC(*pb.Blueprint, []int) *pb.Configuration
+	WriteC(*pb.Blueprint, []int) *pb.Configuration
 }
 
 type ThriftyNorecConfP struct {
@@ -26,12 +26,12 @@ func NewProvider(mgr *pb.Manager, id int) *ThriftyNorecConfP {
 	return &ThriftyNorecConfP{mgr, id}
 }
 
-func (cp *ThriftyNorecConfP) chooseQ(ids []uint32, q int) (quorum []uint32) {
+func (cp *ThriftyNorecConfP) chooseQ(ids []int, q int) (quorum []int) {
 	if q > len(ids) {
 		glog.Fatalf("Trying to choose %d nodes, out of %d\n", q, len(ids))
 	}
 
-	quorum = make([]uint32, q)
+	quorum = make([]int, q)
 	start := cp.id % len(ids)
 	if start+q <= len(ids) {
 		copy(quorum, ids[start:])
@@ -42,8 +42,8 @@ func (cp *ThriftyNorecConfP) chooseQ(ids []uint32, q int) (quorum []uint32) {
 	return quorum
 }
 
-func (cp *ThriftyNorecConfP) ReadC(blp *pb.Blueprint, rids []uint32) *pb.Configuration {
-	cids := blp.Ids()
+func (cp *ThriftyNorecConfP) ReadC(blp *pb.Blueprint, rids []int) *pb.Configuration {
+	cids := cp.mgr.ToIds(blp.Ids())
 	rq := len(cids) - blp.Quorum() + 1 //read quorum
 	newcids := pb.Difference(cids, rids)
 
@@ -65,8 +65,8 @@ func (cp *ThriftyNorecConfP) ReadC(blp *pb.Blueprint, rids []uint32) *pb.Configu
 	return cnf
 }
 
-func (cp *ThriftyNorecConfP) WriteC(blp *pb.Blueprint, rids []uint32) *pb.Configuration {
-	cids := blp.Ids()
+func (cp *ThriftyNorecConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configuration {
+	cids := cp.mgr.ToIds(blp.Ids())
 	q := blp.Quorum()
 	newcids := pb.Difference(cids, rids)
 
@@ -87,7 +87,7 @@ func (cp *ThriftyNorecConfP) WriteC(blp *pb.Blueprint, rids []uint32) *pb.Config
 }
 
 func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
-	cids := blp.Ids()
+	cids := cp.mgr.ToIds(blp.Ids())
 	q := blp.Quorum()
 
 	cnf, err := cp.mgr.NewConfiguration(cids, q, ConfTimeout)

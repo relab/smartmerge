@@ -8,10 +8,10 @@ type ThriftyConfP struct {
 	Provider
 }
 
-func (cp *ThriftyConfP) ReadC(blp *pb.Blueprint, rids []uint32) *pb.Configuration {
+func (cp *ThriftyConfP) ReadC(blp *pb.Blueprint, rids []int) *pb.Configuration {
 	return cp.Provider.ReadC(blp, nil)
 }
 
-func (cp *ThriftyConfP) WriteC(blp *pb.Blueprint, rids []uint32) *pb.Configuration {
+func (cp *ThriftyConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configuration {
 	return cp.Provider.WriteC(blp, nil)
 }

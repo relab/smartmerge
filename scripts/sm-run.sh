@@ -2,13 +2,14 @@
 
 #Arguements: $1: reader optimization $2:alg  $3: number of removals, $4: more reader option, e.g. -regular, 
 
-if [ $1 == "help" ]; then
+if [ "$1" == "help" ]; then
 	echo Arguments:
-	echo "1 reader optimization: no | doreconf | norecontact"
+	echo "1 reader optimization: no | doreconf"
 	echo "2 alg: sm | cons"
-	echo "3 reconfiguration: -rm -add -cont"
-	echo "4 number of reconfiguration clients"
-	echo "5 more reader options, e.g. -regular | -logThroughput"
+	echo "3 cprov: normal | thrifty | norecontact"
+	echo "4 reconfiguration: -rm -add -cont"
+	echo "5 number of reconfiguration clients"
+	echo "6 more reader options, e.g. -regular | -logThroughput"
 	exit
 fi
 
@@ -34,14 +35,25 @@ echo starting servers on
 for Pi in ${SERVS[@]}
 do
 
-if [ "$2" == "sm" -o "$1" == "norecontact" ]; then
+if [ "$3" == "norecontact" ]; then
+
+	echo -n "sm-pitter$Pi "
+	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -no-abort -v=6  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -no-abort -v=6  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+
+
+elif [ "$2" == "sm" ]; then
+
 	echo -n "sm-pitter$Pi "
 	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -v=6  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
 	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -v=6  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+
 else
+
 	echo -n "c-pitter$Pi "
 	ssh pitter"$Pi" "nohup $SM/server/server -alg=cons -port 13000 -v=6  -log_dir='/local/scratch/ljehl' > /dev/null 2>&1 &"
 	ssh pitter"$Pi" "nohup $SM/server/server -alg=cons -port 12000 -v=6  -log_dir='/local/scratch/ljehl' > /dev/null 2>&1 &"
+
 fi
 done
 
@@ -57,7 +69,7 @@ echo starting Readers on
 for Pi in ${READS[@]}
 do
 	echo -n "pitter$Pi "
-ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -opt=$1 $5 -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
+ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -opt=$1 -cprov=$3 $6 -mode=bench -contR -nclients=1 -id='$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi'$Pi' 2>&1 &"
 
 #ssh pitter"$Pi" "nohup $SM/client/client -conf $SM/scripts/newList -alg=sm -opt=$1 $3 -mode=bench -contR -gc-off -nclients=1 -id='1$Pi' -initsize=100 -log_events -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/rlogpi1'$Pi' 2>&1 &"
 done
@@ -67,9 +79,9 @@ echo " "
 sleep 1
 
 
-if ! [ "$3" == "" ]; then
+if ! [ "$4" == "" ]; then
 	echo starting Reconfigurers
-	nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=exp $3 -nclients="$4" -initsize=100 -elog -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &
+	nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=exp $4 -nclients="$5" -initsize=100 -elog -v=6 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &
 else
 	echo no reconfiguration, waiting 10 seconds
 	sleep 10

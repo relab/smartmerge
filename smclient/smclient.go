@@ -2,60 +2,48 @@ package smclient
 
 import (
 	"errors"
-	"time"
 
 	"github.com/golang/glog"
 
+	confP "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
 )
 
-var ConfTimeout = 1 * time.Second
-var TryTimeout = 10 * time.Millisecond
-var MinSize = 3
+const Retry = 1
+const MinSize = 3
 
 type SmClient struct {
 	Blueps   []*pb.Blueprint
-	Confs    []*pb.Configuration
-	curRead  *pb.Configuration
-	curWrite *pb.Configuration
-	mgr      *pb.Manager
-	ID       uint32
-	doCons   bool
+	Id		 uint32
 }
 
-func New(initBlp *pb.Blueprint, mgr *pb.Manager, id uint32, cons bool) (*SmClient, error) {
-	conf, err := mgr.NewConfiguration(initBlp.Ids(), initBlp.Quorum(), ConfTimeout)
-	if err != nil {
-		return nil, err
-	}
+func New(initBlp *pb.Blueprint, id uint32, cp confP.ConfigProvider) (*SmClient, error) {
+	cnf := cp.FullC(initBlp)
 
 	glog.Infof("New Client with Id: %d\n", id)
 
-	_, err = conf.SetCur(&pb.NewCur{initBlp, uint32(initBlp.Len())})
+	_, err := cnf.SetCur(&pb.NewCur{initBlp, uint32(initBlp.Len())})
 	if err != nil {
 		glog.Errorln("initial SetCur returned error: ", err)
 		return nil, errors.New("Initial SetCur failed.")
 	}
 	return &SmClient{
 		Blueps: []*pb.Blueprint{initBlp},
-		Confs:  []*pb.Configuration{conf},
-		mgr:    mgr,
-		ID:     id,
-		doCons: cons,
+		Id:     id,
 	}, nil
 }
 
 //Atomic read
-func (smc *SmClient) Read() (val []byte, cnt int) {
+func (smc *SmClient) Read(cp confP.ConfigProvider) (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting Read")
 	}
-	rs, cnt := smc.get()
+	rs, cnt := smc.get(cp)
 	if rs == nil {
 		return nil, cnt
 	}
 
-	mcnt := smc.set(rs)
+	mcnt := smc.set(cp, rs)
 
 	if glog.V(3) {
 		if cnt > 1 {
@@ -69,11 +57,11 @@ func (smc *SmClient) Read() (val []byte, cnt int) {
 }
 
 //Regular read
-func (smc *SmClient) RRead() (val []byte, cnt int) {
+func (smc *SmClient) RRead(cp confP.ConfigProvider) (val []byte, cnt int) {
 	if glog.V(5) {
 		glog.Infoln("starting regular Read")
 	}
-	rs, cnt := smc.get()
+	rs, cnt := smc.get(cp)
 	if rs == nil {
 		return nil, cnt
 	}
@@ -85,22 +73,17 @@ func (smc *SmClient) RRead() (val []byte, cnt int) {
 	return rs.Value, cnt
 }
 
-func (smc *SmClient) Write(val []byte) int {
+func (smc *SmClient) Write(cp confP.ConfigProvider, val []byte) int {
 	if glog.V(5) {
 		glog.Infoln("starting Write")
 	}
-	rs, cnt := smc.get()
+	rs, cnt := smc.get(cp)
 	if rs == nil && cnt == 0 {
 		return 0
 	}
-	if rs == nil {
-		rs = &pb.State{Value: val, Timestamp: 1, Writer: smc.ID}
-	} else {
-		rs.Value = val
-		rs.Timestamp++
-		rs.Writer = smc.ID
-	}
-	mcnt := smc.set(rs)
+	rs = smc.WriteValue(&val, rs)
+	
+	mcnt := smc.set(cp, rs)
 	if glog.V(3) {
 		if cnt > 1 {
 			glog.Infof("get used %d accesses\n", cnt)
@@ -112,9 +95,23 @@ func (smc *SmClient) Write(val []byte) int {
 	return cnt + mcnt
 }
 
-// We should probably only return a copy.
-func (smc *SmClient) GetCur() *pb.Blueprint {
-	smc.set(nil)
-	b := smc.Blueps[0].Copy()
-	return b
+// Given a state returned from a regular read, and a value to be written,
+// getWriteValue finds the correct state to write. 
+// The value is passed by pointer, and set to nil, to avoid reseting the write value.
+func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {
+	if val == nil || *val == nil {
+		return st
+	}
+	if st == nil {
+		return &pb.State{Value: *val, Timestamp: 1, Writer: smc.Id}
+	}
+	st = &pb.State{Value: *val, Timestamp: st.Timestamp + 1, Writer: smc.Id}
+	*val = nil
+	return st
 }
+
+func (smc *SmClient) GetCur(cp confP.ConfigProvider) *pb.Blueprint {
+	smc.set(cp, nil)
+	return smc.Blueps[0].Copy()
+}
+

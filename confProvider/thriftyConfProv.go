@@ -13,6 +13,5 @@ func (cp *ThriftyConfP) ReadC(blp *pb.Blueprint, rids []uint32) *pb.Configuratio
 }
 
 func (cp *ThriftyConfP) WriteC(blp *pb.Blueprint, rids []uint32) *pb.Configuration {
-		return cp.Provider.WriteC(blp, nil)
+	return cp.Provider.WriteC(blp, nil)
 }
-

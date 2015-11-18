@@ -19,14 +19,14 @@ import (
 	"github.com/relab/goxos/kvs/bgen"
 	//"github.com/relab/smartMerge/consclient"
 	//"github.com/relab/smartMerge/dynaclient"
+	conf "github.com/relab/smartMerge/confProvider"
+	cc "github.com/relab/smartMerge/consclient"
+	"github.com/relab/smartMerge/doreconf"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
 	qf "github.com/relab/smartMerge/qfuncs"
 	smc "github.com/relab/smartMerge/smclient"
-	cc "github.com/relab/smartMerge/consclient"
-	"github.com/relab/smartMerge/doreconf"
-	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/util"
 	grpc "google.golang.org/grpc"
 )
@@ -235,7 +235,6 @@ func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.M
 	}
 	return
 }
-
 
 func NewClient(initB *pb.Blueprint, alg string, opt string, id int, cp conf.Provider) (cl RWRer, err error) {
 	switch alg {

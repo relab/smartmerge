@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
+	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
-	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -80,7 +80,7 @@ func usermain() {
 			fmt.Print("Insert string to write: ")
 			fmt.Scanln(&str)
 			reqsent := time.Now()
-			cnt := client.Write(cp,[]byte(str))
+			cnt := client.Write(cp, []byte(str))
 			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			fmt.Printf("Did %d accesses.\n", cnt)
 		case 3:
@@ -92,14 +92,14 @@ func usermain() {
 			fmt.Printf("Has %d bytes.\n", len(bytes))
 			fmt.Printf("Did %d accesses.\n", cnt)
 		case 4:
-			handleReconf(client,cp, ids)
+			handleReconf(client, cp, ids)
 		case 5:
 			var size, writes int
 			fmt.Println("Enter size:")
 			fmt.Scanln(&size)
 			fmt.Println("Enter writes:")
 			fmt.Scanln(&writes)
-			doWrites(client,cp, size, writes, nil)
+			doWrites(client, cp, size, writes, nil)
 		default:
 			return
 		}
@@ -139,7 +139,7 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 
 		fmt.Println("Starting reconfiguration with target ", target)
 		reqsent := time.Now()
-		cnt, err := c.Reconf(cp,target)
+		cnt, err := c.Reconf(cp, target)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 		if err != nil {
 			fmt.Println("Reconf returned error: ", err)
@@ -167,7 +167,7 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 		}
 
 		reqsent := time.Now()
-		cnt, err := c.Reconf(cp,target)
+		cnt, err := c.Reconf(cp, target)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 		if err != nil {

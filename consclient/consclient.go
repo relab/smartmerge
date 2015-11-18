@@ -3,8 +3,8 @@ package consclient
 import (
 	"github.com/golang/glog"
 
-	pb "github.com/relab/smartMerge/proto"
 	conf "github.com/relab/smartMerge/confProvider"
+	pb "github.com/relab/smartMerge/proto"
 	smc "github.com/relab/smartMerge/smclient"
 )
 
@@ -19,7 +19,6 @@ func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*ConsClient, error
 	}
 	return &ConsClient{c}, nil
 }
-	
 
 func (cc *ConsClient) Reconf(cp conf.Provider, prop *pb.Blueprint) (cnt int, err error) {
 	//Proposed blueprint is already in place, or outdated.

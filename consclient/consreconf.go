@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	pb "github.com/relab/smartMerge/proto"
 	conf "github.com/relab/smartMerge/confProvider"
+	pb "github.com/relab/smartMerge/proto"
 	smc "github.com/relab/smartMerge/smclient"
 )
 
@@ -49,9 +49,9 @@ forconfiguration:
 				return nil, 0, err
 			}
 			if i+1 < len(cc.Blueps) {
-				next = cc.Blueps[i + 1]
+				next = cc.Blueps[i+1]
 			}
-			cnt =+ c
+			cnt = +c
 			if rst.Compare(st) == 1 {
 				rst = st
 			}
@@ -156,7 +156,7 @@ func (cc *ConsClient) getconsensus(cp conf.Provider, i int, prop *pb.Blueprint) 
 	ms := 1 * time.Millisecond
 	rnd := cc.Id
 	// The 24 higher bits of rnd (uint32) are a counter, the lower 8 bits the client id. Should separate the two in the future, to simplify things
-	
+
 prepare:
 	for {
 		//Send Prepare:
@@ -167,7 +167,7 @@ prepare:
 		for j := 0; ; j++ {
 			promise, err = cnf.GetPromise(&pb.Prepare{
 				CurC: uint32(cc.Blueps[i].Len()),
-				Rnd: rnd})
+				Rnd:  rnd})
 			if err != nil && j == 0 {
 				glog.Errorf("C%d: error from Optimized Prepare: %v\n", cc.Id, err)
 				//Try again with full configuration.
@@ -177,7 +177,7 @@ prepare:
 
 			if err != nil && j == smc.Retry {
 				glog.Errorf("C%d: error %v from Prepare after %d retries.\n", cc.Id, err, smc.Retry)
-				return nil, 0,0,err
+				return nil, 0, 0, err
 			}
 
 			if err == nil {
@@ -221,7 +221,7 @@ prepare:
 			if glog.V(3) {
 				glog.Infof("C%d: Conflict, sleeping %v.\n", cc.Id, ms)
 			}
-			
+
 			//The below would be more clear, if we either implement it with a bitshift, or separate the counter, and the id.
 			if rrid := rrnd % 256; rrid < cc.Id {
 				rnd = rrnd - rrid + cc.Id
@@ -240,8 +240,8 @@ prepare:
 
 		for j := 0; ; j++ {
 			learn, err = cnf.Accept(&pb.Propose{
-				CurC: uint32(cc.Blueps[i].Len()), 
-				Val: &pb.CV{rnd, next},
+				CurC: uint32(cc.Blueps[i].Len()),
+				Val:  &pb.CV{rnd, next},
 			})
 			if err != nil && j == 0 {
 				glog.Errorf("C%d: error from OptimizedAccept: %v\n", cc.Id, err)
@@ -258,7 +258,7 @@ prepare:
 				break
 			}
 		}
-			
+
 		cur = cc.HandleOneCur(cur, learn.Reply.GetCur())
 		if i < cur {
 			glog.V(3).Infof("C%d: Accept returned new current conf.\n", cc.Id)

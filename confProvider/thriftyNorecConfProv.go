@@ -19,7 +19,7 @@ type Provider interface {
 
 type ThriftyNorecConfP struct {
 	mgr *pb.Manager
-	id 	int
+	id  int
 }
 
 func NewProvider(mgr *pb.Manager, id int) *ThriftyNorecConfP {

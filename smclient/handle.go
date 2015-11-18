@@ -2,7 +2,7 @@ package smclient
 
 import (
 	"github.com/golang/glog"
-		
+
 	pb "github.com/relab/smartMerge/proto"
 )
 
@@ -14,7 +14,7 @@ func (smc *SmClient) SetNewCur(cur int) {
 	if cur == 0 {
 		return
 	}
-	
+
 	smc.Blueps = smc.Blueps[cur:]
 }
 

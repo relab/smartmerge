@@ -13,8 +13,8 @@ const Retry = 1
 const MinSize = 3
 
 type SmClient struct {
-	Blueps   []*pb.Blueprint
-	Id		 uint32
+	Blueps []*pb.Blueprint
+	Id     uint32
 }
 
 func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*SmClient, error) {
@@ -82,7 +82,7 @@ func (smc *SmClient) Write(cp conf.Provider, val []byte) int {
 		return 0
 	}
 	rs = smc.WriteValue(&val, rs)
-	
+
 	mcnt := smc.set(cp, rs)
 	if glog.V(3) {
 		if cnt > 1 {
@@ -96,7 +96,7 @@ func (smc *SmClient) Write(cp conf.Provider, val []byte) int {
 }
 
 // Given a state returned from a regular read, and a value to be written,
-// getWriteValue finds the correct state to write. 
+// getWriteValue finds the correct state to write.
 // The value is passed by pointer, and set to nil, to avoid reseting the write value.
 func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {
 	if val == nil || *val == nil {
@@ -114,4 +114,3 @@ func (smc *SmClient) GetCur(cp conf.Provider) *pb.Blueprint {
 	smc.set(cp, nil)
 	return smc.Blueps[0].Copy()
 }
-

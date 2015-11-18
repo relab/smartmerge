@@ -2,8 +2,8 @@ package smclient
 
 import (
 	"github.com/golang/glog"
-	pb "github.com/relab/smartMerge/proto"
 	conf "github.com/relab/smartMerge/confProvider"
+	pb "github.com/relab/smartMerge/proto"
 )
 
 func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {

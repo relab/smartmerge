@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
-	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/util"
 )
 
@@ -62,14 +62,14 @@ func expmain() {
 		switch {
 		case *cont:
 			if i%2 == 0 {
-				go contremove(cl,cp, ids, syncchan, (*clientid)+(i/2), &wg)
+				go contremove(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			} else {
-				go contadd(cl,cp, ids, syncchan, (*clientid)+(i/2), &wg)
+				go contadd(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			}
 		case *rm:
-			go remove(cl,cp, ids, syncchan, (*clientid)+i, &wg)
+			go remove(cl, cp, ids, syncchan, (*clientid)+i, &wg)
 		case *add:
-			go adds(cl,cp, ids, syncchan, *initsize+i, &wg)
+			go adds(cl, cp, ids, syncchan, *initsize+i, &wg)
 		}
 	}
 
@@ -143,7 +143,7 @@ func contadd(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, w
 			glog.V(4).Infoln("Could not add %v\n.", ids[i])
 		} else {
 			reqsent := time.Now()
-			cnt, err := c.Reconf(cp,target)
+			cnt, err := c.Reconf(cp, target)
 			if err == nil || cnt == 0 {
 				elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 			} else {
@@ -200,7 +200,7 @@ func adds(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *
 	<-sc
 
 	reqsent := time.Now()
-	cnt, err := c.Reconf(cp,target)
+	cnt, err := c.Reconf(cp, target)
 	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 	if err != nil {

@@ -4,9 +4,8 @@ import (
 	"errors"
 
 	"github.com/golang/glog"
-	pb "github.com/relab/smartMerge/proto"
 	conf "github.com/relab/smartMerge/confProvider"
-	
+	pb "github.com/relab/smartMerge/proto"
 )
 
 func (smc *SmClient) Reconf(cp conf.Provider, prop *pb.Blueprint) (cnt int, err error) {
@@ -67,7 +66,7 @@ forconfiguration:
 					continue forconfiguration
 				}
 			}
-			prop = smc.Blueps[len(smc.Blueps) - 1]
+			prop = smc.Blueps[len(smc.Blueps)-1]
 			wid = nil // Empty rid on new Write Value.
 		}
 
@@ -170,7 +169,6 @@ func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Bluep
 		cnf := cp.WriteC(smc.Blueps[i], rid)
 
 		laProp := new(pb.LAPropReply)
-		var err error
 
 		for j := 0; cnf != nil; j++ {
 			laProp, err = cnf.LAProp(&pb.LAProposal{

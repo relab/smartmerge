@@ -12,6 +12,5 @@ func (cp *NormalConfP) ReadC(blp *pb.Blueprint, rids []uint32) *pb.Configuration
 }
 
 func (cp *NormalConfP) WriteC(blp *pb.Blueprint, rids []uint32) *pb.Configuration {
-		return cp.Provider.FullC(blp)
+	return cp.Provider.FullC(blp)
 }
-

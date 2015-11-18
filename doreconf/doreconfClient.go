@@ -2,15 +2,15 @@ package doreconf
 
 import (
 	"github.com/golang/glog"
-	pb "github.com/relab/smartMerge/proto"
 	conf "github.com/relab/smartMerge/confProvider"
-	smc "github.com/relab/smartMerge/smclient"
 	cc "github.com/relab/smartMerge/consclient"
+	pb "github.com/relab/smartMerge/proto"
+	smc "github.com/relab/smartMerge/smclient"
 )
 
 type Reconfer interface {
 	Doreconf(conf.Provider, *pb.Blueprint, bool, []byte) (*pb.State, int, error)
-	Reconf(conf.Provider, *pb.Blueprint) (int, error) 
+	Reconf(conf.Provider, *pb.Blueprint) (int, error)
 	GetCur(conf.Provider) *pb.Blueprint
 }
 
@@ -21,25 +21,24 @@ type DoreconfClient struct {
 func NewSM(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
 
 	rec, err := smc.New(initBlp, id, cp)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &DoreconfClient{rec}, nil
 }
 
 func NewCons(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
 
 	rec, err := cc.New(initBlp, id, cp)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &DoreconfClient{rec}, nil
 }
-
 
 //Atomic read
 func (drc *DoreconfClient) Read(cp conf.Provider) (val []byte, cnt int) {

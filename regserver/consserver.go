@@ -12,16 +12,33 @@ type ConsServer struct {
 	*RegServer
 }
 
-func NewConsServer() *ConsServer {
+func NewConsServer(noabort bool) *ConsServer {
 	return &ConsServer{
-		NewRegServer(),
+		NewRegServer(noabort),
 	}
 }
 
-func NewConsServerWithCur(cur *pb.Blueprint, curc uint32) *ConsServer {
+func NewConsServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *ConsServer {
 	return &ConsServer{
-		NewRegServerWithCur(cur, curc),
+		NewRegServerWithCur(cur, curc, noabort),
 	}
+}
+
+func (cs *ConsServer) handleConf(conf *pb.Conf) (cr *pb.ConfReply) {
+	if conf == nil || (conf.This < cs.CurC && !cs.noabort) {
+		//The client is using an outdated configuration, abort.
+		return &pb.ConfReply{Cur: cs.Cur, Abort: false}
+	}
+
+	if conf.Cur < cs.CurC {
+		// Inform the client of the new current configuration
+		return &pb.ConfReply{Cur: cs.Cur, Abort: false, Next: []*pb.Blueprint{cs.NextMap[conf.This]}}
+	}
+	if n:= cs.NextMap[conf.This]; n != nil {
+		// Inform the client of the next configurations
+		return &pb.ConfReply{Next: []*pb.Blueprint{n}}
+	}
+	return nil
 }
 
 func (cs *ConsServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
@@ -29,45 +46,23 @@ func (cs *ConsServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, e
 	defer cs.RUnlock()
 	glog.V(5).Infoln("Handling ReadS")
 
-	if rr.This < cs.CurC {
-		// The client is in an outdated configuration.
-		return &pb.ReadReply{State: nil, Cur: &pb.ConfReply{cs.Cur, true}, Next: nil}, nil
+	cr := cs.handleConf(rr)
+	if cr != nil && cr.Abort {
+		return &pb.ReadReply{Cur: cr}, nil
 	}
 
-	var next []*pb.Blueprint
-	if cs.NextMap[rr.This] != nil {
-		next = []*pb.Blueprint{cs.NextMap[rr.This]}
-	}
-
-	if rr.Cur < cs.CurC {
-		return &pb.ReadReply{State: cs.RState, Cur: &pb.ConfReply{cs.Cur, false}, Next: next}, nil
-	}
-
-	return &pb.ReadReply{State: cs.RState, Next: next}, nil
+	return &pb.ReadReply{State: cs.RState, Cur: cr}, nil
 }
 
-func (cs *ConsServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.WriteSReply, error) {
+func (cs *ConsServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply, error) {
 	cs.Lock()
 	defer cs.Unlock()
 	glog.V(5).Infoln("Handling WriteS")
-	if cs.RState.Compare(wr.State) == 1 {
-		cs.RState = wr.State
+	if cs.RState.Compare(wr.GetState()) == 1 {
+		cs.RState = wr.GetState()
 	}
 
-	if wr.Conf.This < cs.CurC {
-		// The client is in an outdated configuration.
-		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.Cur, true}}, nil
-	}
-
-	var next []*pb.Blueprint
-	if cs.NextMap[wr.Conf.This] != nil {
-		next = []*pb.Blueprint{cs.NextMap[wr.Conf.This]}
-	}
-
-	if wr.Conf.Cur < cs.CurC {
-		return &pb.WriteSReply{Cur: &pb.ConfReply{cs.Cur, false}, Next: next}, nil
-	}
-	return &pb.WriteSReply{Next: next}, nil
+	return cs.handleConf(wr.GetConf()), nil
 }
 
 func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNReply, error) {
@@ -75,18 +70,16 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 	defer cs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	if wr.CurC < cs.CurC {
-		return &pb.WriteNReply{Cur: cs.Cur}, nil
+	cr := cs.handleConf(&pb.Conf{wr.CurC, wr.CurC})
+	if cr != nil && cr.Abort {
+		return &pb.WriteNReply{Cur: cr}, nil
 	}
 
 	cs.NextMap[wr.CurC] = wr.Next
-	var next []*pb.Blueprint
-	if wr.Next != nil {
-		next = []*pb.Blueprint{wr.Next}
-	}
 
-	return &pb.WriteNReply{State: cs.RState, Next: next}, nil
+	return &pb.WriteNReply{Cur: cr, State: cs.RState, LAState: cs.LAState}, nil
 }
+
 
 func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
 	cs.Lock()
@@ -109,6 +102,12 @@ func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewSta
 		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
 		cs.Cur = ns.Cur
 		cs.CurC = ns.CurC
+		for nc, _ := range cs.NextMap {
+			if nc < cs.CurC {
+				delete(cs.NextMap, nc)
+			}
+		}
+
 	}
 
 	var next []*pb.Blueprint

@@ -7,3 +7,6 @@ elog/util/efmt/efmt
 # Logs
 *.elog
 *.prof
+
+# Other
+*.swp

@@ -19,6 +19,8 @@ var (
 	gcoff    = flag.Bool("gcoff", false, "turn garbage collection off.")
 	alg      = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
 	allCores = flag.Bool("all-cores", false, "use all available logical CPUs")
+
+	noabort    = flag.Bool("no-abort", false, "do not send aborting new-cur information.")
 )
 
 func main() {
@@ -38,11 +40,11 @@ func main() {
 	glog.Infoln("Starting Server with port: ", *port)
 	switch *alg {
 	case "", "sm":
-		_, err = regserver.StartAdv(*port)
+		_, err = regserver.StartAdv(*port, *noabort)
 	case "dyna":
 		_, err = regserver.StartDyna(*port)
 	case "cons":
-		_, err = regserver.StartCons(*port)
+		_, err = regserver.StartCons(*port, *noabort)
 	}
 
 	if err != nil {

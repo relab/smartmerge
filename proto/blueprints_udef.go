@@ -1,14 +1,12 @@
 package proto
 
-func Union(A, B []uint32) (C []uint32) {
+func Union(A, B []int) (C []int) {
 	return union(A, B)
 }
 
-func union(A, B []uint32) (C []uint32) {
-	C = make([]uint32, 0, len(A))
-	for _, id := range A {
-		C = append(C, id)
-	}
+func union(A, B []int) (C []int) {
+	C = make([]int, len(A))
+	copy(C, A)
 	for _, id := range B {
 		copy := true
 		for _, id2 := range A {
@@ -24,6 +22,7 @@ func union(A, B []uint32) (C []uint32) {
 	return C
 }
 
+// I think this can be removed. Is not used.
 func Intersection(A, B []uint32) (C []uint32) {
 	C = make([]uint32, 0, len(A))
 	for _, id := range A {
@@ -37,11 +36,11 @@ func Intersection(A, B []uint32) (C []uint32) {
 	return C
 }
 
-func Difference(A, B []uint32) (C []uint32) {
+func Difference(A, B []int) (C []int) {
 	return difference(A, B)
 }
-func difference(A, B []uint32) (C []uint32) {
-	C = make([]uint32, 0, len(A))
+func difference(A, B []int) (C []int) {
+	C = make([]int, 0, len(A))
 	for _, id := range A {
 		copy := true
 		for _, id2 := range B {
@@ -82,7 +81,9 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 	}
 	mbp = new(Blueprint)
 	mbp.Nodes = make([]*Node, len(bp.Nodes))
-	copy(mbp.Nodes, bp.Nodes)
+	for i,n := range bp.Nodes {
+		mbp.Nodes[i] = &Node{Id: n.Id, Version: n.Version}
+	}
 
 	for _, n := range blpr.Nodes {
 		found := false
@@ -98,7 +99,7 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 			}
 		}
 		if !found {
-			mbp.Nodes = append(mbp.Nodes, n)
+			mbp.Nodes = append(mbp.Nodes, &Node{Id: n.Id, Version: n.Version})
 		}
 	}
 
@@ -203,6 +204,7 @@ func (bp *Blueprint) Equals(blpr *Blueprint) bool {
 	return bp.Compare(blpr) == 1 && blpr.Compare(bp) == 1
 }
 
+// See Ids.
 func (bp *Blueprint) Len() int {
 	if bp == nil {
 		return 0
@@ -241,6 +243,9 @@ func (bp *Blueprint) LearnedEquals(blpr *Blueprint) bool {
 // Oups: Nodes with even version are part of the configuration, those with odd
 // 	version have been removed.
 func (bp *Blueprint) Ids() []uint32 {
+	if bp == nil {
+		return nil
+	}
 	ids := make([]uint32, 0, len(bp.Nodes))
 	for _, n := range bp.Nodes {
 		if n.Version%2 == 0 {

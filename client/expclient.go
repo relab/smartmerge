@@ -17,7 +17,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/relab/goxos/kvs/bgen"
-	//"github.com/relab/smartMerge/dynaclient"
+	dyna "github.com/relab/smartMerge/dynaclient"
 	conf "github.com/relab/smartMerge/confProvider"
 	cc "github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/doreconf"
@@ -141,6 +141,8 @@ func benchmain() {
 	}
 	initBlp.FaultTolerance = uint32(15)
 
+	checkFlags(*alg, *cprov, *opt)
+
 	var wg sync.WaitGroup
 
 	elog.Enable()
@@ -247,8 +249,7 @@ func NewClient(initB *pb.Blueprint, alg string, opt string, id int, cp conf.Prov
 			glog.Fatalf("optimization %v not supported.\n", opt)
 		}
 	case "dyna":
-		glog.Fatalln("this option is outdated and not updated to the new version.")
-		//cl, err = dynaclient.New(initB, mgr, uint32(id))
+		cl, err = dyna.New(initB, uint32(id), cp)
 	case "odyna":
 		glog.Fatalln("this option is outdated an not updated to the new version.")
 		//cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
@@ -429,4 +430,20 @@ func LogErrors(mgr *pb.Manager) {
 	}
 
 	return
+}
+
+func checkFlags(alg, cprov, opt string) {
+	if alg == "cons" && cprov == "norecontact" && opt == "doreconf" {
+		glog.Errorln("Unsupported flag combination. With alg=cons and doreconf, norecontact will result in no benefit.")
+	} else if alg == "cons" && cprov == "norecontact" {
+		glog.Warningln("To use norecontact with warning, the servers have to use alg=sm, not alg=cons")
+	}
+	if alg == "dyna" {
+		if opt == "doreconf" {
+			glog.Warningln("Doreconf is default for Dynastore algorithm.")
+		}
+		if cprov == "norecontact" {
+			glog.Warningln("Norecontact not supported in Dynastore algorithm.")
+		}
+	}
 }

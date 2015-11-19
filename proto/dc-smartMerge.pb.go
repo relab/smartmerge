@@ -19,26 +19,24 @@
 		Read
 		ReadReply
 		WriteS
-		AdvRead
-		AdvReadReply
-		AdvWriteS
-		AdvWriteSReply
 		WriteN
 		WriteNReply
 		LAProposal
 		LAReply
 		NewState
 		NewStateReply
-		DRead
-		DWriteN
-		DWriteNReply
-		GetOne
-		GetOneReply
 		CV
 		Prepare
 		Promise
 		Propose
 		Learn
+		GetOne
+		GetOneReply
+		DRead
+		DReadReply
+		DNewState
+		DWriteNs
+		DWriteNsReply
 */
 package proto
 
@@ -224,84 +222,6 @@ func (m *WriteS) GetConf() *Conf {
 	return nil
 }
 
-type AdvRead struct {
-	CurC uint32 `protobuf:"varint,1,opt,name=CurC,proto3" json:"CurC,omitempty"`
-}
-
-func (m *AdvRead) Reset()         { *m = AdvRead{} }
-func (m *AdvRead) String() string { return proto1.CompactTextString(m) }
-func (*AdvRead) ProtoMessage()    {}
-
-type AdvReadReply struct {
-	State *State       `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
-	Cur   *Blueprint   `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
-	Next  []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
-}
-
-func (m *AdvReadReply) Reset()         { *m = AdvReadReply{} }
-func (m *AdvReadReply) String() string { return proto1.CompactTextString(m) }
-func (*AdvReadReply) ProtoMessage()    {}
-
-func (m *AdvReadReply) GetState() *State {
-	if m != nil {
-		return m.State
-	}
-	return nil
-}
-
-func (m *AdvReadReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-func (m *AdvReadReply) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
-	}
-	return nil
-}
-
-type AdvWriteS struct {
-	State *State `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
-	CurC  uint32 `protobuf:"varint,2,opt,name=CurC,proto3" json:"CurC,omitempty"`
-}
-
-func (m *AdvWriteS) Reset()         { *m = AdvWriteS{} }
-func (m *AdvWriteS) String() string { return proto1.CompactTextString(m) }
-func (*AdvWriteS) ProtoMessage()    {}
-
-func (m *AdvWriteS) GetState() *State {
-	if m != nil {
-		return m.State
-	}
-	return nil
-}
-
-type AdvWriteSReply struct {
-	Cur  *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
-}
-
-func (m *AdvWriteSReply) Reset()         { *m = AdvWriteSReply{} }
-func (m *AdvWriteSReply) String() string { return proto1.CompactTextString(m) }
-func (*AdvWriteSReply) ProtoMessage()    {}
-
-func (m *AdvWriteSReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-func (m *AdvWriteSReply) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
-	}
-	return nil
-}
-
 type WriteN struct {
 	CurC uint32     `protobuf:"varint,1,opt,name=CurC,proto3" json:"CurC,omitempty"`
 	Next *Blueprint `protobuf:"bytes,2,opt,name=Next" json:"Next,omitempty"`
@@ -450,92 +370,6 @@ func (m *NewStateReply) GetNext() []*Blueprint {
 	return nil
 }
 
-type DRead struct {
-	CurC uint32     `protobuf:"varint,1,opt,name=CurC,proto3" json:"CurC,omitempty"`
-	Prop *Blueprint `protobuf:"bytes,2,opt,name=Prop" json:"Prop,omitempty"`
-}
-
-func (m *DRead) Reset()         { *m = DRead{} }
-func (m *DRead) String() string { return proto1.CompactTextString(m) }
-func (*DRead) ProtoMessage()    {}
-
-func (m *DRead) GetProp() *Blueprint {
-	if m != nil {
-		return m.Prop
-	}
-	return nil
-}
-
-type DWriteN struct {
-	CurC uint32       `protobuf:"varint,1,opt,name=CurC,proto3" json:"CurC,omitempty"`
-	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
-}
-
-func (m *DWriteN) Reset()         { *m = DWriteN{} }
-func (m *DWriteN) String() string { return proto1.CompactTextString(m) }
-func (*DWriteN) ProtoMessage()    {}
-
-func (m *DWriteN) GetNext() []*Blueprint {
-	if m != nil {
-		return m.Next
-	}
-	return nil
-}
-
-type DWriteNReply struct {
-	Cur *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-}
-
-func (m *DWriteNReply) Reset()         { *m = DWriteNReply{} }
-func (m *DWriteNReply) String() string { return proto1.CompactTextString(m) }
-func (*DWriteNReply) ProtoMessage()    {}
-
-func (m *DWriteNReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
-type GetOne struct {
-	CurC uint32     `protobuf:"varint,1,opt,name=CurC,proto3" json:"CurC,omitempty"`
-	Next *Blueprint `protobuf:"bytes,2,opt,name=Next" json:"Next,omitempty"`
-}
-
-func (m *GetOne) Reset()         { *m = GetOne{} }
-func (m *GetOne) String() string { return proto1.CompactTextString(m) }
-func (*GetOne) ProtoMessage()    {}
-
-func (m *GetOne) GetNext() *Blueprint {
-	if m != nil {
-		return m.Next
-	}
-	return nil
-}
-
-type GetOneReply struct {
-	Next *Blueprint `protobuf:"bytes,1,opt,name=Next" json:"Next,omitempty"`
-	Cur  *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
-}
-
-func (m *GetOneReply) Reset()         { *m = GetOneReply{} }
-func (m *GetOneReply) String() string { return proto1.CompactTextString(m) }
-func (*GetOneReply) ProtoMessage()    {}
-
-func (m *GetOneReply) GetNext() *Blueprint {
-	if m != nil {
-		return m.Next
-	}
-	return nil
-}
-
-func (m *GetOneReply) GetCur() *Blueprint {
-	if m != nil {
-		return m.Cur
-	}
-	return nil
-}
-
 type CV struct {
 	Rnd uint32     `protobuf:"varint,1,opt,name=Rnd,proto3" json:"Rnd,omitempty"`
 	Val *Blueprint `protobuf:"bytes,2,opt,name=Val" json:"Val,omitempty"`
@@ -633,6 +467,175 @@ func (m *Learn) GetDec() *Blueprint {
 	return nil
 }
 
+type GetOne struct {
+	Conf *Conf      `protobuf:"bytes,1,opt,name=Conf" json:"Conf,omitempty"`
+	Next *Blueprint `protobuf:"bytes,2,opt,name=Next" json:"Next,omitempty"`
+}
+
+func (m *GetOne) Reset()         { *m = GetOne{} }
+func (m *GetOne) String() string { return proto1.CompactTextString(m) }
+func (*GetOne) ProtoMessage()    {}
+
+func (m *GetOne) GetConf() *Conf {
+	if m != nil {
+		return m.Conf
+	}
+	return nil
+}
+
+func (m *GetOne) GetNext() *Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+type GetOneReply struct {
+	Next *Blueprint `protobuf:"bytes,1,opt,name=Next" json:"Next,omitempty"`
+	Cur  *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+}
+
+func (m *GetOneReply) Reset()         { *m = GetOneReply{} }
+func (m *GetOneReply) String() string { return proto1.CompactTextString(m) }
+func (*GetOneReply) ProtoMessage()    {}
+
+func (m *GetOneReply) GetNext() *Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+func (m *GetOneReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+type DRead struct {
+	Conf *Conf      `protobuf:"bytes,1,opt,name=Conf" json:"Conf,omitempty"`
+	Prop *Blueprint `protobuf:"bytes,2,opt,name=Prop" json:"Prop,omitempty"`
+}
+
+func (m *DRead) Reset()         { *m = DRead{} }
+func (m *DRead) String() string { return proto1.CompactTextString(m) }
+func (*DRead) ProtoMessage()    {}
+
+func (m *DRead) GetConf() *Conf {
+	if m != nil {
+		return m.Conf
+	}
+	return nil
+}
+
+func (m *DRead) GetProp() *Blueprint {
+	if m != nil {
+		return m.Prop
+	}
+	return nil
+}
+
+type DReadReply struct {
+	State *State       `protobuf:"bytes,1,opt,name=State" json:"State,omitempty"`
+	Cur   *Blueprint   `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+	Next  []*Blueprint `protobuf:"bytes,3,rep,name=Next" json:"Next,omitempty"`
+}
+
+func (m *DReadReply) Reset()         { *m = DReadReply{} }
+func (m *DReadReply) String() string { return proto1.CompactTextString(m) }
+func (*DReadReply) ProtoMessage()    {}
+
+func (m *DReadReply) GetState() *State {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+func (m *DReadReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *DReadReply) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+type DNewState struct {
+	Conf  *Conf      `protobuf:"bytes,1,opt,name=Conf" json:"Conf,omitempty"`
+	Cur   *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+	State *State     `protobuf:"bytes,3,opt,name=State" json:"State,omitempty"`
+}
+
+func (m *DNewState) Reset()         { *m = DNewState{} }
+func (m *DNewState) String() string { return proto1.CompactTextString(m) }
+func (*DNewState) ProtoMessage()    {}
+
+func (m *DNewState) GetConf() *Conf {
+	if m != nil {
+		return m.Conf
+	}
+	return nil
+}
+
+func (m *DNewState) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *DNewState) GetState() *State {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+type DWriteNs struct {
+	Conf *Conf        `protobuf:"bytes,1,opt,name=Conf" json:"Conf,omitempty"`
+	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
+}
+
+func (m *DWriteNs) Reset()         { *m = DWriteNs{} }
+func (m *DWriteNs) String() string { return proto1.CompactTextString(m) }
+func (*DWriteNs) ProtoMessage()    {}
+
+func (m *DWriteNs) GetConf() *Conf {
+	if m != nil {
+		return m.Conf
+	}
+	return nil
+}
+
+func (m *DWriteNs) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+type DWriteNsReply struct {
+	Cur *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+}
+
+func (m *DWriteNsReply) Reset()         { *m = DWriteNsReply{} }
+func (m *DWriteNsReply) String() string { return proto1.CompactTextString(m) }
+func (*DWriteNsReply) ProtoMessage()    {}
+
+func (m *DWriteNsReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
 func init() {
 	proto1.RegisterType((*State)(nil), "proto.State")
 	proto1.RegisterType((*Conf)(nil), "proto.Conf")
@@ -644,26 +647,24 @@ func init() {
 	proto1.RegisterType((*Read)(nil), "proto.Read")
 	proto1.RegisterType((*ReadReply)(nil), "proto.ReadReply")
 	proto1.RegisterType((*WriteS)(nil), "proto.WriteS")
-	proto1.RegisterType((*AdvRead)(nil), "proto.AdvRead")
-	proto1.RegisterType((*AdvReadReply)(nil), "proto.AdvReadReply")
-	proto1.RegisterType((*AdvWriteS)(nil), "proto.AdvWriteS")
-	proto1.RegisterType((*AdvWriteSReply)(nil), "proto.AdvWriteSReply")
 	proto1.RegisterType((*WriteN)(nil), "proto.WriteN")
 	proto1.RegisterType((*WriteNReply)(nil), "proto.WriteNReply")
 	proto1.RegisterType((*LAProposal)(nil), "proto.LAProposal")
 	proto1.RegisterType((*LAReply)(nil), "proto.LAReply")
 	proto1.RegisterType((*NewState)(nil), "proto.NewState")
 	proto1.RegisterType((*NewStateReply)(nil), "proto.NewStateReply")
-	proto1.RegisterType((*DRead)(nil), "proto.DRead")
-	proto1.RegisterType((*DWriteN)(nil), "proto.DWriteN")
-	proto1.RegisterType((*DWriteNReply)(nil), "proto.DWriteNReply")
-	proto1.RegisterType((*GetOne)(nil), "proto.GetOne")
-	proto1.RegisterType((*GetOneReply)(nil), "proto.GetOneReply")
 	proto1.RegisterType((*CV)(nil), "proto.CV")
 	proto1.RegisterType((*Prepare)(nil), "proto.Prepare")
 	proto1.RegisterType((*Promise)(nil), "proto.Promise")
 	proto1.RegisterType((*Propose)(nil), "proto.Propose")
 	proto1.RegisterType((*Learn)(nil), "proto.Learn")
+	proto1.RegisterType((*GetOne)(nil), "proto.GetOne")
+	proto1.RegisterType((*GetOneReply)(nil), "proto.GetOneReply")
+	proto1.RegisterType((*DRead)(nil), "proto.DRead")
+	proto1.RegisterType((*DReadReply)(nil), "proto.DReadReply")
+	proto1.RegisterType((*DNewState)(nil), "proto.DNewState")
+	proto1.RegisterType((*DWriteNs)(nil), "proto.DWriteNs")
+	proto1.RegisterType((*DWriteNsReply)(nil), "proto.DWriteNsReply")
 }
 
 /* Manager type struct */
@@ -690,10 +691,10 @@ type Manager struct {
 	setStateqf   SetStateQuorumFn
 	getPromiseqf GetPromiseQuorumFn
 	acceptqf     AcceptQuorumFn
-	dReadSqf     DReadSQuorumFn
-	dWriteSqf    DWriteSQuorumFn
-	dWriteNSetqf DWriteNSetQuorumFn
 	getOneNqf    GetOneNQuorumFn
+	dWriteNqf    DWriteNQuorumFn
+	dSetStateqf  DSetStateQuorumFn
+	dWriteNSetqf DWriteNSetQuorumFn
 	dSetCurqf    DSetCurQuorumFn
 }
 
@@ -780,20 +781,30 @@ func (m *Manager) setDefaultQuorumFuncs() {
 			return replies[0], true
 		}
 	}
-	if m.opts.dReadSqf != nil {
-		m.dReadSqf = m.opts.dReadSqf
+	if m.opts.getOneNqf != nil {
+		m.getOneNqf = m.opts.getOneNqf
 	} else {
-		m.dReadSqf = func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool) {
+		m.getOneNqf = func(c *Configuration, replies []*GetOneReply) (*GetOneReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
 			return replies[0], true
 		}
 	}
-	if m.opts.dWriteSqf != nil {
-		m.dWriteSqf = m.opts.dWriteSqf
+	if m.opts.dWriteNqf != nil {
+		m.dWriteNqf = m.opts.dWriteNqf
 	} else {
-		m.dWriteSqf = func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool) {
+		m.dWriteNqf = func(c *Configuration, replies []*DReadReply) (*DReadReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.dSetStateqf != nil {
+		m.dSetStateqf = m.opts.dSetStateqf
+	} else {
+		m.dSetStateqf = func(c *Configuration, replies []*NewStateReply) (*NewStateReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -803,17 +814,7 @@ func (m *Manager) setDefaultQuorumFuncs() {
 	if m.opts.dWriteNSetqf != nil {
 		m.dWriteNSetqf = m.opts.dWriteNSetqf
 	} else {
-		m.dWriteNSetqf = func(c *Configuration, replies []*DWriteNReply) (*DWriteNReply, bool) {
-			if len(replies) < c.Quorum() {
-				return nil, false
-			}
-			return replies[0], true
-		}
-	}
-	if m.opts.getOneNqf != nil {
-		m.getOneNqf = m.opts.getOneNqf
-	} else {
-		m.getOneNqf = func(c *Configuration, replies []*GetOneReply) (*GetOneReply, bool) {
+		m.dWriteNSetqf = func(c *Configuration, replies []*DWriteNsReply) (*DWriteNsReply, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -864,10 +865,10 @@ type managerOptions struct {
 	setStateqf   SetStateQuorumFn
 	getPromiseqf GetPromiseQuorumFn
 	acceptqf     AcceptQuorumFn
-	dReadSqf     DReadSQuorumFn
-	dWriteSqf    DWriteSQuorumFn
-	dWriteNSetqf DWriteNSetQuorumFn
 	getOneNqf    GetOneNQuorumFn
+	dWriteNqf    DWriteNQuorumFn
+	dSetStateqf  DSetStateQuorumFn
+	dWriteNSetqf DWriteNSetQuorumFn
 	dSetCurqf    DSetCurQuorumFn
 }
 
@@ -935,19 +936,27 @@ func WithAcceptQuorumFunc(f AcceptQuorumFn) ManagerOption {
 	}
 }
 
-// WithDReadSQuorumFunc returns a ManagerOption that sets a cumstom
-// DReadSQuorumFunc.
-func WithDReadSQuorumFunc(f DReadSQuorumFn) ManagerOption {
+// WithGetOneNQuorumFunc returns a ManagerOption that sets a cumstom
+// GetOneNQuorumFunc.
+func WithGetOneNQuorumFunc(f GetOneNQuorumFn) ManagerOption {
 	return func(o *managerOptions) {
-		o.dReadSqf = f
+		o.getOneNqf = f
 	}
 }
 
-// WithDWriteSQuorumFunc returns a ManagerOption that sets a cumstom
-// DWriteSQuorumFunc.
-func WithDWriteSQuorumFunc(f DWriteSQuorumFn) ManagerOption {
+// WithDWriteNQuorumFunc returns a ManagerOption that sets a cumstom
+// DWriteNQuorumFunc.
+func WithDWriteNQuorumFunc(f DWriteNQuorumFn) ManagerOption {
 	return func(o *managerOptions) {
-		o.dWriteSqf = f
+		o.dWriteNqf = f
+	}
+}
+
+// WithDSetStateQuorumFunc returns a ManagerOption that sets a cumstom
+// DSetStateQuorumFunc.
+func WithDSetStateQuorumFunc(f DSetStateQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.dSetStateqf = f
 	}
 }
 
@@ -956,14 +965,6 @@ func WithDWriteSQuorumFunc(f DWriteSQuorumFn) ManagerOption {
 func WithDWriteNSetQuorumFunc(f DWriteNSetQuorumFn) ManagerOption {
 	return func(o *managerOptions) {
 		o.dWriteNSetqf = f
-	}
-}
-
-// WithGetOneNQuorumFunc returns a ManagerOption that sets a cumstom
-// GetOneNQuorumFunc.
-func WithGetOneNQuorumFunc(f GetOneNQuorumFn) ManagerOption {
-	return func(o *managerOptions) {
-		o.getOneNqf = f
 	}
 }
 
@@ -1023,29 +1024,29 @@ type GetPromiseQuorumFn func(c *Configuration, replies []*Promise) (*Promise, bo
 // reply among the replies and returns (reply, true).
 type AcceptQuorumFn func(c *Configuration, replies []*Learn) (*Learn, bool)
 
-// DReadSQuorumFn is used to pick a reply from the replies if there is a quorum.
-// If there was not enough replies to satisfy the quorum requirement,
-// then the function returns (nil, false). Otherwise, the function picks a
-// reply among the replies and returns (reply, true).
-type DReadSQuorumFn func(c *Configuration, replies []*AdvReadReply) (*AdvReadReply, bool)
-
-// DWriteSQuorumFn is used to pick a reply from the replies if there is a quorum.
-// If there was not enough replies to satisfy the quorum requirement,
-// then the function returns (nil, false). Otherwise, the function picks a
-// reply among the replies and returns (reply, true).
-type DWriteSQuorumFn func(c *Configuration, replies []*AdvWriteSReply) (*AdvWriteSReply, bool)
-
-// DWriteNSetQuorumFn is used to pick a reply from the replies if there is a quorum.
-// If there was not enough replies to satisfy the quorum requirement,
-// then the function returns (nil, false). Otherwise, the function picks a
-// reply among the replies and returns (reply, true).
-type DWriteNSetQuorumFn func(c *Configuration, replies []*DWriteNReply) (*DWriteNReply, bool)
-
 // GetOneNQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
 type GetOneNQuorumFn func(c *Configuration, replies []*GetOneReply) (*GetOneReply, bool)
+
+// DWriteNQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type DWriteNQuorumFn func(c *Configuration, replies []*DReadReply) (*DReadReply, bool)
+
+// DSetStateQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type DSetStateQuorumFn func(c *Configuration, replies []*NewStateReply) (*NewStateReply, bool)
+
+// DWriteNSetQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type DWriteNSetQuorumFn func(c *Configuration, replies []*DWriteNsReply) (*DWriteNsReply, bool)
 
 // DSetCurQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
@@ -1417,141 +1418,6 @@ func (f *AcceptFuture) Get() (*AcceptReply, error) {
 	return f.reply, f.err
 }
 
-// DReadSReply encapsulates the reply from a DReadS RPC invocation.
-// It contains the id of each machine in the quorum that replied and a single
-// reply.
-type DReadSReply struct {
-	MachineIDs []int
-	Reply      *AdvReadReply
-}
-
-func (r DReadSReply) String() string {
-	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
-}
-
-// DReadSReply invokes a DReadS RPC on configuration c
-// and returns the result as a DReadSReply.
-func (c *Configuration) DReadS(args *DRead) (*DReadSReply, error) {
-	return c.mgr.dReadS(c.id, args)
-}
-
-// DReadSFuture is a reference to an asynchronous DReadS RPC invocation.
-type DReadSFuture struct {
-	reply *DReadSReply
-	err   error
-	c     chan struct{}
-}
-
-// DReadSFuture asynchronously invokes a DReadS RPC on configuration c and
-// returns a DReadSFuture which can be used to inspect the RPC reply and error
-// when available.
-func (c *Configuration) DReadSFuture(args *DRead) *DReadSFuture {
-	f := new(DReadSFuture)
-	f.c = make(chan struct{}, 1)
-	go func() {
-		defer close(f.c)
-		f.reply, f.err = c.mgr.dReadS(c.id, args)
-	}()
-	return f
-}
-
-// Get returns the reply and any error associated with the DReadSFuture.
-// The method blocks until a reply or error is available.
-func (f *DReadSFuture) Get() (*DReadSReply, error) {
-	<-f.c
-	return f.reply, f.err
-}
-
-// DWriteSReply encapsulates the reply from a DWriteS RPC invocation.
-// It contains the id of each machine in the quorum that replied and a single
-// reply.
-type DWriteSReply struct {
-	MachineIDs []int
-	Reply      *AdvWriteSReply
-}
-
-func (r DWriteSReply) String() string {
-	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
-}
-
-// DWriteSReply invokes a DWriteS RPC on configuration c
-// and returns the result as a DWriteSReply.
-func (c *Configuration) DWriteS(args *AdvWriteS) (*DWriteSReply, error) {
-	return c.mgr.dWriteS(c.id, args)
-}
-
-// DWriteSFuture is a reference to an asynchronous DWriteS RPC invocation.
-type DWriteSFuture struct {
-	reply *DWriteSReply
-	err   error
-	c     chan struct{}
-}
-
-// DWriteSFuture asynchronously invokes a DWriteS RPC on configuration c and
-// returns a DWriteSFuture which can be used to inspect the RPC reply and error
-// when available.
-func (c *Configuration) DWriteSFuture(args *AdvWriteS) *DWriteSFuture {
-	f := new(DWriteSFuture)
-	f.c = make(chan struct{}, 1)
-	go func() {
-		defer close(f.c)
-		f.reply, f.err = c.mgr.dWriteS(c.id, args)
-	}()
-	return f
-}
-
-// Get returns the reply and any error associated with the DWriteSFuture.
-// The method blocks until a reply or error is available.
-func (f *DWriteSFuture) Get() (*DWriteSReply, error) {
-	<-f.c
-	return f.reply, f.err
-}
-
-// DWriteNSetReply encapsulates the reply from a DWriteNSet RPC invocation.
-// It contains the id of each machine in the quorum that replied and a single
-// reply.
-type DWriteNSetReply struct {
-	MachineIDs []int
-	Reply      *DWriteNReply
-}
-
-func (r DWriteNSetReply) String() string {
-	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
-}
-
-// DWriteNSetReply invokes a DWriteNSet RPC on configuration c
-// and returns the result as a DWriteNSetReply.
-func (c *Configuration) DWriteNSet(args *DWriteN) (*DWriteNSetReply, error) {
-	return c.mgr.dWriteNSet(c.id, args)
-}
-
-// DWriteNSetFuture is a reference to an asynchronous DWriteNSet RPC invocation.
-type DWriteNSetFuture struct {
-	reply *DWriteNSetReply
-	err   error
-	c     chan struct{}
-}
-
-// DWriteNSetFuture asynchronously invokes a DWriteNSet RPC on configuration c and
-// returns a DWriteNSetFuture which can be used to inspect the RPC reply and error
-// when available.
-func (c *Configuration) DWriteNSetFuture(args *DWriteN) *DWriteNSetFuture {
-	f := new(DWriteNSetFuture)
-	f.c = make(chan struct{}, 1)
-	go func() {
-		defer close(f.c)
-		f.reply, f.err = c.mgr.dWriteNSet(c.id, args)
-	}()
-	return f
-}
-
-// Get returns the reply and any error associated with the DWriteNSetFuture.
-// The method blocks until a reply or error is available.
-func (f *DWriteNSetFuture) Get() (*DWriteNSetReply, error) {
-	<-f.c
-	return f.reply, f.err
-}
-
 // GetOneNReply encapsulates the reply from a GetOneN RPC invocation.
 // It contains the id of each machine in the quorum that replied and a single
 // reply.
@@ -1593,6 +1459,141 @@ func (c *Configuration) GetOneNFuture(args *GetOne) *GetOneNFuture {
 // Get returns the reply and any error associated with the GetOneNFuture.
 // The method blocks until a reply or error is available.
 func (f *GetOneNFuture) Get() (*GetOneNReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// DWriteNReply encapsulates the reply from a DWriteN RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type DWriteNReply struct {
+	MachineIDs []int
+	Reply      *DReadReply
+}
+
+func (r DWriteNReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// DWriteNReply invokes a DWriteN RPC on configuration c
+// and returns the result as a DWriteNReply.
+func (c *Configuration) DWriteN(args *DRead) (*DWriteNReply, error) {
+	return c.mgr.dWriteN(c.id, args)
+}
+
+// DWriteNFuture is a reference to an asynchronous DWriteN RPC invocation.
+type DWriteNFuture struct {
+	reply *DWriteNReply
+	err   error
+	c     chan struct{}
+}
+
+// DWriteNFuture asynchronously invokes a DWriteN RPC on configuration c and
+// returns a DWriteNFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) DWriteNFuture(args *DRead) *DWriteNFuture {
+	f := new(DWriteNFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.dWriteN(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the DWriteNFuture.
+// The method blocks until a reply or error is available.
+func (f *DWriteNFuture) Get() (*DWriteNReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// DSetStateReply encapsulates the reply from a DSetState RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type DSetStateReply struct {
+	MachineIDs []int
+	Reply      *NewStateReply
+}
+
+func (r DSetStateReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// DSetStateReply invokes a DSetState RPC on configuration c
+// and returns the result as a DSetStateReply.
+func (c *Configuration) DSetState(args *DNewState) (*DSetStateReply, error) {
+	return c.mgr.dSetState(c.id, args)
+}
+
+// DSetStateFuture is a reference to an asynchronous DSetState RPC invocation.
+type DSetStateFuture struct {
+	reply *DSetStateReply
+	err   error
+	c     chan struct{}
+}
+
+// DSetStateFuture asynchronously invokes a DSetState RPC on configuration c and
+// returns a DSetStateFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) DSetStateFuture(args *DNewState) *DSetStateFuture {
+	f := new(DSetStateFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.dSetState(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the DSetStateFuture.
+// The method blocks until a reply or error is available.
+func (f *DSetStateFuture) Get() (*DSetStateReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// DWriteNSetReply encapsulates the reply from a DWriteNSet RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type DWriteNSetReply struct {
+	MachineIDs []int
+	Reply      *DWriteNsReply
+}
+
+func (r DWriteNSetReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// DWriteNSetReply invokes a DWriteNSet RPC on configuration c
+// and returns the result as a DWriteNSetReply.
+func (c *Configuration) DWriteNSet(args *DWriteNs) (*DWriteNSetReply, error) {
+	return c.mgr.dWriteNSet(c.id, args)
+}
+
+// DWriteNSetFuture is a reference to an asynchronous DWriteNSet RPC invocation.
+type DWriteNSetFuture struct {
+	reply *DWriteNSetReply
+	err   error
+	c     chan struct{}
+}
+
+// DWriteNSetFuture asynchronously invokes a DWriteNSet RPC on configuration c and
+// returns a DWriteNSetFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) DWriteNSetFuture(args *DWriteNs) *DWriteNSetFuture {
+	f := new(DWriteNSetFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.dWriteNSet(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the DWriteNSetFuture.
+// The method blocks until a reply or error is available.
+func (f *DWriteNSetFuture) Get() (*DWriteNSetReply, error) {
 	<-f.c
 	return f.reply, f.err
 }
@@ -2324,261 +2325,6 @@ func (m *Manager) accept(cid int, args *Propose) (*AcceptReply, error) {
 	}
 }
 
-type dReadSReply struct {
-	mid   int
-	reply *AdvReadReply
-	err   error
-}
-
-func (m *Manager) dReadS(cid int, args *DRead) (*DReadSReply, error) {
-	c, found := m.Configuration(cid)
-	if !found {
-		panic("execptional: config not found")
-	}
-
-	var (
-		replyChan   = make(chan dReadSReply, c.quorum)
-		stopSignal  = make(chan struct{})
-		replyValues = make([]*AdvReadReply, 0, c.quorum)
-		errCount    int
-		quorum      bool
-		reply       = &DReadSReply{MachineIDs: make([]int, 0, c.quorum)}
-	)
-
-	for _, mid := range c.machines {
-		machine, found := m.Machine(mid)
-		if !found {
-			panic("exceptional: machine not found")
-		}
-		go func() {
-			reply := new(AdvReadReply)
-			ce := make(chan error, 1)
-			start := time.Now()
-			go func() {
-				select {
-				case ce <- grpc.Invoke(
-					c.defCtx,
-					"/proto.DynaDisk/DReadS",
-					args,
-					reply,
-					machine.conn,
-				):
-				case <-stopSignal:
-					return
-				}
-			}()
-			select {
-			case err := <-ce:
-				switch grpc.Code(err) {
-				case codes.OK, codes.Aborted, codes.Canceled:
-					machine.setLatency(time.Since(start))
-				default:
-					machine.setLastErr(err)
-				}
-				replyChan <- dReadSReply{machine.id, reply, err}
-			case <-stopSignal:
-				return
-			}
-		}()
-	}
-
-	defer close(stopSignal)
-
-	for {
-
-		select {
-		case r := <-replyChan:
-			if r.err != nil {
-				errCount++
-				goto terminationCheck
-			}
-
-			replyValues = append(replyValues, r.reply)
-			reply.MachineIDs = append(reply.MachineIDs, r.mid)
-			if reply.Reply, quorum = m.dReadSqf(c, replyValues); quorum {
-				return reply, nil
-			}
-		case <-time.After(c.timeout):
-			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
-		}
-
-	terminationCheck:
-		if errCount+len(replyValues) == c.Size() {
-			return reply, IncompleteRPCError{errCount, len(replyValues)}
-		}
-	}
-}
-
-type dWriteSReply struct {
-	mid   int
-	reply *AdvWriteSReply
-	err   error
-}
-
-func (m *Manager) dWriteS(cid int, args *AdvWriteS) (*DWriteSReply, error) {
-	c, found := m.Configuration(cid)
-	if !found {
-		panic("execptional: config not found")
-	}
-
-	var (
-		replyChan   = make(chan dWriteSReply, c.quorum)
-		stopSignal  = make(chan struct{})
-		replyValues = make([]*AdvWriteSReply, 0, c.quorum)
-		errCount    int
-		quorum      bool
-		reply       = &DWriteSReply{MachineIDs: make([]int, 0, c.quorum)}
-	)
-
-	for _, mid := range c.machines {
-		machine, found := m.Machine(mid)
-		if !found {
-			panic("exceptional: machine not found")
-		}
-		go func() {
-			reply := new(AdvWriteSReply)
-			ce := make(chan error, 1)
-			start := time.Now()
-			go func() {
-				select {
-				case ce <- grpc.Invoke(
-					c.defCtx,
-					"/proto.DynaDisk/DWriteS",
-					args,
-					reply,
-					machine.conn,
-				):
-				case <-stopSignal:
-					return
-				}
-			}()
-			select {
-			case err := <-ce:
-				switch grpc.Code(err) {
-				case codes.OK, codes.Aborted, codes.Canceled:
-					machine.setLatency(time.Since(start))
-				default:
-					machine.setLastErr(err)
-				}
-				replyChan <- dWriteSReply{machine.id, reply, err}
-			case <-stopSignal:
-				return
-			}
-		}()
-	}
-
-	defer close(stopSignal)
-
-	for {
-
-		select {
-		case r := <-replyChan:
-			if r.err != nil {
-				errCount++
-				goto terminationCheck
-			}
-
-			replyValues = append(replyValues, r.reply)
-			reply.MachineIDs = append(reply.MachineIDs, r.mid)
-			if reply.Reply, quorum = m.dWriteSqf(c, replyValues); quorum {
-				return reply, nil
-			}
-		case <-time.After(c.timeout):
-			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
-		}
-
-	terminationCheck:
-		if errCount+len(replyValues) == c.Size() {
-			return reply, IncompleteRPCError{errCount, len(replyValues)}
-		}
-	}
-}
-
-type dWriteNSetReply struct {
-	mid   int
-	reply *DWriteNReply
-	err   error
-}
-
-func (m *Manager) dWriteNSet(cid int, args *DWriteN) (*DWriteNSetReply, error) {
-	c, found := m.Configuration(cid)
-	if !found {
-		panic("execptional: config not found")
-	}
-
-	var (
-		replyChan   = make(chan dWriteNSetReply, c.quorum)
-		stopSignal  = make(chan struct{})
-		replyValues = make([]*DWriteNReply, 0, c.quorum)
-		errCount    int
-		quorum      bool
-		reply       = &DWriteNSetReply{MachineIDs: make([]int, 0, c.quorum)}
-	)
-
-	for _, mid := range c.machines {
-		machine, found := m.Machine(mid)
-		if !found {
-			panic("exceptional: machine not found")
-		}
-		go func() {
-			reply := new(DWriteNReply)
-			ce := make(chan error, 1)
-			start := time.Now()
-			go func() {
-				select {
-				case ce <- grpc.Invoke(
-					c.defCtx,
-					"/proto.DynaDisk/DWriteNSet",
-					args,
-					reply,
-					machine.conn,
-				):
-				case <-stopSignal:
-					return
-				}
-			}()
-			select {
-			case err := <-ce:
-				switch grpc.Code(err) {
-				case codes.OK, codes.Aborted, codes.Canceled:
-					machine.setLatency(time.Since(start))
-				default:
-					machine.setLastErr(err)
-				}
-				replyChan <- dWriteNSetReply{machine.id, reply, err}
-			case <-stopSignal:
-				return
-			}
-		}()
-	}
-
-	defer close(stopSignal)
-
-	for {
-
-		select {
-		case r := <-replyChan:
-			if r.err != nil {
-				errCount++
-				goto terminationCheck
-			}
-
-			replyValues = append(replyValues, r.reply)
-			reply.MachineIDs = append(reply.MachineIDs, r.mid)
-			if reply.Reply, quorum = m.dWriteNSetqf(c, replyValues); quorum {
-				return reply, nil
-			}
-		case <-time.After(c.timeout):
-			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
-		}
-
-	terminationCheck:
-		if errCount+len(replyValues) == c.Size() {
-			return reply, IncompleteRPCError{errCount, len(replyValues)}
-		}
-	}
-}
-
 type getOneNReply struct {
 	mid   int
 	reply *GetOneReply
@@ -2651,6 +2397,261 @@ func (m *Manager) getOneN(cid int, args *GetOne) (*GetOneNReply, error) {
 			replyValues = append(replyValues, r.reply)
 			reply.MachineIDs = append(reply.MachineIDs, r.mid)
 			if reply.Reply, quorum = m.getOneNqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type dWriteNReply struct {
+	mid   int
+	reply *DReadReply
+	err   error
+}
+
+func (m *Manager) dWriteN(cid int, args *DRead) (*DWriteNReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan dWriteNReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*DReadReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &DWriteNReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(DReadReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.DynaDisk/DWriteN",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- dWriteNReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.dWriteNqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type dSetStateReply struct {
+	mid   int
+	reply *NewStateReply
+	err   error
+}
+
+func (m *Manager) dSetState(cid int, args *DNewState) (*DSetStateReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan dSetStateReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*NewStateReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &DSetStateReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(NewStateReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.DynaDisk/DSetState",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- dSetStateReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.dSetStateqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type dWriteNSetReply struct {
+	mid   int
+	reply *DWriteNsReply
+	err   error
+}
+
+func (m *Manager) dWriteNSet(cid int, args *DWriteNs) (*DWriteNSetReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan dWriteNSetReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*DWriteNsReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &DWriteNSetReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(DWriteNsReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.DynaDisk/DWriteNSet",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- dWriteNSetReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.dWriteNSetqf(c, replyValues); quorum {
 				return reply, nil
 			}
 		case <-time.After(c.timeout):
@@ -3134,7 +3135,7 @@ func (m *Manager) createMachine(mn string) error {
 	m.Lock()
 	defer m.Unlock()
 	h := fnv.New32a()
-	h.Write([]byte(mn))
+	_, _ = h.Write([]byte(mn))
 	gid := h.Sum32()
 	if _, machineExists := m.machineGidToID[gid]; machineExists {
 		return fmt.Errorf("create machine %s error: machine already exists", mn)
@@ -3534,10 +3535,10 @@ var _AdvRegister_serviceDesc = grpc.ServiceDesc{
 // Client API for DynaDisk service
 
 type DynaDiskClient interface {
-	DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error)
-	DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error)
-	DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error)
 	GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error)
+	DWriteN(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*DReadReply, error)
+	DSetState(ctx context.Context, in *DNewState, opts ...grpc.CallOption) (*NewStateReply, error)
+	DWriteNSet(ctx context.Context, in *DWriteNs, opts ...grpc.CallOption) (*DWriteNsReply, error)
 	DSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
 }
 
@@ -3549,36 +3550,36 @@ func NewDynaDiskClient(cc *grpc.ClientConn) DynaDiskClient {
 	return &dynaDiskClient{cc}
 }
 
-func (c *dynaDiskClient) DReadS(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*AdvReadReply, error) {
-	out := new(AdvReadReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/DReadS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dynaDiskClient) DWriteS(ctx context.Context, in *AdvWriteS, opts ...grpc.CallOption) (*AdvWriteSReply, error) {
-	out := new(AdvWriteSReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteS", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dynaDiskClient) DWriteNSet(ctx context.Context, in *DWriteN, opts ...grpc.CallOption) (*DWriteNReply, error) {
-	out := new(DWriteNReply)
-	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteNSet", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *dynaDiskClient) GetOneN(ctx context.Context, in *GetOne, opts ...grpc.CallOption) (*GetOneReply, error) {
 	out := new(GetOneReply)
 	err := grpc.Invoke(ctx, "/proto.DynaDisk/GetOneN", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DWriteN(ctx context.Context, in *DRead, opts ...grpc.CallOption) (*DReadReply, error) {
+	out := new(DReadReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteN", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DSetState(ctx context.Context, in *DNewState, opts ...grpc.CallOption) (*NewStateReply, error) {
+	out := new(NewStateReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DSetState", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dynaDiskClient) DWriteNSet(ctx context.Context, in *DWriteNs, opts ...grpc.CallOption) (*DWriteNsReply, error) {
+	out := new(DWriteNsReply)
+	err := grpc.Invoke(ctx, "/proto.DynaDisk/DWriteNSet", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3597,51 +3598,15 @@ func (c *dynaDiskClient) DSetCur(ctx context.Context, in *NewCur, opts ...grpc.C
 // Server API for DynaDisk service
 
 type DynaDiskServer interface {
-	DReadS(context.Context, *DRead) (*AdvReadReply, error)
-	DWriteS(context.Context, *AdvWriteS) (*AdvWriteSReply, error)
-	DWriteNSet(context.Context, *DWriteN) (*DWriteNReply, error)
 	GetOneN(context.Context, *GetOne) (*GetOneReply, error)
+	DWriteN(context.Context, *DRead) (*DReadReply, error)
+	DSetState(context.Context, *DNewState) (*NewStateReply, error)
+	DWriteNSet(context.Context, *DWriteNs) (*DWriteNsReply, error)
 	DSetCur(context.Context, *NewCur) (*NewCurReply, error)
 }
 
 func RegisterDynaDiskServer(s *grpc.Server, srv DynaDiskServer) {
 	s.RegisterService(&_DynaDisk_serviceDesc, srv)
-}
-
-func _DynaDisk_DReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DRead)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).DReadS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _DynaDisk_DWriteS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AdvWriteS)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).DWriteS(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DWriteN)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DynaDiskServer).DWriteNSet(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
@@ -3650,6 +3615,42 @@ func _DynaDisk_GetOneN_Handler(srv interface{}, ctx context.Context, dec func(in
 		return nil, err
 	}
 	out, err := srv.(DynaDiskServer).GetOneN(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DWriteN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DRead)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DWriteN(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DSetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DNewState)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DSetState(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _DynaDisk_DWriteNSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DWriteNs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DynaDiskServer).DWriteNSet(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -3673,20 +3674,20 @@ var _DynaDisk_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*DynaDiskServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "DReadS",
-			Handler:    _DynaDisk_DReadS_Handler,
+			MethodName: "GetOneN",
+			Handler:    _DynaDisk_GetOneN_Handler,
 		},
 		{
-			MethodName: "DWriteS",
-			Handler:    _DynaDisk_DWriteS_Handler,
+			MethodName: "DWriteN",
+			Handler:    _DynaDisk_DWriteN_Handler,
+		},
+		{
+			MethodName: "DSetState",
+			Handler:    _DynaDisk_DSetState_Handler,
 		},
 		{
 			MethodName: "DWriteNSet",
 			Handler:    _DynaDisk_DWriteNSet_Handler,
-		},
-		{
-			MethodName: "GetOneN",
-			Handler:    _DynaDisk_GetOneN_Handler,
 		},
 		{
 			MethodName: "DSetCur",
@@ -4043,152 +4044,6 @@ func (m *WriteS) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *AdvRead) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AdvRead) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurC))
-	}
-	return i, nil
-}
-
-func (m *AdvReadReply) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AdvReadReply) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.State != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n8, err := m.State.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n8
-	}
-	if m.Cur != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n9, err := m.Cur.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n9
-	}
-	if len(m.Next) > 0 {
-		for _, msg := range m.Next {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintDcSmartMerge(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *AdvWriteS) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AdvWriteS) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.State != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n10, err := m.State.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n10
-	}
-	if m.CurC != 0 {
-		data[i] = 0x10
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurC))
-	}
-	return i, nil
-}
-
-func (m *AdvWriteSReply) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AdvWriteSReply) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Cur != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n11, err := m.Cur.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n11
-	}
-	if len(m.Next) > 0 {
-		for _, msg := range m.Next {
-			data[i] = 0x12
-			i++
-			i = encodeVarintDcSmartMerge(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
 func (m *WriteN) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -4213,11 +4068,11 @@ func (m *WriteN) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
-		n12, err := m.Next.MarshalTo(data[i:])
+		n8, err := m.Next.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n12
+		i += n8
 	}
 	return i, nil
 }
@@ -4241,31 +4096,31 @@ func (m *WriteNReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n13, err := m.Cur.MarshalTo(data[i:])
+		n9, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n13
+		i += n9
 	}
 	if m.State != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n14, err := m.State.MarshalTo(data[i:])
+		n10, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n14
+		i += n10
 	}
 	if m.LAState != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.LAState.Size()))
-		n15, err := m.LAState.MarshalTo(data[i:])
+		n11, err := m.LAState.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n15
+		i += n11
 	}
 	return i, nil
 }
@@ -4289,21 +4144,21 @@ func (m *LAProposal) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n16, err := m.Conf.MarshalTo(data[i:])
+		n12, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n16
+		i += n12
 	}
 	if m.Prop != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n17, err := m.Prop.MarshalTo(data[i:])
+		n13, err := m.Prop.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n17
+		i += n13
 	}
 	return i, nil
 }
@@ -4327,21 +4182,21 @@ func (m *LAReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n18, err := m.Cur.MarshalTo(data[i:])
+		n14, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n18
+		i += n14
 	}
 	if m.LAState != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.LAState.Size()))
-		n19, err := m.LAState.MarshalTo(data[i:])
+		n15, err := m.LAState.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n19
+		i += n15
 	}
 	return i, nil
 }
@@ -4370,31 +4225,31 @@ func (m *NewState) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n20, err := m.Cur.MarshalTo(data[i:])
+		n16, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n20
+		i += n16
 	}
 	if m.State != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n21, err := m.State.MarshalTo(data[i:])
+		n17, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n21
+		i += n17
 	}
 	if m.LAState != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.LAState.Size()))
-		n22, err := m.LAState.MarshalTo(data[i:])
+		n18, err := m.LAState.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n22
+		i += n18
 	}
 	return i, nil
 }
@@ -4418,11 +4273,11 @@ func (m *NewStateReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n23, err := m.Cur.MarshalTo(data[i:])
+		n19, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n23
+		i += n19
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -4435,173 +4290,6 @@ func (m *NewStateReply) MarshalTo(data []byte) (int, error) {
 			}
 			i += n
 		}
-	}
-	return i, nil
-}
-
-func (m *DRead) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DRead) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurC))
-	}
-	if m.Prop != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n24, err := m.Prop.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n24
-	}
-	return i, nil
-}
-
-func (m *DWriteN) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DWriteN) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurC))
-	}
-	if len(m.Next) > 0 {
-		for _, msg := range m.Next {
-			data[i] = 0x12
-			i++
-			i = encodeVarintDcSmartMerge(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *DWriteNReply) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DWriteNReply) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Cur != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n25, err := m.Cur.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n25
-	}
-	return i, nil
-}
-
-func (m *GetOne) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *GetOne) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurC))
-	}
-	if m.Next != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
-		n26, err := m.Next.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n26
-	}
-	return i, nil
-}
-
-func (m *GetOneReply) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *GetOneReply) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Next != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
-		n27, err := m.Next.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n27
-	}
-	if m.Cur != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n28, err := m.Cur.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n28
 	}
 	return i, nil
 }
@@ -4630,11 +4318,11 @@ func (m *CV) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Val.Size()))
-		n29, err := m.Val.MarshalTo(data[i:])
+		n20, err := m.Val.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n29
+		i += n20
 	}
 	return i, nil
 }
@@ -4686,11 +4374,11 @@ func (m *Promise) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n30, err := m.Cur.MarshalTo(data[i:])
+		n21, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n30
+		i += n21
 	}
 	if m.Rnd != 0 {
 		data[i] = 0x10
@@ -4701,21 +4389,21 @@ func (m *Promise) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Val.Size()))
-		n31, err := m.Val.MarshalTo(data[i:])
+		n22, err := m.Val.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n31
+		i += n22
 	}
 	if m.Dec != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Dec.Size()))
-		n32, err := m.Dec.MarshalTo(data[i:])
+		n23, err := m.Dec.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n32
+		i += n23
 	}
 	return i, nil
 }
@@ -4744,11 +4432,11 @@ func (m *Propose) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Val.Size()))
-		n33, err := m.Val.MarshalTo(data[i:])
+		n24, err := m.Val.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n33
+		i += n24
 	}
 	return i, nil
 }
@@ -4772,21 +4460,21 @@ func (m *Learn) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n34, err := m.Cur.MarshalTo(data[i:])
+		n25, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n34
+		i += n25
 	}
 	if m.Dec != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Dec.Size()))
-		n35, err := m.Dec.MarshalTo(data[i:])
+		n26, err := m.Dec.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n35
+		i += n26
 	}
 	if m.Learned {
 		data[i] = 0x18
@@ -4797,6 +4485,286 @@ func (m *Learn) MarshalTo(data []byte) (int, error) {
 			data[i] = 0
 		}
 		i++
+	}
+	return i, nil
+}
+
+func (m *GetOne) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *GetOne) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Conf != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
+		n27, err := m.Conf.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n27
+	}
+	if m.Next != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
+		n28, err := m.Next.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n28
+	}
+	return i, nil
+}
+
+func (m *GetOneReply) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *GetOneReply) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Next != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
+		n29, err := m.Next.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n29
+	}
+	if m.Cur != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n30, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n30
+	}
+	return i, nil
+}
+
+func (m *DRead) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DRead) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Conf != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
+		n31, err := m.Conf.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n31
+	}
+	if m.Prop != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
+		n32, err := m.Prop.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n32
+	}
+	return i, nil
+}
+
+func (m *DReadReply) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DReadReply) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.State != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
+		n33, err := m.State.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n33
+	}
+	if m.Cur != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n34, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n34
+	}
+	if len(m.Next) > 0 {
+		for _, msg := range m.Next {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintDcSmartMerge(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *DNewState) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DNewState) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Conf != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
+		n35, err := m.Conf.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n35
+	}
+	if m.Cur != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n36, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n36
+	}
+	if m.State != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
+		n37, err := m.State.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n37
+	}
+	return i, nil
+}
+
+func (m *DWriteNs) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DWriteNs) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Conf != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
+		n38, err := m.Conf.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n38
+	}
+	if len(m.Next) > 0 {
+		for _, msg := range m.Next {
+			data[i] = 0x12
+			i++
+			i = encodeVarintDcSmartMerge(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *DWriteNsReply) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DWriteNsReply) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Cur != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n39, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n39
 	}
 	return i, nil
 }
@@ -4967,64 +4935,6 @@ func (m *WriteS) Size() (n int) {
 	return n
 }
 
-func (m *AdvRead) Size() (n int) {
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		n += 1 + sovDcSmartMerge(uint64(m.CurC))
-	}
-	return n
-}
-
-func (m *AdvReadReply) Size() (n int) {
-	var l int
-	_ = l
-	if m.State != nil {
-		l = m.State.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	if m.Cur != nil {
-		l = m.Cur.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	if len(m.Next) > 0 {
-		for _, e := range m.Next {
-			l = e.Size()
-			n += 1 + l + sovDcSmartMerge(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *AdvWriteS) Size() (n int) {
-	var l int
-	_ = l
-	if m.State != nil {
-		l = m.State.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	if m.CurC != 0 {
-		n += 1 + sovDcSmartMerge(uint64(m.CurC))
-	}
-	return n
-}
-
-func (m *AdvWriteSReply) Size() (n int) {
-	var l int
-	_ = l
-	if m.Cur != nil {
-		l = m.Cur.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	if len(m.Next) > 0 {
-		for _, e := range m.Next {
-			l = e.Size()
-			n += 1 + l + sovDcSmartMerge(uint64(l))
-		}
-	}
-	return n
-}
-
 func (m *WriteN) Size() (n int) {
 	var l int
 	_ = l
@@ -5121,71 +5031,6 @@ func (m *NewStateReply) Size() (n int) {
 	return n
 }
 
-func (m *DRead) Size() (n int) {
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		n += 1 + sovDcSmartMerge(uint64(m.CurC))
-	}
-	if m.Prop != nil {
-		l = m.Prop.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	return n
-}
-
-func (m *DWriteN) Size() (n int) {
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		n += 1 + sovDcSmartMerge(uint64(m.CurC))
-	}
-	if len(m.Next) > 0 {
-		for _, e := range m.Next {
-			l = e.Size()
-			n += 1 + l + sovDcSmartMerge(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *DWriteNReply) Size() (n int) {
-	var l int
-	_ = l
-	if m.Cur != nil {
-		l = m.Cur.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	return n
-}
-
-func (m *GetOne) Size() (n int) {
-	var l int
-	_ = l
-	if m.CurC != 0 {
-		n += 1 + sovDcSmartMerge(uint64(m.CurC))
-	}
-	if m.Next != nil {
-		l = m.Next.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	return n
-}
-
-func (m *GetOneReply) Size() (n int) {
-	var l int
-	_ = l
-	if m.Next != nil {
-		l = m.Next.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	if m.Cur != nil {
-		l = m.Cur.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	return n
-}
-
 func (m *CV) Size() (n int) {
 	var l int
 	_ = l
@@ -5258,6 +5103,112 @@ func (m *Learn) Size() (n int) {
 	}
 	if m.Learned {
 		n += 2
+	}
+	return n
+}
+
+func (m *GetOne) Size() (n int) {
+	var l int
+	_ = l
+	if m.Conf != nil {
+		l = m.Conf.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.Next != nil {
+		l = m.Next.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *GetOneReply) Size() (n int) {
+	var l int
+	_ = l
+	if m.Next != nil {
+		l = m.Next.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *DRead) Size() (n int) {
+	var l int
+	_ = l
+	if m.Conf != nil {
+		l = m.Conf.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.Prop != nil {
+		l = m.Prop.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *DReadReply) Size() (n int) {
+	var l int
+	_ = l
+	if m.State != nil {
+		l = m.State.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if len(m.Next) > 0 {
+		for _, e := range m.Next {
+			l = e.Size()
+			n += 1 + l + sovDcSmartMerge(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *DNewState) Size() (n int) {
+	var l int
+	_ = l
+	if m.Conf != nil {
+		l = m.Conf.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.State != nil {
+		l = m.State.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *DWriteNs) Size() (n int) {
+	var l int
+	_ = l
+	if m.Conf != nil {
+		l = m.Conf.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if len(m.Next) > 0 {
+		for _, e := range m.Next {
+			l = e.Size()
+			n += 1 + l + sovDcSmartMerge(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *DWriteNsReply) Size() (n int) {
+	var l int
+	_ = l
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
 	}
 	return n
 }
@@ -6307,438 +6258,6 @@ func (m *WriteS) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *AdvRead) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AdvRead: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AdvRead: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CurC", wireType)
-			}
-			m.CurC = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.CurC |= (uint32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AdvReadReply) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AdvReadReply: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AdvReadReply: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.State == nil {
-				m.State = &State{}
-			}
-			if err := m.State.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Cur == nil {
-				m.Cur = &Blueprint{}
-			}
-			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Next = append(m.Next, &Blueprint{})
-			if err := m.Next[len(m.Next)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AdvWriteS) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AdvWriteS: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AdvWriteS: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.State == nil {
-				m.State = &State{}
-			}
-			if err := m.State.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CurC", wireType)
-			}
-			m.CurC = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.CurC |= (uint32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AdvWriteSReply) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AdvWriteSReply: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AdvWriteSReply: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Cur == nil {
-				m.Cur = &Blueprint{}
-			}
-			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Next = append(m.Next, &Blueprint{})
-			if err := m.Next[len(m.Next)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *WriteN) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -7504,509 +7023,6 @@ func (m *NewStateReply) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DRead) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DRead: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DRead: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CurC", wireType)
-			}
-			m.CurC = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.CurC |= (uint32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Prop", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Prop == nil {
-				m.Prop = &Blueprint{}
-			}
-			if err := m.Prop.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DWriteN) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DWriteN: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DWriteN: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CurC", wireType)
-			}
-			m.CurC = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.CurC |= (uint32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Next = append(m.Next, &Blueprint{})
-			if err := m.Next[len(m.Next)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DWriteNReply) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DWriteNReply: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DWriteNReply: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Cur == nil {
-				m.Cur = &Blueprint{}
-			}
-			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetOne) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetOne: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetOne: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CurC", wireType)
-			}
-			m.CurC = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.CurC |= (uint32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Next == nil {
-				m.Next = &Blueprint{}
-			}
-			if err := m.Next.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetOneReply) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDcSmartMerge
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetOneReply: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetOneReply: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Next == nil {
-				m.Next = &Blueprint{}
-			}
-			if err := m.Next.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Cur == nil {
-				m.Cur = &Blueprint{}
-			}
-			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDcSmartMerge(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *CV) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -8582,6 +7598,847 @@ func (m *Learn) Unmarshal(data []byte) error {
 				}
 			}
 			m.Learned = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetOne) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetOne: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetOne: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Conf", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Conf == nil {
+				m.Conf = &Conf{}
+			}
+			if err := m.Conf.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Next == nil {
+				m.Next = &Blueprint{}
+			}
+			if err := m.Next.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetOneReply) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetOneReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetOneReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Next == nil {
+				m.Next = &Blueprint{}
+			}
+			if err := m.Next.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DRead) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DRead: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DRead: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Conf", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Conf == nil {
+				m.Conf = &Conf{}
+			}
+			if err := m.Conf.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Prop", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Prop == nil {
+				m.Prop = &Blueprint{}
+			}
+			if err := m.Prop.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DReadReply) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DReadReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DReadReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.State == nil {
+				m.State = &State{}
+			}
+			if err := m.State.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Next = append(m.Next, &Blueprint{})
+			if err := m.Next[len(m.Next)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DNewState) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DNewState: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DNewState: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Conf", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Conf == nil {
+				m.Conf = &Conf{}
+			}
+			if err := m.Conf.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.State == nil {
+				m.State = &State{}
+			}
+			if err := m.State.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DWriteNs) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DWriteNs: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DWriteNs: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Conf", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Conf == nil {
+				m.Conf = &Conf{}
+			}
+			if err := m.Conf.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Next = append(m.Next, &Blueprint{})
+			if err := m.Next[len(m.Next)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DWriteNsReply) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DWriteNsReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DWriteNsReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipDcSmartMerge(data[iNdEx:])

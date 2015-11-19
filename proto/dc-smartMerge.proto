@@ -64,26 +64,6 @@ message WriteS {
 	Conf Conf = 2;
 }
 
-message AdvRead {
-	uint32 CurC = 1;
-}
-
-message AdvReadReply {
-	State State = 1;
-	Blueprint Cur = 2;
-	repeated Blueprint Next = 3;
-}
-
-message AdvWriteS {
-	State State = 1;
-	uint32 CurC = 2;
-}
-
-message AdvWriteSReply {
-	Blueprint Cur = 1;
-	repeated Blueprint Next = 2;
-}
-
 message WriteN {
 	uint32 CurC = 1;
 	Blueprint Next = 2;
@@ -117,39 +97,7 @@ message NewStateReply {
 	repeated Blueprint Next = 2;
 }
 
-service DynaDisk {
-	rpc DReadS(DRead) returns (AdvReadReply) {} 
-	rpc DWriteS(AdvWriteS) returns (AdvWriteSReply) {}
-	rpc DWriteNSet(DWriteN) returns (DWriteNReply) {}
-	rpc GetOneN(GetOne) returns (GetOneReply) {}
-	rpc DSetCur(NewCur) returns (NewCurReply) {}
-}
-
-message DRead {
-	uint32 CurC = 1;
-	Blueprint Prop = 2;
-}
-
-message DWriteN {
-	uint32 CurC = 1;
-	repeated Blueprint Next = 2;
-}
-
-message DWriteNReply {
-	Blueprint Cur = 1;
-}
-
-message GetOne {
-	uint32 CurC = 1;
-	Blueprint Next = 2;
-}
-
-message GetOneReply {
-	Blueprint Next = 1;
-	Blueprint Cur = 2;
-}
-
-message CV {
+message CV {		//Consensus Value: (vrnd, vval)
 	uint32 Rnd = 1;
 	Blueprint Val = 2;
 }
@@ -175,4 +123,48 @@ message Learn {
 	Blueprint Cur = 1;
 	Blueprint Dec = 2;
 	bool Learned = 3;
+}
+
+service DynaDisk {
+	rpc GetOneN(GetOne) returns (GetOneReply) {}
+	rpc DWriteN(DRead) returns (DReadReply) {} 
+	rpc DSetState(DNewState) returns (NewStateReply) {}
+	rpc DWriteNSet(DWriteNs) returns (DWriteNsReply) {}
+	rpc DSetCur(NewCur) returns (NewCurReply) {}
+}
+
+message GetOne {
+	Conf Conf = 1;
+	Blueprint Next = 2;
+}
+
+message GetOneReply {
+	Blueprint Next = 1;
+	Blueprint Cur = 2;
+}
+
+message DRead {
+	Conf Conf = 1;
+	Blueprint Prop = 2;
+}
+
+message DReadReply {
+	State State = 1;
+	Blueprint Cur = 2;
+	repeated Blueprint Next = 3;
+}
+
+message DNewState {
+	Conf Conf = 1;
+	Blueprint Cur = 2;
+	State State = 3;
+}
+
+message DWriteNs {
+	Conf Conf = 1;
+	repeated Blueprint Next = 2;
+}
+
+message DWriteNsReply {
+	Blueprint Cur = 1;
 }

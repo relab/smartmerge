@@ -15,8 +15,10 @@ func (dc *DynaClient) Traverse(prop *pb.Blueprint, val []byte, regular bool) ([]
 		var curprop *pb.Blueprint
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
-			getOne, err := dc.Confs[i].GetOneN(&pb.GetOne{uint32(dc.Blueps[i].Len()), prop})
-			//fmt.Println("invoke getone")
+			getOne, err :=  dc.Confs[i].GetOneN(&pb.GetOne{
+				CurC: uint32(dc.Blueps[i].Len()), 
+				Next: prop,
+			})
 			cnt++
 			isnew := dc.handleNewCur(i, getOne.Reply.GetCur())
 			if isnew {
@@ -35,8 +37,12 @@ func (dc *DynaClient) Traverse(prop *pb.Blueprint, val []byte, regular bool) ([]
 		}
 
 		//ReadInView:
-		read, err := dc.Confs[i].DReadS(&pb.DRead{uint32(dc.Blueps[i].Len()), curprop})
-		//fmt.Println("invoke readS")
+		read, err := dc.Confs[i].DReadS(
+			&pb.DRead{
+				CurC: uint32(dc.Blueps[i].Len()), 
+				Prop: curprop,
+			}
+		)
 		cnt++
 		isnew := dc.handleNewCur(i, read.Reply.GetCur())
 		if isnew {
@@ -59,10 +65,16 @@ func (dc *DynaClient) Traverse(prop *pb.Blueprint, val []byte, regular bool) ([]
 		}
 
 		if len(next) == 0 && !regular {
+			
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
-			write, err := dc.Confs[i].DWriteS(&pb.AdvWriteS{wst, uint32(dc.Blueps[i].Len())})
-			//fmt.Println("invoke writeS")
+			write, err := dc.Confs[i].DWriteS(
+				&pb.AdvWriteS{
+					State: wst,
+					CurC: uint32(dc.Blueps[i].Len()),
+				}
+			)
+			
 			cnt++
 			isnew = dc.handleNewCur(i, write.Reply.GetCur())
 			if isnew {

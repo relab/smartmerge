@@ -15,6 +15,7 @@ type Provider interface {
 	FullC(*pb.Blueprint) *pb.Configuration
 	ReadC(*pb.Blueprint, []int) *pb.Configuration
 	WriteC(*pb.Blueprint, []int) *pb.Configuration
+	SingleC(*pb.Blueprint) *pb.Configuration
 }
 
 type ThriftyNorecConfP struct {
@@ -91,6 +92,19 @@ func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
 	q := blp.Quorum()
 
 	cnf, err := cp.mgr.NewConfiguration(cids, q, ConfTimeout)
+	if err != nil {
+		glog.Fatalln("could not get config")
+	}
+
+	return cnf
+}
+
+func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
+	cids := cp.mgr.ToIds(blp.Ids())
+	
+	cids = cp.chooseQ(cids, 1)
+
+	cnf, err := cp.mgr.NewConfiguration(cids, 1, ConfTimeout)
 	if err != nil {
 		glog.Fatalln("could not get config")
 	}

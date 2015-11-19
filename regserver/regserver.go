@@ -105,7 +105,10 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply,
 		rs.RState = wr.GetState()
 	}
 
-	return rs.handleConf(wr.GetConf()), nil
+	if crepl := rs.handleConf(wr.GetConf()); crepl != nil {
+		return crepl, nil
+	}
+	return &pb.ConfReply{}, nil
 }
 
 func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNReply, error) {

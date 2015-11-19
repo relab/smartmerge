@@ -17,7 +17,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/relab/goxos/kvs/bgen"
-	//"github.com/relab/smartMerge/consclient"
 	//"github.com/relab/smartMerge/dynaclient"
 	conf "github.com/relab/smartMerge/confProvider"
 	cc "github.com/relab/smartMerge/consclient"

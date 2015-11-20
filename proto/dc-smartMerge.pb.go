@@ -37,6 +37,14 @@
 		DNewState
 		DWriteNs
 		DWriteNsReply
+		SWriteN
+		SWriteNReply
+		Commit
+		CommitReply
+		SRead
+		SReadReply
+		SState
+		SStateReply
 */
 package proto
 
@@ -636,6 +644,168 @@ func (m *DWriteNsReply) GetCur() *Blueprint {
 	return nil
 }
 
+type SWriteN struct {
+	CurL uint32     `protobuf:"varint,1,opt,name=CurL,proto3" json:"CurL,omitempty"`
+	This uint32     `protobuf:"varint,2,opt,name=This,proto3" json:"This,omitempty"`
+	Rnd  uint32     `protobuf:"varint,3,opt,name=Rnd,proto3" json:"Rnd,omitempty"`
+	Prop *Blueprint `protobuf:"bytes,4,opt,name=Prop" json:"Prop,omitempty"`
+}
+
+func (m *SWriteN) Reset()         { *m = SWriteN{} }
+func (m *SWriteN) String() string { return proto1.CompactTextString(m) }
+func (*SWriteN) ProtoMessage()    {}
+
+func (m *SWriteN) GetProp() *Blueprint {
+	if m != nil {
+		return m.Prop
+	}
+	return nil
+}
+
+type SWriteNReply struct {
+	Cur  *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
+}
+
+func (m *SWriteNReply) Reset()         { *m = SWriteNReply{} }
+func (m *SWriteNReply) String() string { return proto1.CompactTextString(m) }
+func (*SWriteNReply) ProtoMessage()    {}
+
+func (m *SWriteNReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *SWriteNReply) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
+	}
+	return nil
+}
+
+type Commit struct {
+	CurL    uint32     `protobuf:"varint,1,opt,name=CurL,proto3" json:"CurL,omitempty"`
+	This    uint32     `protobuf:"varint,2,opt,name=This,proto3" json:"This,omitempty"`
+	Rnd     uint32     `protobuf:"varint,3,opt,name=Rnd,proto3" json:"Rnd,omitempty"`
+	Commit  bool       `protobuf:"varint,4,opt,name=Commit,proto3" json:"Commit,omitempty"`
+	Collect *Blueprint `protobuf:"bytes,5,opt,name=Collect" json:"Collect,omitempty"`
+}
+
+func (m *Commit) Reset()         { *m = Commit{} }
+func (m *Commit) String() string { return proto1.CompactTextString(m) }
+func (*Commit) ProtoMessage()    {}
+
+func (m *Commit) GetCollect() *Blueprint {
+	if m != nil {
+		return m.Collect
+	}
+	return nil
+}
+
+type CommitReply struct {
+	Cur       *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Committed *Blueprint `protobuf:"bytes,2,opt,name=Committed" json:"Committed,omitempty"`
+	Collected *Blueprint `protobuf:"bytes,3,opt,name=Collected" json:"Collected,omitempty"`
+}
+
+func (m *CommitReply) Reset()         { *m = CommitReply{} }
+func (m *CommitReply) String() string { return proto1.CompactTextString(m) }
+func (*CommitReply) ProtoMessage()    {}
+
+func (m *CommitReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *CommitReply) GetCommitted() *Blueprint {
+	if m != nil {
+		return m.Committed
+	}
+	return nil
+}
+
+func (m *CommitReply) GetCollected() *Blueprint {
+	if m != nil {
+		return m.Collected
+	}
+	return nil
+}
+
+type SRead struct {
+	CurL uint32 `protobuf:"varint,1,opt,name=CurL,proto3" json:"CurL,omitempty"`
+}
+
+func (m *SRead) Reset()         { *m = SRead{} }
+func (m *SRead) String() string { return proto1.CompactTextString(m) }
+func (*SRead) ProtoMessage()    {}
+
+type SReadReply struct {
+	Cur   *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	State *State     `protobuf:"bytes,2,opt,name=State" json:"State,omitempty"`
+}
+
+func (m *SReadReply) Reset()         { *m = SReadReply{} }
+func (m *SReadReply) String() string { return proto1.CompactTextString(m) }
+func (*SReadReply) ProtoMessage()    {}
+
+func (m *SReadReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *SReadReply) GetState() *State {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+type SState struct {
+	CurL  uint32     `protobuf:"varint,1,opt,name=CurL,proto3" json:"CurL,omitempty"`
+	Cur   *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+	State *State     `protobuf:"bytes,3,opt,name=State" json:"State,omitempty"`
+}
+
+func (m *SState) Reset()         { *m = SState{} }
+func (m *SState) String() string { return proto1.CompactTextString(m) }
+func (*SState) ProtoMessage()    {}
+
+func (m *SState) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
+func (m *SState) GetState() *State {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+type SStateReply struct {
+	HasNext bool       `protobuf:"varint,1,opt,name=HasNext,proto3" json:"HasNext,omitempty"`
+	Cur     *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+}
+
+func (m *SStateReply) Reset()         { *m = SStateReply{} }
+func (m *SStateReply) String() string { return proto1.CompactTextString(m) }
+func (*SStateReply) ProtoMessage()    {}
+
+func (m *SStateReply) GetCur() *Blueprint {
+	if m != nil {
+		return m.Cur
+	}
+	return nil
+}
+
 func init() {
 	proto1.RegisterType((*State)(nil), "proto.State")
 	proto1.RegisterType((*Conf)(nil), "proto.Conf")
@@ -665,6 +835,14 @@ func init() {
 	proto1.RegisterType((*DNewState)(nil), "proto.DNewState")
 	proto1.RegisterType((*DWriteNs)(nil), "proto.DWriteNs")
 	proto1.RegisterType((*DWriteNsReply)(nil), "proto.DWriteNsReply")
+	proto1.RegisterType((*SWriteN)(nil), "proto.SWriteN")
+	proto1.RegisterType((*SWriteNReply)(nil), "proto.SWriteNReply")
+	proto1.RegisterType((*Commit)(nil), "proto.Commit")
+	proto1.RegisterType((*CommitReply)(nil), "proto.CommitReply")
+	proto1.RegisterType((*SRead)(nil), "proto.SRead")
+	proto1.RegisterType((*SReadReply)(nil), "proto.SReadReply")
+	proto1.RegisterType((*SState)(nil), "proto.SState")
+	proto1.RegisterType((*SStateReply)(nil), "proto.SStateReply")
 }
 
 /* Manager type struct */
@@ -696,6 +874,10 @@ type Manager struct {
 	dSetStateqf  DSetStateQuorumFn
 	dWriteNSetqf DWriteNSetQuorumFn
 	dSetCurqf    DSetCurQuorumFn
+	spSnOneqf    SpSnOneQuorumFn
+	sCommitqf    SCommitQuorumFn
+	sReadSqf     SReadSQuorumFn
+	sSetStateqf  SSetStateQuorumFn
 }
 
 /* Manager quorum functions */
@@ -831,6 +1013,46 @@ func (m *Manager) setDefaultQuorumFuncs() {
 			return replies[0], true
 		}
 	}
+	if m.opts.spSnOneqf != nil {
+		m.spSnOneqf = m.opts.spSnOneqf
+	} else {
+		m.spSnOneqf = func(c *Configuration, replies []*SWriteNReply) (*SWriteNReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.sCommitqf != nil {
+		m.sCommitqf = m.opts.sCommitqf
+	} else {
+		m.sCommitqf = func(c *Configuration, replies []*CommitReply) (*CommitReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.sReadSqf != nil {
+		m.sReadSqf = m.opts.sReadSqf
+	} else {
+		m.sReadSqf = func(c *Configuration, replies []*SReadReply) (*SReadReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.sSetStateqf != nil {
+		m.sSetStateqf = m.opts.sSetStateqf
+	} else {
+		m.sSetStateqf = func(c *Configuration, replies []*SStateReply) (*SStateReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
 }
 
 /* Manager create/close streams */
@@ -870,6 +1092,10 @@ type managerOptions struct {
 	dSetStateqf  DSetStateQuorumFn
 	dWriteNSetqf DWriteNSetQuorumFn
 	dSetCurqf    DSetCurQuorumFn
+	spSnOneqf    SpSnOneQuorumFn
+	sCommitqf    SCommitQuorumFn
+	sReadSqf     SReadSQuorumFn
+	sSetStateqf  SSetStateQuorumFn
 }
 
 // WithAReadSQuorumFunc returns a ManagerOption that sets a cumstom
@@ -976,6 +1202,38 @@ func WithDSetCurQuorumFunc(f DSetCurQuorumFn) ManagerOption {
 	}
 }
 
+// WithSpSnOneQuorumFunc returns a ManagerOption that sets a cumstom
+// SpSnOneQuorumFunc.
+func WithSpSnOneQuorumFunc(f SpSnOneQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.spSnOneqf = f
+	}
+}
+
+// WithSCommitQuorumFunc returns a ManagerOption that sets a cumstom
+// SCommitQuorumFunc.
+func WithSCommitQuorumFunc(f SCommitQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.sCommitqf = f
+	}
+}
+
+// WithSReadSQuorumFunc returns a ManagerOption that sets a cumstom
+// SReadSQuorumFunc.
+func WithSReadSQuorumFunc(f SReadSQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.sReadSqf = f
+	}
+}
+
+// WithSSetStateQuorumFunc returns a ManagerOption that sets a cumstom
+// SSetStateQuorumFunc.
+func WithSSetStateQuorumFunc(f SSetStateQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.sSetStateqf = f
+	}
+}
+
 // AReadSQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
@@ -1053,6 +1311,30 @@ type DWriteNSetQuorumFn func(c *Configuration, replies []*DWriteNsReply) (*DWrit
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
 type DSetCurQuorumFn func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool)
+
+// SpSnOneQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type SpSnOneQuorumFn func(c *Configuration, replies []*SWriteNReply) (*SWriteNReply, bool)
+
+// SCommitQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type SCommitQuorumFn func(c *Configuration, replies []*CommitReply) (*CommitReply, bool)
+
+// SReadSQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type SReadSQuorumFn func(c *Configuration, replies []*SReadReply) (*SReadReply, bool)
+
+// SSetStateQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type SSetStateQuorumFn func(c *Configuration, replies []*SStateReply) (*SStateReply, bool)
 
 /* Gorums Client API */
 
@@ -1639,6 +1921,186 @@ func (c *Configuration) DSetCurFuture(args *NewCur) *DSetCurFuture {
 // Get returns the reply and any error associated with the DSetCurFuture.
 // The method blocks until a reply or error is available.
 func (f *DSetCurFuture) Get() (*DSetCurReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// SpSnOneReply encapsulates the reply from a SpSnOne RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type SpSnOneReply struct {
+	MachineIDs []int
+	Reply      *SWriteNReply
+}
+
+func (r SpSnOneReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// SpSnOneReply invokes a SpSnOne RPC on configuration c
+// and returns the result as a SpSnOneReply.
+func (c *Configuration) SpSnOne(args *SWriteN) (*SpSnOneReply, error) {
+	return c.mgr.spSnOne(c.id, args)
+}
+
+// SpSnOneFuture is a reference to an asynchronous SpSnOne RPC invocation.
+type SpSnOneFuture struct {
+	reply *SpSnOneReply
+	err   error
+	c     chan struct{}
+}
+
+// SpSnOneFuture asynchronously invokes a SpSnOne RPC on configuration c and
+// returns a SpSnOneFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) SpSnOneFuture(args *SWriteN) *SpSnOneFuture {
+	f := new(SpSnOneFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.spSnOne(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the SpSnOneFuture.
+// The method blocks until a reply or error is available.
+func (f *SpSnOneFuture) Get() (*SpSnOneReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// SCommitReply encapsulates the reply from a SCommit RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type SCommitReply struct {
+	MachineIDs []int
+	Reply      *CommitReply
+}
+
+func (r SCommitReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// SCommitReply invokes a SCommit RPC on configuration c
+// and returns the result as a SCommitReply.
+func (c *Configuration) SCommit(args *Commit) (*SCommitReply, error) {
+	return c.mgr.sCommit(c.id, args)
+}
+
+// SCommitFuture is a reference to an asynchronous SCommit RPC invocation.
+type SCommitFuture struct {
+	reply *SCommitReply
+	err   error
+	c     chan struct{}
+}
+
+// SCommitFuture asynchronously invokes a SCommit RPC on configuration c and
+// returns a SCommitFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) SCommitFuture(args *Commit) *SCommitFuture {
+	f := new(SCommitFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.sCommit(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the SCommitFuture.
+// The method blocks until a reply or error is available.
+func (f *SCommitFuture) Get() (*SCommitReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// SReadSReply encapsulates the reply from a SReadS RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type SReadSReply struct {
+	MachineIDs []int
+	Reply      *SReadReply
+}
+
+func (r SReadSReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// SReadSReply invokes a SReadS RPC on configuration c
+// and returns the result as a SReadSReply.
+func (c *Configuration) SReadS(args *SRead) (*SReadSReply, error) {
+	return c.mgr.sReadS(c.id, args)
+}
+
+// SReadSFuture is a reference to an asynchronous SReadS RPC invocation.
+type SReadSFuture struct {
+	reply *SReadSReply
+	err   error
+	c     chan struct{}
+}
+
+// SReadSFuture asynchronously invokes a SReadS RPC on configuration c and
+// returns a SReadSFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) SReadSFuture(args *SRead) *SReadSFuture {
+	f := new(SReadSFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.sReadS(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the SReadSFuture.
+// The method blocks until a reply or error is available.
+func (f *SReadSFuture) Get() (*SReadSReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// SSetStateReply encapsulates the reply from a SSetState RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type SSetStateReply struct {
+	MachineIDs []int
+	Reply      *SStateReply
+}
+
+func (r SSetStateReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// SSetStateReply invokes a SSetState RPC on configuration c
+// and returns the result as a SSetStateReply.
+func (c *Configuration) SSetState(args *SState) (*SSetStateReply, error) {
+	return c.mgr.sSetState(c.id, args)
+}
+
+// SSetStateFuture is a reference to an asynchronous SSetState RPC invocation.
+type SSetStateFuture struct {
+	reply *SSetStateReply
+	err   error
+	c     chan struct{}
+}
+
+// SSetStateFuture asynchronously invokes a SSetState RPC on configuration c and
+// returns a SSetStateFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) SSetStateFuture(args *SState) *SSetStateFuture {
+	f := new(SSetStateFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.sSetState(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the SSetStateFuture.
+// The method blocks until a reply or error is available.
+func (f *SSetStateFuture) Get() (*SSetStateReply, error) {
 	<-f.c
 	return f.reply, f.err
 }
@@ -2750,6 +3212,346 @@ func (m *Manager) dSetCur(cid int, args *NewCur) (*DSetCurReply, error) {
 	}
 }
 
+type spSnOneReply struct {
+	mid   int
+	reply *SWriteNReply
+	err   error
+}
+
+func (m *Manager) spSnOne(cid int, args *SWriteN) (*SpSnOneReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan spSnOneReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*SWriteNReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &SpSnOneReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(SWriteNReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.SpSnRegister/SpSnOne",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- spSnOneReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.spSnOneqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type sCommitReply struct {
+	mid   int
+	reply *CommitReply
+	err   error
+}
+
+func (m *Manager) sCommit(cid int, args *Commit) (*SCommitReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan sCommitReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*CommitReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &SCommitReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(CommitReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.SpSnRegister/SCommit",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- sCommitReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.sCommitqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type sReadSReply struct {
+	mid   int
+	reply *SReadReply
+	err   error
+}
+
+func (m *Manager) sReadS(cid int, args *SRead) (*SReadSReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan sReadSReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*SReadReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &SReadSReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(SReadReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.SpSnRegister/SReadS",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- sReadSReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.sReadSqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type sSetStateReply struct {
+	mid   int
+	reply *SStateReply
+	err   error
+}
+
+func (m *Manager) sSetState(cid int, args *SState) (*SSetStateReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan sSetStateReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*SStateReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &SSetStateReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(SStateReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.SpSnRegister/SSetState",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- sSetStateReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.sSetStateqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
 /* Static resources */
 
 /* config.go */
@@ -3692,6 +4494,144 @@ var _DynaDisk_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DSetCur",
 			Handler:    _DynaDisk_DSetCur_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for SpSnRegister service
+
+type SpSnRegisterClient interface {
+	SpSnOne(ctx context.Context, in *SWriteN, opts ...grpc.CallOption) (*SWriteNReply, error)
+	SCommit(ctx context.Context, in *Commit, opts ...grpc.CallOption) (*CommitReply, error)
+	SReadS(ctx context.Context, in *SRead, opts ...grpc.CallOption) (*SReadReply, error)
+	SSetState(ctx context.Context, in *SState, opts ...grpc.CallOption) (*SStateReply, error)
+}
+
+type spSnRegisterClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewSpSnRegisterClient(cc *grpc.ClientConn) SpSnRegisterClient {
+	return &spSnRegisterClient{cc}
+}
+
+func (c *spSnRegisterClient) SpSnOne(ctx context.Context, in *SWriteN, opts ...grpc.CallOption) (*SWriteNReply, error) {
+	out := new(SWriteNReply)
+	err := grpc.Invoke(ctx, "/proto.SpSnRegister/SpSnOne", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spSnRegisterClient) SCommit(ctx context.Context, in *Commit, opts ...grpc.CallOption) (*CommitReply, error) {
+	out := new(CommitReply)
+	err := grpc.Invoke(ctx, "/proto.SpSnRegister/SCommit", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spSnRegisterClient) SReadS(ctx context.Context, in *SRead, opts ...grpc.CallOption) (*SReadReply, error) {
+	out := new(SReadReply)
+	err := grpc.Invoke(ctx, "/proto.SpSnRegister/SReadS", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spSnRegisterClient) SSetState(ctx context.Context, in *SState, opts ...grpc.CallOption) (*SStateReply, error) {
+	out := new(SStateReply)
+	err := grpc.Invoke(ctx, "/proto.SpSnRegister/SSetState", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for SpSnRegister service
+
+type SpSnRegisterServer interface {
+	SpSnOne(context.Context, *SWriteN) (*SWriteNReply, error)
+	SCommit(context.Context, *Commit) (*CommitReply, error)
+	SReadS(context.Context, *SRead) (*SReadReply, error)
+	SSetState(context.Context, *SState) (*SStateReply, error)
+}
+
+func RegisterSpSnRegisterServer(s *grpc.Server, srv SpSnRegisterServer) {
+	s.RegisterService(&_SpSnRegister_serviceDesc, srv)
+}
+
+func _SpSnRegister_SpSnOne_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SWriteN)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SpSnRegisterServer).SpSnOne(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _SpSnRegister_SCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(Commit)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SpSnRegisterServer).SCommit(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _SpSnRegister_SReadS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SRead)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SpSnRegisterServer).SReadS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _SpSnRegister_SSetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SState)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SpSnRegisterServer).SSetState(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _SpSnRegister_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.SpSnRegister",
+	HandlerType: (*SpSnRegisterServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SpSnOne",
+			Handler:    _SpSnRegister_SpSnOne_Handler,
+		},
+		{
+			MethodName: "SCommit",
+			Handler:    _SpSnRegister_SCommit_Handler,
+		},
+		{
+			MethodName: "SReadS",
+			Handler:    _SpSnRegister_SReadS_Handler,
+		},
+		{
+			MethodName: "SSetState",
+			Handler:    _SpSnRegister_SSetState_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -4769,6 +5709,332 @@ func (m *DWriteNsReply) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *SWriteN) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SWriteN) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurL))
+	}
+	if m.This != 0 {
+		data[i] = 0x10
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.This))
+	}
+	if m.Rnd != 0 {
+		data[i] = 0x18
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Rnd))
+	}
+	if m.Prop != nil {
+		data[i] = 0x22
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
+		n40, err := m.Prop.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n40
+	}
+	return i, nil
+}
+
+func (m *SWriteNReply) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SWriteNReply) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Cur != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n41, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n41
+	}
+	if len(m.Next) > 0 {
+		for _, msg := range m.Next {
+			data[i] = 0x12
+			i++
+			i = encodeVarintDcSmartMerge(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *Commit) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *Commit) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurL))
+	}
+	if m.This != 0 {
+		data[i] = 0x10
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.This))
+	}
+	if m.Rnd != 0 {
+		data[i] = 0x18
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Rnd))
+	}
+	if m.Commit {
+		data[i] = 0x20
+		i++
+		if m.Commit {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Collect != nil {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Collect.Size()))
+		n42, err := m.Collect.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n42
+	}
+	return i, nil
+}
+
+func (m *CommitReply) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *CommitReply) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Cur != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n43, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n43
+	}
+	if m.Committed != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Committed.Size()))
+		n44, err := m.Committed.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n44
+	}
+	if m.Collected != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Collected.Size()))
+		n45, err := m.Collected.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n45
+	}
+	return i, nil
+}
+
+func (m *SRead) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SRead) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurL))
+	}
+	return i, nil
+}
+
+func (m *SReadReply) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SReadReply) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Cur != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n46, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n46
+	}
+	if m.State != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
+		n47, err := m.State.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n47
+	}
+	return i, nil
+}
+
+func (m *SState) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SState) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.CurL))
+	}
+	if m.Cur != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n48, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n48
+	}
+	if m.State != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
+		n49, err := m.State.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n49
+	}
+	return i, nil
+}
+
+func (m *SStateReply) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SStateReply) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.HasNext {
+		data[i] = 0x8
+		i++
+		if m.HasNext {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Cur != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n50, err := m.Cur.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n50
+	}
+	return i, nil
+}
+
 func encodeFixed64DcSmartMerge(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -5206,6 +6472,134 @@ func (m *DWriteNs) Size() (n int) {
 func (m *DWriteNsReply) Size() (n int) {
 	var l int
 	_ = l
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *SWriteN) Size() (n int) {
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.CurL))
+	}
+	if m.This != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.This))
+	}
+	if m.Rnd != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.Rnd))
+	}
+	if m.Prop != nil {
+		l = m.Prop.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *SWriteNReply) Size() (n int) {
+	var l int
+	_ = l
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if len(m.Next) > 0 {
+		for _, e := range m.Next {
+			l = e.Size()
+			n += 1 + l + sovDcSmartMerge(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *Commit) Size() (n int) {
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.CurL))
+	}
+	if m.This != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.This))
+	}
+	if m.Rnd != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.Rnd))
+	}
+	if m.Commit {
+		n += 2
+	}
+	if m.Collect != nil {
+		l = m.Collect.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *CommitReply) Size() (n int) {
+	var l int
+	_ = l
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.Committed != nil {
+		l = m.Committed.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.Collected != nil {
+		l = m.Collected.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *SRead) Size() (n int) {
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.CurL))
+	}
+	return n
+}
+
+func (m *SReadReply) Size() (n int) {
+	var l int
+	_ = l
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.State != nil {
+		l = m.State.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *SState) Size() (n int) {
+	var l int
+	_ = l
+	if m.CurL != 0 {
+		n += 1 + sovDcSmartMerge(uint64(m.CurL))
+	}
+	if m.Cur != nil {
+		l = m.Cur.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if m.State != nil {
+		l = m.State.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *SStateReply) Size() (n int) {
+	var l int
+	_ = l
+	if m.HasNext {
+		n += 2
+	}
 	if m.Cur != nil {
 		l = m.Cur.Size()
 		n += 1 + l + sovDcSmartMerge(uint64(l))
@@ -8407,6 +9801,992 @@ func (m *DWriteNsReply) Unmarshal(data []byte) error {
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SWriteN) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SWriteN: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SWriteN: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurL", wireType)
+			}
+			m.CurL = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.CurL |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field This", wireType)
+			}
+			m.This = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.This |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rnd", wireType)
+			}
+			m.Rnd = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Rnd |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Prop", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Prop == nil {
+				m.Prop = &Blueprint{}
+			}
+			if err := m.Prop.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SWriteNReply) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SWriteNReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SWriteNReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Next = append(m.Next, &Blueprint{})
+			if err := m.Next[len(m.Next)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Commit) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Commit: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Commit: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurL", wireType)
+			}
+			m.CurL = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.CurL |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field This", wireType)
+			}
+			m.This = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.This |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rnd", wireType)
+			}
+			m.Rnd = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Rnd |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Commit", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Commit = bool(v != 0)
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Collect", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Collect == nil {
+				m.Collect = &Blueprint{}
+			}
+			if err := m.Collect.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitReply) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CommitReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CommitReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Committed", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Committed == nil {
+				m.Committed = &Blueprint{}
+			}
+			if err := m.Committed.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Collected", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Collected == nil {
+				m.Collected = &Blueprint{}
+			}
+			if err := m.Collected.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SRead) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SRead: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SRead: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurL", wireType)
+			}
+			m.CurL = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.CurL |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SReadReply) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SReadReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SReadReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.State == nil {
+				m.State = &State{}
+			}
+			if err := m.State.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SState) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SState: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SState: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurL", wireType)
+			}
+			m.CurL = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.CurL |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cur == nil {
+				m.Cur = &Blueprint{}
+			}
+			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.State == nil {
+				m.State = &State{}
+			}
+			if err := m.State.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SStateReply) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SStateReply: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SStateReply: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HasNext", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.HasNext = bool(v != 0)
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Cur", wireType)
 			}

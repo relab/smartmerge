@@ -168,3 +168,57 @@ message DWriteNs {
 message DWriteNsReply {
 	Blueprint Cur = 1;
 }
+
+service SpSnRegister {
+	rpc SpSnOne(SWriteN) returns (SWriteNReply) {}
+	rpc SCommit(Commit) returns (CommitReply) {}
+	rpc SReadS(SRead) returns (SReadReply) {}
+	rpc SSetState(SState) returns (SStateReply) {}
+}
+
+message SWriteN {
+	uint32 CurL = 1;
+	uint32 This = 2;
+	uint32 Rnd = 3;
+	Blueprint Prop = 4;
+}
+
+message SWriteNReply {
+	Blueprint Cur = 1;
+	repeated Blueprint Next = 2;
+}
+
+message Commit {
+	uint32 CurL = 1;
+	uint32 This = 2;
+	uint32 Rnd = 3;
+	bool Commit = 4;
+	Blueprint Collect = 5;
+}
+
+message CommitReply {
+	Blueprint Cur = 1;
+	Blueprint Committed = 2;
+	Blueprint Collected = 3;
+}
+
+message SRead {
+	uint32 CurL = 1;
+}
+
+message SReadReply {
+	Blueprint Cur = 1;
+	State State = 2;
+}
+
+message SState {
+	uint32 CurL = 1;
+	Blueprint Cur = 2;
+	State State = 3;
+}
+
+message SStateReply {
+	bool HasNext = 1;
+	Blueprint Cur = 2;
+}
+

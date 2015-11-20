@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 )
@@ -47,7 +48,7 @@ func NewDynaServerWithCur(cur *pb.Blueprint, curc uint32) *DynaServer {
 func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	//defer rs.PrintState("SetCur")
+	glog.V(5).Infoln("Handling DSetCur")
 
 	if nc.CurC == rs.CurC {
 		return &pb.NewCurReply{false}, nil
@@ -69,7 +70,7 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	//defer rs.PrintState("DReadS")
+	glog.V(5).Infoln("Handling WriteN")
 
 	if rr.Conf.Cur < rs.CurC {
 		return &pb.DReadReply{Cur: rs.Cur}, nil
@@ -89,6 +90,7 @@ func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply
 func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewStateReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling SetState")
 	
 	if ns.Conf.Cur < rs.CurC {
 		// Outdated
@@ -108,6 +110,7 @@ func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewS
 func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWriteNsReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling WriteNSet")
 
 	if wr.Conf.Cur < rs.CurC {
 		return &pb.DWriteNsReply{Cur: rs.Cur}, nil
@@ -132,6 +135,7 @@ outerLoop:
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling GetOne")
 
 	if gt.Conf.Cur < rs.CurC {
 		return &pb.GetOneReply{Cur: rs.Cur}, nil

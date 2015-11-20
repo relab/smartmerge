@@ -140,10 +140,11 @@ func (srs *SSRServer) SSetState(ctx context.Context, ss *pb.SState) (*pb.SStateR
 	defer srs.mu.Unlock()
 	glog.V(5).Infoln("handling SSetState")
 	
+	var c *Blueprint
 	if ss.CurL < srs.CurC {
-		return &pb.SStateReply{Cur: srs.Cur}, nil
+		c = srs.Cur
 	}
-
+	
 	if srs.RState.Compare(ss.State) == 1 {
 		srs.RState = ss.State
 	}
@@ -154,7 +155,7 @@ func (srs *SSRServer) SSetState(ctx context.Context, ss *pb.SState) (*pb.SStateR
 	}
 	
 	if len(srs.proposed(ss.CurL, 0)) != 0 {
-		return &pb.SStateReply{HasNext: true}, nil
+		return &pb.SStateReply{HasNext: true, Cur: c}, nil
 	}
-	return &pb.SStateReply{HasNext: false}, nil
+	return &pb.SStateReply{HasNext: false, Cur: c}, nil
 }

@@ -216,7 +216,8 @@ func (bp *Blueprint) Len() int {
 
 	sum := uint32(0)
 	for _, n := range bp.Nodes {
-		sum += n.Version
+		sum = sum + n.Version + 1  
+		// +1 necessary to acchieve, that adding one id with version 0 results in increased length.
 	}
 
 	sum += bp.Epoch * 16

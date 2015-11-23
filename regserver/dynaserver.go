@@ -12,7 +12,7 @@ import (
 
 type DynaServer struct {
 	Cur    *pb.Blueprint
-	CurC   uint32  // This should be the length of cur, not its Gid.
+	CurC   uint32 // This should be the length of cur, not its Gid.
 	RState *pb.State
 	Next   map[uint32][]*pb.Blueprint
 	mu     sync.RWMutex
@@ -75,7 +75,7 @@ func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply
 	if rr.Conf.Cur < rs.CurC {
 		return &pb.DReadReply{Cur: rs.Cur}, nil
 	}
-	
+
 	if rr.Prop != nil {
 		if len(rs.Next[rr.Conf.This]) > 0 {
 			rs.Next[rr.Conf.This] = append(rs.Next[rr.Conf.This], rr.Prop)
@@ -91,7 +91,7 @@ func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewS
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	glog.V(5).Infoln("Handling SetState")
-	
+
 	if ns.Conf.Cur < rs.CurC {
 		// Outdated
 		return &pb.NewStateReply{Cur: rs.Cur}, nil
@@ -115,7 +115,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 	if wr.Conf.Cur < rs.CurC {
 		return &pb.DWriteNsReply{Cur: rs.Cur}, nil
 	}
-	
+
 	if rs.Next[wr.Conf.This] == nil {
 		rs.Next[wr.Conf.This] = wr.Next
 	}

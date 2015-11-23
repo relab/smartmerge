@@ -35,12 +35,11 @@ func (rs *RegServer) PrintState(op string) {
 
 var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
 
-
 func NewRegServer(noabort bool) *RegServer {
 	rs := &RegServer{}
 	rs.RWMutex = sync.RWMutex{}
 	rs.RState = &pb.State{make([]byte, 0), int32(0), uint32(0)}
-	rs.Next = make([]*pb.Blueprint,0,5)
+	rs.Next = make([]*pb.Blueprint, 0, 5)
 	rs.NextMap = make(map[uint32]*pb.Blueprint, 5)
 	rs.Rnd = make(map[uint32]uint32, 5)
 	rs.Val = make(map[uint32]*pb.CV, 5)
@@ -80,9 +79,6 @@ func (rs *RegServer) handleConf(conf *pb.Conf) (cr *pb.ConfReply) {
 	}
 	return nil
 }
-
-
-
 
 func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
 	rs.RLock()
@@ -279,5 +275,3 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 
 	return &pb.NewCurReply{true}, nil
 }
-
-

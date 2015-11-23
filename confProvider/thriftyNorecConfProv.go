@@ -9,7 +9,7 @@ import (
 )
 
 var ConfTimeout = 1 * time.Second
-var TryTimeout = 10 * time.Millisecond
+var TryTimeout = 500 * time.Millisecond
 
 type Provider interface {
 	FullC(*pb.Blueprint) *pb.Configuration

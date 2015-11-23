@@ -34,7 +34,7 @@ func (cs *ConsServer) handleConf(conf *pb.Conf) (cr *pb.ConfReply) {
 		// Inform the client of the new current configuration
 		return &pb.ConfReply{Cur: cs.Cur, Abort: false, Next: []*pb.Blueprint{cs.NextMap[conf.This]}}
 	}
-	if n:= cs.NextMap[conf.This]; n != nil {
+	if n := cs.NextMap[conf.This]; n != nil {
 		// Inform the client of the next configurations
 		return &pb.ConfReply{Next: []*pb.Blueprint{n}}
 	}
@@ -79,7 +79,6 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 
 	return &pb.WriteNReply{Cur: cr, State: cs.RState, LAState: cs.LAState}, nil
 }
-
 
 func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
 	cs.Lock()

@@ -388,7 +388,7 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 				break for_rec
 			}
 		}
-		fmt.Fprintf(of, "Initialized %d reconfigurations before:\n", count)
+		fmt.Fprintf(of, "Initialized %d reconfigurations before: ", count)
 		fmt.Fprintf(of, "%v\n", tput)
 	}
 }

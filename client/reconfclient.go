@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	//"flag"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,12 +17,11 @@ import (
 )
 
 func expmain() {
-	flag.Parse()
 	addrs, ids := util.GetProcs(*confFile, false)
 
 	//Build initial blueprint.
 	if *initsize > len(ids) && *initsize < 100 {
-		glog.Errorln(os.Stderr, "Not enough servers to fulfill initsize.")
+		glog.Errorln("Not enough servers to fulfill initsize.")
 		return
 	}
 
@@ -67,7 +66,6 @@ func expmain() {
 				go contadd(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			}
 		case *rm:
-			glog.Infoln("removing a process.")
 			go remove(cl, cp, ids, syncchan, (*clientid)+i, &wg)
 		case *add:
 			go adds(cl, cp, ids, syncchan, *initsize+i, &wg)
@@ -173,7 +171,6 @@ func remove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg
 		glog.Errorln("Remove did not result in new blueprint.")
 	}
 
-	glog.Infoln("waiting for synchronyzation.")
 	<-sc
 	reqsent := time.Now()
 	cnt, err := c.Reconf(cp, target)

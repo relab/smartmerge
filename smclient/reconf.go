@@ -99,6 +99,12 @@ forconfiguration:
 					break
 				}
 			}
+			
+			if i > 0 && glog.V(3) {
+				glog.Infof("C%d: WriteN in Configuration with length %d\n ", smc.Id, smc.Blueps[i].Len())
+			} else if glog.V(6) {
+				glog.Infoln("WriteN returned.")
+			}
 
 			cur = smc.HandleNewCur(cur, writeN.Reply.GetCur())
 			las = las.Merge(writeN.Reply.GetLAState())

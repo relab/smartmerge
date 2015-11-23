@@ -16,9 +16,9 @@ func checkConfResponder(cr ConfResponder) bool {
 func checkConfReply(cr *pr.ConfReply) bool {
 	if cr != nil && cr.Abort {
 		return true
-	} 
+	}
 	return false
-} 
+}
 
 func handleConfResponder(old *pr.ConfReply, cr ConfResponder) *pr.ConfReply {
 	return handleConfReply(old, cr.GetCur())
@@ -28,14 +28,14 @@ func handleConfReply(old *pr.ConfReply, cr *pr.ConfReply) *pr.ConfReply {
 	if old == nil {
 		return cr
 	}
-	
+
 	if cr == nil {
 		return old
 	}
 	if old.Cur.LearnedCompare(cr.Cur) == 1 {
 		old.Cur = cr.Cur
 	}
-	
+
 	old.Next = GetBlueprintSlice(old.Next, cr)
 	return old
 }
@@ -267,9 +267,9 @@ func GetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {
 	if repNext == nil {
 		return next
 	}
-	
+
 	if next == nil {
-		next = make([]*pr.Blueprint,0,len(repNext))
+		next = make([]*pr.Blueprint, 0, len(repNext))
 	}
 	for _, blp := range repNext {
 		next = addLearned(next, blp)

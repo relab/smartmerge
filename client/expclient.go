@@ -17,15 +17,16 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/relab/goxos/kvs/bgen"
-	dyna "github.com/relab/smartMerge/dynaclient"
 	conf "github.com/relab/smartMerge/confProvider"
 	cc "github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/doreconf"
+	dyna "github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
 	qf "github.com/relab/smartMerge/qfuncs"
 	smc "github.com/relab/smartMerge/smclient"
+	ssr "github.com/relab/smartMerge/ssrclient"
 	"github.com/relab/smartMerge/util"
 	grpc "google.golang.org/grpc"
 )
@@ -40,7 +41,7 @@ var (
 
 	// Mode
 	mode   = flag.String("mode", "", "run mode: (user | bench | exp )")
-	alg    = flag.String("alg", "", "algorithm to be used: (sm | dyna | odyna | cons )")
+	alg    = flag.String("alg", "", "algorithm to be used: (sm | dyna | ssr | cons )")
 	opt    = flag.String("opt", "", "which optimization to use: ( no | doreconf )")
 	cprov  = flag.String("cprov", "normal", "which configuration provider: (normal | thrifty | norecontact ) ")
 	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
@@ -217,6 +218,10 @@ func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.M
 		pb.WithDWriteNSetQuorumFunc(qf.DWriteNSetQF),
 		pb.WithDSetCurQuorumFunc(qf.DSetCurQF),
 		pb.WithGetOneNQuorumFunc(qf.GetOneNQF),
+		pb.WithSpSnOneQuorumFunc(qf.SpSnOneQF),
+		pb.WithSCommitQuorumFunc(qf.SCommitQF),
+		pb.WithSReadSQuorumFunc(qf.SReadSQF),
+		pb.WithSSetStateQuorumFunc(qf.SSetStateQF),
 	)
 	if err != nil {
 		glog.Errorln("Creating manager returned error: ", err)
@@ -250,9 +255,8 @@ func NewClient(initB *pb.Blueprint, alg string, opt string, id int, cp conf.Prov
 		}
 	case "dyna":
 		cl, err = dyna.New(initB, uint32(id), cp)
-	case "odyna":
-		glog.Fatalln("this option is outdated an not updated to the new version.")
-		//cl, err = dynaclient.NewOrg(initB, mgr, uint32(id))
+	case "ssr":
+		cl, err = ssr.New(initB, uint32(id), cp)
 	case "cons":
 		switch opt {
 		case "", "no":
@@ -444,6 +448,14 @@ func checkFlags(alg, cprov, opt string) {
 		}
 		if cprov == "norecontact" {
 			glog.Warningln("Norecontact not supported in Dynastore algorithm.")
+		}
+	}
+	if alg == "ssr" {
+		if opt == "doreconf" {
+			glog.Warningln("Doreconf is default for the speculating snapshot register.")
+		}
+		if cprov == "norecontact" {
+			glog.Warningln("Norecontact not supported for speculated snapshot register.")
 		}
 	}
 }

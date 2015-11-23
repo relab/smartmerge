@@ -440,7 +440,7 @@ func checkFlags(alg, cprov, opt string) {
 	if alg == "cons" && cprov == "norecontact" && opt == "doreconf" {
 		glog.Errorln("Unsupported flag combination. With alg=cons and doreconf, norecontact will result in no benefit.")
 	} else if alg == "cons" && cprov == "norecontact" {
-		glog.Warningln("To use norecontact with warning, the servers have to use alg=sm, not alg=cons")
+		glog.Warningln("To use norecontact with consensus, the servers have to use alg=sm, not alg=cons")
 	}
 	if alg == "dyna" {
 		if opt == "doreconf" {

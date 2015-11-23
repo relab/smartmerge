@@ -8,7 +8,7 @@ import (
 )
 
 type SSRClient struct {
-	smc.SmClient
+	*smc.SmClient
 }
 
 func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*SSRClient, error) {
@@ -19,7 +19,7 @@ func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*SSRClient, error)
 		return nil, err
 	}
 
-	return &SSRClient{sr}, nil
+	return &SSRClient{sc}, nil
 }
 
 //Atomic read

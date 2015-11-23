@@ -1,8 +1,7 @@
 package ssrclient
 
 import (
-	"errors"
-	"time"
+	//"errors"
 
 	"github.com/golang/glog"
 	conf "github.com/relab/smartMerge/confProvider"
@@ -14,9 +13,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconfiguration\n", ssc.Id)
 	}
-	
-	
-forconfiguration:
+
 	for i := 0; i < len(ssc.Blueps); i++ {
 
 		if i == 0 {
@@ -26,13 +23,13 @@ forconfiguration:
 		var c int
 		var newcur bool
 
-		prop, c, newcur, err = spsn(cp, i, prop)
+		prop, c, newcur, err = ssc.spsn(cp, i, prop)
 		if err != nil {
 			return nil, 0, err
 		}
-		
+
 		cnt += c
-		
+
 		if newcur {
 			// Restart in the new current configuration.
 			i = -1
@@ -67,17 +64,17 @@ forconfiguration:
 		}
 
 		if cr := readS.Reply.Cur; cr != nil {
-			ssc.Blueps = []*Blueps{cr}
+			ssc.Blueps = []*pb.Blueprint{cr}
 			glog.V(3).Infof("C%d: ReadS returned new current conf of length %d.\n", ssc.Id, cr.Len())
 			i = -1
 			continue
 		}
 
-		if rst.Compare(ReadS.Reply.GetState()) == 1 {
-			rst = ReadS.Reply.GetState()
+		if rst.Compare(readS.Reply.GetState()) == 1 {
+			rst = readS.Reply.GetState()
 		}
 
-		 if i > cur || !regular {
+		if i > 0 || !regular {
 			//Establish new cur, or write value in write, atomic read.
 
 			rst = ssc.WriteValue(&val, rst)
@@ -117,27 +114,24 @@ forconfiguration:
 			}
 
 			if regular {
+				ssc.Blueps = []*pb.Blueprint{ssc.Blueps[i]}
 				return
 			}
-
-			// Continue here. Not sure what to do.
 
 			if cr := setS.Reply.Cur; cr != nil {
 				ssc.Blueps = []*pb.Blueprint{cr}
 				glog.V(3).Infof("C%d: SetState returned new current conf of length %d.\n", ssc.Id, cr.Len())
-				i == -1
+				i = -1
+				continue
 			}
-			
-			
-			
-			if i < len(ssc.Blueps)-1 {
-				prop = ssc.Blueps[len(ssc.Blueps)-1]
-				doconsensus = false
+
+			if setS.Reply.HasNext {
+				i--
+				continue
 			}
 		}
 	}
 
-	ssc.SetNewCur(cur)
 	return rst, cnt, nil
 }
 
@@ -165,7 +159,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 
 			if err != nil && j == smc.Retry {
 				glog.Errorf("C%d: error %v from Phase1 after %d retries.\n", ssc.Id, err, smc.Retry)
-				return nil, 0, 0, err
+				return nil, 0, false, err
 			}
 
 			if err == nil {
@@ -175,7 +169,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 
 		// Abort on new Cur
 		if cr := collect.Reply.Cur; cr != nil {
-			ssc.Blueps = []*Blueps{cr}
+			ssc.Blueps = []*pb.Blueprint{cr}
 			glog.V(3).Infof("C%d: Phase1 returned new current conf of length %d.\n", ssc.Id, cr.Len())
 			return prop, cnt, true, nil
 		}
@@ -189,11 +183,11 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			commit = false
 			prop = prop.Merge(blp)
 		}
-		
+
 		if prop.Len() == 0 && commit {
 			return nil, cnt, false, nil
 		}
-		
+
 		if commit {
 			ssc.HandleOneCur(i, prop)
 		}
@@ -201,14 +195,14 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 		//Do SpSn Phase two.
 		cnf = cp.WriteC(ssc.Blueps[i], nil) //This is not really necessary.
 
-		var commit *pb.SCommitReply
+		var commitR *pb.SCommitReply
 
 		for j := 0; ; j++ {
-			commit, err = cnf.SCommit(&pb.Commit{
-				CurL: uint32(ssc.Blueps[0].Len()),			
-				This: uint32(ssc.Blueps[i].Len()),
-				Rnd:  uint32(rnd),
-				Commit: commit,
+			commitR, err = cnf.SCommit(&pb.Commit{
+				CurL:    uint32(ssc.Blueps[0].Len()),
+				This:    uint32(ssc.Blueps[i].Len()),
+				Rnd:     uint32(rnd),
+				Commit:  commit,
 				Collect: prop,
 			})
 			if err != nil && j == 0 {
@@ -219,34 +213,34 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 
 			if err != nil && j == smc.Retry {
 				glog.Errorf("C%d: error %v from Commit after %d retries: ", ssc.Id, err, smc.Retry)
-				return nil, 0, 0, err
+				return nil, 0, false, err
 			}
 
 			if err == nil {
 				break
 			}
 		}
-		
+
 		// Abort on new Cur.
-		if cr := commit.Reply.Cur; cr != nil {
-			ssc.Blueps = []*Blueps{cr}
+		if cr := commitR.Reply.Cur; cr != nil {
+			ssc.Blueps = []*pb.Blueprint{cr}
 			glog.V(3).Infof("C%d: Commit returned new current conf of length %d.\n", ssc.Id, cr.Len())
 			return prop, cnt, true, nil
 		}
-		
+
 		//Insert Committed Blueprint
 		if commit {
 			ssc.HandleOneCur(i, prop)
 		} else {
-			ssc.HandleOneCur(i, commit.Reply.Committed)
+			ssc.HandleOneCur(i, commitR.Reply.Committed)
 		}
 
 		//If no uncommitted was collected, return.
-		if commit..Reply.Collected.Len() == 0 {
+		if commitR.Reply.Collected.Len() == 0 {
 			return prop, cnt, false, nil
 		}
-		
+
 		//Merge with collected and go to next rnd.
-		prop = prop.Merge(commit.Reply.Collected)
+		prop = prop.Merge(commitR.Reply.Collected)
 	}
-}		
+}

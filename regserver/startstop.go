@@ -157,7 +157,6 @@ func StartSSRInConf(port int, init *pb.Blueprint, initC uint32) (*SSRServer, err
 	return ds, nil
 }
 
-
 ///////////////// Consensus Server ////////////////////
 
 func StartCons(port int, noabort bool) (*ConsServer, error) {

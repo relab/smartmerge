@@ -85,7 +85,9 @@ func main() {
 	if *allCores {
 		cpus := runtime.NumCPU()
 		runtime.GOMAXPROCS(cpus)
-	}
+	} else {
+		runtime.GOMAXPROCS(1)
+	}	
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)

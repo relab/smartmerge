@@ -30,9 +30,14 @@ func (cs *ConsServer) handleConf(conf *pb.Conf) (cr *pb.ConfReply) {
 		return &pb.ConfReply{Cur: cs.Cur, Abort: false}
 	}
 
+
 	if conf.Cur < cs.CurC {
+		if n := cs.NextMap[conf.This]; n != nil {
+			// Inform the client of the next configurations
+			return &pb.ConfReply{Cur: cs.Cur, Abort: false, Next: []*pb.Blueprint{n}}
+		}
 		// Inform the client of the new current configuration
-		return &pb.ConfReply{Cur: cs.Cur, Abort: false, Next: []*pb.Blueprint{cs.NextMap[conf.This]}}
+		return &pb.ConfReply{Cur: cs.Cur, Abort: false }
 	}
 	if n := cs.NextMap[conf.This]; n != nil {
 		// Inform the client of the next configurations

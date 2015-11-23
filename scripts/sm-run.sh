@@ -12,6 +12,16 @@ if [ "$1" == "help" ]; then
 	echo "6 more reader options, e.g. -regular | -logThroughput"
 	echo "7 V-level"
 	exit
+else 
+	echo Arguments:
+	echo "1 reader optimization: $1"
+	echo "2 alg: $2"
+	echo "3 cprov: $3"
+	echo "4 reconfiguration: $4"
+	echo "5 number of reconfiguration clients: $5"
+	echo "6 more reader options, $6"
+	echo "7 V-level: $7"
+	
 fi
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
@@ -49,11 +59,18 @@ elif [ "$2" == "sm" ]; then
 	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
 	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
-else
+elif [ "$2" == "cons" ]; then
 
 	echo -n "c-pitter$Pi "
 	ssh pitter"$Pi" "nohup $SM/server/server -alg=cons -port 13000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
 	ssh pitter"$Pi" "nohup $SM/server/server -alg=cons -port 12000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
+
+else
+
+	echo -n "$2-pitter$Pi "
+	ssh pitter"$Pi" "nohup $SM/server/server -alg=$2 -port 13000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -alg=$2 -port 12000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
+
 
 fi
 done
@@ -79,20 +96,21 @@ echo " "
 
 sleep 1
 
+if [ "$4" == "-cont" ]; then
 
-if ! [ "$4" == "" ]; then
 	echo starting Reconfigurers
-	nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=100 -elog -all-cores  -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &
+	nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=100 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &
+	
+	echo sleeping 30 seconds
+	sleep 30
+
+elif ! [ "$5" == 0 ]; then
+	echo starting Reconfigurers
+	$SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=100 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
 else
 	echo no reconfiguration, waiting 10 seconds
 	sleep 10
 fi
-
-if [ "$4" == "-cont" ]; then
-	echo sleeping 30 seconds
-	sleep 30
-fi
-
 
 sleep 1
 

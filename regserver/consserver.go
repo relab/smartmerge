@@ -67,7 +67,7 @@ func (cs *ConsServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply
 		cs.RState = wr.GetState()
 	}
 
-	if crepl := rs.handleConf(wr.GetConf()); crepl != nil {
+	if crepl := cs.handleConf(wr.GetConf()); crepl != nil {
 		return crepl, nil
 	}
 	return &pb.ConfReply{}, nil

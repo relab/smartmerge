@@ -40,7 +40,7 @@ func (cs *ConsServer) handleConf(conf *pb.Conf, next *pb.Blueprint) (cr *pb.Conf
 			return &pb.ConfReply{Cur: cs.Cur, Abort: false, Next: []*pb.Blueprint{n}}
 		}
 		// Inform the client of the new current configuration
-		return &pb.ConfReply{Cur: cs.Cur, Abort: false }
+		return &pb.ConfReply{Cur: cs.Cur, Abort: false}
 	}
 	if n := cs.NextMap[conf.This]; n != nil {
 		// Inform the client of the next configurations
@@ -82,7 +82,7 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 	defer cs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	cr := cs.handleConf(&pb.Conf{wr.CurC, wr.CurC}, nil)
+	cr := cs.handleConf(&pb.Conf{wr.CurC, wr.CurC}, wr.Next)
 	if cr != nil && cr.Abort {
 		return &pb.WriteNReply{Cur: cr}, nil
 	}

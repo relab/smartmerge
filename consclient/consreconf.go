@@ -243,6 +243,7 @@ prepare:
 				CurC: uint32(cc.Blueps[i].Len()),
 				Val:  &pb.CV{rnd, next},
 			})
+			cnt++
 			if err != nil && j == 0 {
 				glog.Errorf("C%d: error from OptimizedAccept: %v\n", cc.Id, err)
 				// Try again with full configuration.

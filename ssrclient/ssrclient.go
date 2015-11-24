@@ -104,3 +104,14 @@ func (ssc *SSRClient) Write(cp conf.Provider, val []byte) (cnt int) {
 	}
 	return cnt
 }
+
+func (ssc *SSRClient) Reconf(cp conf.Provider, prop *pb.Blueprint) (cnt int, err error) {
+	//Proposed blueprint is already in place, or outdated.
+	if prop.Compare(ssc.Blueps[0]) == 1 {
+		glog.V(3).Infof("C%d: Proposal is already in place.", ssc.Id)
+		return 0, nil
+	}
+
+	_, cnt, err = ssc.Doreconf(cp, prop, true, nil)
+	return
+}

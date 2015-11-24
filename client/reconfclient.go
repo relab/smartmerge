@@ -16,6 +16,8 @@ import (
 )
 
 func expmain() {
+	parseFlags()
+
 	addrs, ids := util.GetProcs(*confFile, false)
 
 	//Build initial blueprint.

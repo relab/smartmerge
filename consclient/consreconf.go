@@ -42,7 +42,7 @@ forconfiguration:
 			}
 		case 1:
 			// No proposal
-			if len(smc.Blueps) == i+1 && (cur == i || regular > 0) {
+			if len(cc.Blueps) == i+1 && (cur == i || regular > 0) {
 				// We are in the current configuration, do a read, to check for next configurations. No need to recontact.
 				// If atomic: Need to read before writing.
 				var st *pb.State

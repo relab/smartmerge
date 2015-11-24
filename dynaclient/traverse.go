@@ -8,21 +8,21 @@ import (
 	sm "github.com/relab/smartMerge/smclient"
 )
 
-func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte, regular bool) (rval []byte,cnt int, err error) {
+func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte, regular bool) (rval []byte, cnt int, err error) {
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Confs); i++ {
-		var curprop *pb.Blueprint    // The current proposal
+		var curprop *pb.Blueprint // The current proposal
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
-			
+
 			cnf := cp.SingleC(dc.Blueps[i])
 
-			 getOne := new(pb.GetOneNReply)
+			getOne := new(pb.GetOneNReply)
 
 			for j := 0; ; j++ {
-				getOne, err =  cnf.GetOneN(&pb.GetOne{
+				getOne, err = cnf.GetOneN(&pb.GetOne{
 					Conf: &pb.Conf{
-						Cur: uint32(dc.Blueps[0].Len()), 
+						Cur:  uint32(dc.Blueps[0].Len()),
 						This: dc.Confs[i].GlobalID(),
 					},
 					Next: prop,
@@ -45,32 +45,32 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					break
 				}
 			}
-			
+
 			if glog.V(4) {
-				glog.Infoln("C%d: GetOne returned.")
+				glog.Infof("C%d: GetOne returned.\n", dc.ID)
 			}
-			
+
 			isnew := dc.handleNewCur(i, getOne.Reply.GetCur(), cp)
 			if isnew {
 				prop = prop.Merge(getOne.Reply.GetCur())
 				i = -1
 				continue
 			}
-						
+
 			curprop = getOne.Reply.GetNext()
 
 		}
 
-		//Update Snapshot and ReadInView: 
+		//Update Snapshot and ReadInView:
 		cnf := cp.WriteC(dc.Blueps[i], nil)
-		
+
 		writeN := new(pb.DWriteNReply)
 
 		for j := 0; ; j++ {
 			writeN, err = dc.Confs[i].DWriteN(
 				&pb.DRead{
 					Conf: &pb.Conf{
-						Cur: uint32(dc.Blueps[0].Len()), 
+						Cur:  uint32(dc.Blueps[0].Len()),
 						This: dc.Confs[i].GlobalID(),
 					},
 					Prop: curprop,
@@ -92,14 +92,13 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				break
 			}
 		}
-		
-		
+
 		if i > 0 && glog.V(3) {
-			glog.Infof("C%d: Read in View with length %d\n ", dc.ID, dc.Blueps[i].Len())
+			glog.Infof("C%d: Read in View with length %d and id %d.\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
 		} else if glog.V(6) {
-			glog.Infoln("Read returned.")
+			glog.Infoln("C%d: Read returned.", dc.ID)
 		}
-		
+
 		isnew := dc.handleNewCur(i, writeN.Reply.GetCur(), cp)
 		if isnew {
 			if prop != nil {
@@ -116,10 +115,10 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		}
 
 		if len(next) == 0 && !regular {
-			
+
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
-			
+
 			cnf = cp.WriteC(dc.Blueps[i], nil)
 
 			var setS *pb.DSetStateReply
@@ -127,11 +126,11 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			for j := 0; ; j++ {
 				setS, err = cnf.DSetState(&pb.DNewState{
 					Conf: &pb.Conf{
-						Cur: uint32(dc.Blueps[i].Len()), 
+						Cur:  uint32(dc.Blueps[i].Len()),
 						This: dc.Confs[i].GlobalID(),
 					},
-					Cur:     dc.Blueps[i],
-					State:   wst,
+					Cur:   dc.Blueps[i],
+					State: wst,
 				})
 				cnt++
 
@@ -150,13 +149,13 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					break
 				}
 			}
-			
+
 			if i > 0 && glog.V(3) {
-				glog.Infof("C%d: Write in view with length %d\n ", dc.ID, dc.Blueps[i].Len())
+				glog.Infof("C%d: Write in view with length %d and id %d\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
 			} else if glog.V(6) {
 				glog.Infoln("Write returned.")
 			}
-			
+
 			isnew = dc.handleNewCur(i, setS.Reply.GetCur(), cp)
 			if isnew {
 				if prop != nil {
@@ -165,18 +164,18 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				i = -1
 				continue
 			}
-					
+
 			dc.Blueps = dc.Blueps[i:]
 			dc.Confs = dc.Confs[i:]
 			i = 0
-					
+
 			next = setS.Reply.GetNext()
 			prop = dc.handleNext(i, next, prop, cp)
 		}
 
-		if len(next) > 0 {	//Oups this is an else to the if above, but can also be used be true, after the WriteInView was executed.
+		if len(next) > 0 { //Oups this is an else to the if above, but can also be used be true, after the WriteInView was executed.
 			regular = false
-			
+
 			cnf = cp.WriteC(dc.Blueps[i], nil)
 
 			var writeNs *pb.DWriteNSetReply
@@ -184,10 +183,10 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			for j := 0; ; j++ {
 				writeNs, err = cnf.DWriteNSet(&pb.DWriteNs{
 					Conf: &pb.Conf{
-						Cur: uint32(dc.Blueps[0].Len()), 
+						Cur:  uint32(dc.Blueps[0].Len()),
 						This: dc.Confs[i].GlobalID(),
 					},
-					Next:   next,
+					Next: next,
 				})
 				cnt++
 
@@ -198,7 +197,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				}
 
 				if err != nil && j == sm.Retry {
-					glog.Errorf("C%d: error %v from WriteNSet after %d retries: ", dc.ID, err, sm.Retry)
+					glog.Errorf("C%d: error %v from WriteNSet after %d retries.\n ", dc.ID, err, sm.Retry)
 					return nil, 0, err
 				}
 
@@ -206,11 +205,11 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					break
 				}
 			}
-			
+
 			if glog.V(3) {
-				glog.Infof("C%d: WriteNSet returned./n", dc.ID)
+				glog.Infof("C%d: WriteNSet returned.\n", dc.ID)
 			}
-			
+
 			isnew = dc.handleNewCur(i, writeNs.Reply.GetCur(), cp)
 			if isnew {
 				if prop != nil {
@@ -236,18 +235,18 @@ func (dc *DynaClient) handleNewCur(i int, newCur *pb.Blueprint, cp conf.Provider
 	if newCur.Compare(dc.Blueps[i]) == 1 {
 		return false
 	}
-	
+
 	glog.V(4).Infoln("Found new current view with length", newCur.Len())
-	
+
 	cnf := cp.FullC(newCur)
-	
-	dc.Blueps = make([]*pb.Blueprint,1,5)
-	dc.Confs = make([]*pb.Configuration,1,5)
+
+	dc.Blueps = make([]*pb.Blueprint, 1, 5)
+	dc.Confs = make([]*pb.Configuration, 1, 5)
 	dc.Blueps[0] = newCur
 	dc.Confs[0] = cnf
-	
+
 	return true
-	
+
 }
 
 func (dc *DynaClient) handleNext(i int, next []*pb.Blueprint, prop *pb.Blueprint, cp conf.Provider) *pb.Blueprint {
@@ -264,7 +263,7 @@ func (dc *DynaClient) findorinsert(i int, blp *pb.Blueprint, cp conf.Provider) {
 	if (dc.Blueps[i]).Compare(blp) <= 0 {
 		return
 	}
-	for i++ ; i < len(dc.Blueps); i++ {
+	for i++; i < len(dc.Blueps); i++ {
 		switch (dc.Blueps[i]).Compare(blp) {
 		case 1, 0:
 			if blp.Compare(dc.Blueps[i]) == 1 {
@@ -284,18 +283,18 @@ func (dc *DynaClient) findorinsert(i int, blp *pb.Blueprint, cp conf.Provider) {
 
 func (dc *DynaClient) insert(i int, blp *pb.Blueprint, cp conf.Provider) {
 	glog.V(4).Infoln("Found next blueprint.")
-	
+
 	cnf := cp.FullC(blp)
 
 	dc.Blueps = append(dc.Blueps, blp)
 	dc.Confs = append(dc.Confs, cnf)
 
-	for j:= len(dc.Blueps)-1; j>i; j-- {
+	for j := len(dc.Blueps) - 1; j > i; j-- {
 		dc.Blueps[j] = dc.Blueps[j-1]
 		dc.Confs[j] = dc.Confs[j-1]
-	} 
+	}
 
-	if len(dc.Blueps) != i + 1 {
+	if len(dc.Blueps) != i+1 {
 		dc.Blueps[i] = blp
 		dc.Confs[i] = cnf
 	}

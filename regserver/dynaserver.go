@@ -90,7 +90,7 @@ func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply
 func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewStateReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	glog.V(5).Infoln("Handling SetState")
+	glog.V(4).Infoln("Handling SetState")
 
 	if ns.Conf.Cur < rs.CurC {
 		// Outdated
@@ -101,6 +101,7 @@ func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewS
 		rs.RState = ns.State
 	}
 
+	glog.V(4).Infoln("New Cur has length %d, previous has length %d\n", rs.CurC, ns.Conf.Cur)
 	rs.CurC = ns.Conf.Cur
 	rs.Cur = ns.Cur
 
@@ -110,9 +111,10 @@ func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewS
 func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWriteNsReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	glog.V(5).Infoln("Handling WriteNSet")
+	glog.V(4).Infoln("Handling WriteNSet")
 
 	if wr.Conf.Cur < rs.CurC {
+		if glog.V(4).Infoln("CLient has outdated cur.")
 		return &pb.DWriteNsReply{Cur: rs.Cur}, nil
 	}
 

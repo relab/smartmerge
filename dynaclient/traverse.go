@@ -96,7 +96,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		if i > 0 && glog.V(3) {
 			glog.Infof("C%d: Read in View with length %d and id %d.\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
 		} else if glog.V(6) {
-			glog.Infoln("C%d: Read returned.", dc.ID)
+			glog.Infof("C%d: Read returned.\n", dc.ID)
 		}
 
 		isnew := dc.handleNewCur(i, writeN.Reply.GetCur(), cp)
@@ -208,6 +208,9 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 
 			if glog.V(3) {
 				glog.Infof("C%d: WriteNSet returned.\n", dc.ID)
+				if writeNs.Reply.GetCur() != nil {
+					glog.Infof("C%d: WriteNSet did return new current.\n", dc.ID)
+				}
 			}
 
 			isnew = dc.handleNewCur(i, writeNs.Reply.GetCur(), cp)

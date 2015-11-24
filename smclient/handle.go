@@ -22,7 +22,7 @@ func (smc *SmClient) HandleOneCur(cur int, newCur *pb.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
-	if glog.V(3) {
+	if glog.V(7) {
 		glog.Infof("Found new Cur with length %d, current has length %d\n", newCur.Len(), smc.Blueps[cur].Len())
 	}
 	return smc.findorinsert(cur, newCur)

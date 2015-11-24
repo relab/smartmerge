@@ -11,7 +11,7 @@ import (
 
 func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
 	if glog.V(6) {
-		glog.Infof("C%d: Starting reconfiguration\n", ssc.Id)
+		glog.Infof("C%d: Starting doreconfiguration\n", ssc.Id)
 	}
 
 	for i := 0; i < len(ssc.Blueps); i++ {
@@ -59,7 +59,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 				return nil, 0, err
 			}
 		}
-		if glog.V(3) {
+		if glog.V(6) {
 			glog.Infof("C%d: ReadS returned.\n", ssc.Id)
 		}
 
@@ -167,6 +167,10 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			}
 		}
 
+		if glog.V(6) {
+			glog.Infof("C%d: Phase1 returned in rnd %d.", ssc.Id, rnd)
+		}
+
 		// Abort on new Cur
 		if cr := collect.Reply.Cur; cr != nil {
 			ssc.Blueps = []*pb.Blueprint{cr}
@@ -205,6 +209,8 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 				Commit:  commit,
 				Collect: prop,
 			})
+			cnt++
+
 			if err != nil && j == 0 {
 				glog.Errorf("C%d: error from OptimizedCommit: %v\n", ssc.Id, err)
 				// Try again with full configuration.
@@ -219,6 +225,10 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			if err == nil {
 				break
 			}
+		}
+
+		if glog.V(6) {
+			glog.Infof("C%d: Commit returned in rnd %d.", ssc.Id, rnd)
 		}
 
 		// Abort on new Cur.

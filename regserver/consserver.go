@@ -24,12 +24,15 @@ func NewConsServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *ConsSer
 	}
 }
 
-func (cs *ConsServer) handleConf(conf *pb.Conf) (cr *pb.ConfReply) {
+func (cs *ConsServer) handleConf(conf *pb.Conf, next *pb.Blueprint) (cr *pb.ConfReply) {
 	if conf == nil || (conf.This < cs.CurC && !cs.noabort) {
 		//The client is using an outdated configuration, abort.
 		return &pb.ConfReply{Cur: cs.Cur, Abort: false}
 	}
 
+	if next != nil {
+		cs.NextMap[conf.This] = next
+	}
 
 	if conf.Cur < cs.CurC {
 		if n := cs.NextMap[conf.This]; n != nil {
@@ -51,7 +54,7 @@ func (cs *ConsServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, e
 	defer cs.RUnlock()
 	glog.V(5).Infoln("Handling ReadS")
 
-	cr := cs.handleConf(rr)
+	cr := cs.handleConf(rr, nil)
 	if cr != nil && cr.Abort {
 		return &pb.ReadReply{Cur: cr}, nil
 	}
@@ -67,7 +70,7 @@ func (cs *ConsServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply
 		cs.RState = wr.GetState()
 	}
 
-	if crepl := cs.handleConf(wr.GetConf()); crepl != nil {
+	if crepl := cs.handleConf(wr.GetConf(), nil); crepl != nil {
 		return crepl, nil
 	}
 	return &pb.ConfReply{}, nil
@@ -79,12 +82,10 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 	defer cs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	cr := cs.handleConf(&pb.Conf{wr.CurC, wr.CurC})
+	cr := cs.handleConf(&pb.Conf{wr.CurC, wr.CurC}, nil)
 	if cr != nil && cr.Abort {
 		return &pb.WriteNReply{Cur: cr}, nil
 	}
-
-	cs.NextMap[wr.CurC] = wr.Next
 
 	return &pb.WriteNReply{Cur: cr, State: cs.RState, LAState: cs.LAState}, nil
 }

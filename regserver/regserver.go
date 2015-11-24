@@ -55,10 +55,23 @@ func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *RegServe
 	return rs
 }
 
-func (rs *RegServer) handleConf(conf *pb.Conf) (cr *pb.ConfReply) {
+func (rs *RegServer) handleConf(conf *pb.Conf, n *pb.Blueprint) (cr *pb.ConfReply) {
 	if conf == nil || (conf.This < rs.CurC && !rs.noabort) {
 		//The client is using an outdated configuration, abort.
 		return &pb.ConfReply{Cur: rs.Cur, Abort: false}
+	}
+	
+	if n != nil {
+		found := false
+		for _,nxt := range rs.Next {
+			if  n.LearnedEquals(nxt) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			rs.Next = append(rs.Next, n)
+		}
 	}
 
 	next := make([]*pb.Blueprint, 0, len(rs.Next))
@@ -85,7 +98,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 	defer rs.RUnlock()
 	glog.V(5).Infoln("Handling ReadS")
 
-	cr := rs.handleConf(rr)
+	cr := rs.handleConf(rr, nil)
 	if cr != nil && cr.Abort {
 		return &pb.ReadReply{Cur: cr}, nil
 	}
@@ -101,7 +114,7 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply,
 		rs.RState = wr.GetState()
 	}
 
-	if crepl := rs.handleConf(wr.GetConf()); crepl != nil {
+	if crepl := rs.handleConf(wr.GetConf(), nil); crepl != nil {
 		return crepl, nil
 	}
 	return &pb.ConfReply{}, nil
@@ -112,23 +125,12 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	cr := rs.handleConf(&pb.Conf{wr.CurC, wr.CurC})
+	cr := rs.handleConf(&pb.Conf{wr.CurC, wr.CurC}, wr.Next)
 	if cr != nil && cr.Abort {
 		return &pb.WriteNReply{Cur: cr}, nil
 	}
 
-	found := false
-	for _, bp := range rs.Next {
-		if bp.LearnedEquals(wr.Next) {
-			found = true
-			break
-		}
-	}
-	if !found {
-		rs.Next = append(rs.Next, wr.Next)
-	}
-
-	rs.NextMap[wr.CurC] = wr.Next
+	rs.NextMap[wr.CurC] = wr.Next // This is nor necessary for sm, but only for running Consensus using norecontact.
 
 	return &pb.WriteNReply{Cur: cr, State: rs.RState, LAState: rs.LAState}, nil
 }
@@ -138,7 +140,7 @@ func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LA
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling LAProp")
 
-	cr := rs.handleConf(lap.GetConf())
+	cr := rs.handleConf(lap.GetConf(), nil)
 	if cr != nil && cr.Abort {
 		return &pb.LAReply{Cur: cr}, nil
 	}

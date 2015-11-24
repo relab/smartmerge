@@ -8,7 +8,7 @@ import (
 var SpSnOneQF = func(c *pb.Configuration, replies []*pb.SWriteNReply) (*pb.SWriteNReply, bool) {
 
 	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur != nil {
+	if lastrep.GetCur() != nil {
 		if glog.V(4) {
 			glog.Infoln("SWriteNReply reported new Cur.")
 		}
@@ -34,7 +34,7 @@ var SpSnOneQF = func(c *pb.Configuration, replies []*pb.SWriteNReply) (*pb.SWrit
 var SCommitQF = func(c *pb.Configuration, replies []*pb.CommitReply) (*pb.CommitReply, bool) {
 
 	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur != nil {
+	if lastrep.GetCur() != nil {
 		if glog.V(4) {
 			glog.Infoln("SCommitReply reported new Cur.")
 		}
@@ -64,7 +64,7 @@ var SCommitQF = func(c *pb.Configuration, replies []*pb.CommitReply) (*pb.Commit
 var SReadSQF = func(c *pb.Configuration, replies []*pb.SReadReply) (*pb.SReadReply, bool) {
 
 	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur != nil {
+	if lastrep.GetCur() != nil {
 		if glog.V(4) {
 			glog.Infoln("SReadReply reported new Cur.")
 		}

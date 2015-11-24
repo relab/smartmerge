@@ -101,10 +101,11 @@ func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewS
 		rs.RState = ns.State
 	}
 
-	glog.V(4).Infoln("New Cur has length %d, previous has length %d\n", rs.CurC, ns.Conf.Cur)
-	rs.CurC = ns.Conf.Cur
-	rs.Cur = ns.Cur
-
+	if rs.CurC < ns.Conf.Cur {
+		glog.V(4).Infof("New Cur has length %d, previous has length %d\n", rs.CurC, ns.Conf.Cur)
+		rs.CurC = ns.Conf.Cur
+		rs.Cur = ns.Cur
+	}
 	return &pb.NewStateReply{Next: rs.Next[ns.Conf.This]}, nil
 }
 
@@ -114,7 +115,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 	glog.V(4).Infoln("Handling WriteNSet")
 
 	if wr.Conf.Cur < rs.CurC {
-		if glog.V(4).Infoln("CLient has outdated cur.")
+		glog.V(4).Infoln("CLient has outdated cur.")
 		return &pb.DWriteNsReply{Cur: rs.Cur}, nil
 	}
 

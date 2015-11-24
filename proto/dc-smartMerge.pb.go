@@ -630,7 +630,8 @@ func (m *DWriteNs) GetNext() []*Blueprint {
 }
 
 type DWriteNsReply struct {
-	Cur *Blueprint `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Cur  *Blueprint   `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	Next []*Blueprint `protobuf:"bytes,2,rep,name=Next" json:"Next,omitempty"`
 }
 
 func (m *DWriteNsReply) Reset()         { *m = DWriteNsReply{} }
@@ -640,6 +641,13 @@ func (*DWriteNsReply) ProtoMessage()    {}
 func (m *DWriteNsReply) GetCur() *Blueprint {
 	if m != nil {
 		return m.Cur
+	}
+	return nil
+}
+
+func (m *DWriteNsReply) GetNext() []*Blueprint {
+	if m != nil {
+		return m.Next
 	}
 	return nil
 }
@@ -5706,6 +5714,18 @@ func (m *DWriteNsReply) MarshalTo(data []byte) (int, error) {
 		}
 		i += n39
 	}
+	if len(m.Next) > 0 {
+		for _, msg := range m.Next {
+			data[i] = 0x12
+			i++
+			i = encodeVarintDcSmartMerge(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
 	return i, nil
 }
 
@@ -6475,6 +6495,12 @@ func (m *DWriteNsReply) Size() (n int) {
 	if m.Cur != nil {
 		l = m.Cur.Size()
 		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	if len(m.Next) > 0 {
+		for _, e := range m.Next {
+			l = e.Size()
+			n += 1 + l + sovDcSmartMerge(uint64(l))
+		}
 	}
 	return n
 }
@@ -9830,6 +9856,37 @@ func (m *DWriteNsReply) Unmarshal(data []byte) error {
 				m.Cur = &Blueprint{}
 			}
 			if err := m.Cur.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Next = append(m.Next, &Blueprint{})
+			if err := m.Next[len(m.Next)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

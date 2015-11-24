@@ -131,7 +131,7 @@ outerLoop:
 		rs.Next[wr.Conf.This] = append(rs.Next[wr.Conf.This], newBp)
 	}
 
-	return &pb.DWriteNsReply{}, nil
+	return &pb.DWriteNsReply{Next: rs.Next[wr.Conf.This]}, nil
 }
 
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {

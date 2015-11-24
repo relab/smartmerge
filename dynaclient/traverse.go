@@ -221,6 +221,8 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				i = -1
 				continue
 			}
+			next = writeNs.Reply.GetNext()
+			prop = dc.handleNext(i, next, prop, cp)
 			continue
 		}
 	}

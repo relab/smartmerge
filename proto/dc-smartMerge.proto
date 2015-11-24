@@ -167,6 +167,7 @@ message DWriteNs {
 
 message DWriteNsReply {
 	Blueprint Cur = 1;
+	repeated Blueprint Next = 2;
 }
 
 service SpSnRegister {

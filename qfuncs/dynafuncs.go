@@ -76,6 +76,15 @@ var DWriteNSetQF = func(c *pr.Configuration, replies []*pr.DWriteNsReply) (*pr.D
 		return nil, false
 	}
 
+	next := make([]*pr.Blueprint, 0, 1)
+	for _, rep := range replies {
+		next = DGetBlueprintSlice(next, rep)
+	}
+
+	if len(next) > 0 {
+		lastrep.Next = next
+	}
+
 	return lastrep, true
 }
 

@@ -126,7 +126,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			for j := 0; ; j++ {
 				setS, err = cnf.DSetState(&pb.DNewState{
 					Conf: &pb.Conf{
-						Cur:  uint32(dc.Blueps[0].Len()),
+						Cur:  uint32(dc.Blueps[i].Len()),
 						This: dc.Confs[i].GlobalID(),
 					},
 					Cur:   dc.Blueps[i],

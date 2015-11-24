@@ -126,6 +126,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 			}
 
 			if setS.Reply.HasNext {
+				glog.V(4).Infoln("There is a next configuration. Restart.")
 				i--
 				continue
 			}

@@ -241,7 +241,7 @@ func (dc *DynaClient) handleNewCur(i int, newCur *pb.Blueprint, cp conf.Provider
 		return false
 	}
 
-	glog.V(4).Infoln("Found new current view with length", newCur.Len())
+	glog.V(4).Infof("C%d: Found new current view with length\n", dc.ID, newCur.Len())
 
 	cnf := cp.FullC(newCur)
 
@@ -287,7 +287,7 @@ func (dc *DynaClient) findorinsert(i int, blp *pb.Blueprint, cp conf.Provider) {
 }
 
 func (dc *DynaClient) insert(i int, blp *pb.Blueprint, cp conf.Provider) {
-	glog.V(4).Infoln("Found next blueprint.")
+	glog.V(4).Infof("C%d: Found next blueprint.\n", dc.ID)
 
 	cnf := cp.FullC(blp)
 

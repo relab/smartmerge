@@ -102,7 +102,7 @@ func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewS
 	}
 
 	if rs.CurC < ns.Conf.Cur {
-		glog.V(4).Infof("New Cur has length %d, previous has length %d\n", rs.CurC, ns.Conf.Cur)
+		glog.V(4).Infof("New Cur has length %d, previous has length %d\n", ns.Conf.Cur, rs.CurC)
 		rs.CurC = ns.Conf.Cur
 		rs.Cur = ns.Cur
 	}

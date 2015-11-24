@@ -87,7 +87,7 @@ func main() {
 		runtime.GOMAXPROCS(cpus)
 	} else {
 		runtime.GOMAXPROCS(1)
-	}	
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -153,20 +153,21 @@ func benchmain() {
 	stop := make(chan struct{}, *nclients)
 
 	for i := 0; i < *nclients; i++ {
-		glog.Infof("starting client number:  %d at time %v\n", i, time.Now())
+		glog.Infof("starting configProvider and manager %d at time %v\n", i, time.Now())
 		cp, mgr, err := NewConfP(addrs, *cprov, (*clientid)+i)
 		if err != nil {
 			glog.Errorln("Error creating confProvider: ", err)
 			continue
 		}
 
+		defer LogErrors(mgr)
+		glog.Infoln("starting client with id", (*clientid)+i)
 		cl, err := NewClient(initBlp, *alg, *opt, (*clientid)+i, cp)
 		if err != nil {
 			glog.Errorln("Error creating client: ", err)
 			continue
 		}
 
-		defer LogErrors(mgr)
 		wg.Add(1)
 		switch {
 		case *contW:

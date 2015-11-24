@@ -175,6 +175,7 @@ service SpSnRegister {
 	rpc SCommit(Commit) returns (CommitReply) {}
 	rpc SReadS(SRead) returns (SReadReply) {}
 	rpc SSetState(SState) returns (SStateReply) {}
+	rpc SSetCur(NewCur) returns (NewCurReply) {}
 }
 
 message SWriteN {

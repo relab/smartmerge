@@ -1,6 +1,7 @@
 package regserver
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/golang/glog"
@@ -158,4 +159,31 @@ func (srs *SSRServer) SSetState(ctx context.Context, ss *pb.SState) (*pb.SStateR
 		return &pb.SStateReply{HasNext: true, Cur: c}, nil
 	}
 	return &pb.SStateReply{HasNext: false, Cur: c}, nil
+}
+
+// Used to set the current configuration. Currenlty only used at startup.
+func (rs *SSRServer) SSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
+	glog.V(5).Infoln("Handling Set Cur")
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	//defer rs.PrintState("SetCur")
+
+	if nc.CurC == rs.CurC {
+		return &pb.NewCurReply{false}, nil
+	}
+
+	if nc.Cur.LearnedCompare(rs.Cur) >= 0 {
+		return &pb.NewCurReply{false}, nil
+	}
+
+	// This could be removed. Not sure this is necessary.
+	if rs.Cur.Compare(nc.Cur) == 0 {
+		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
+	}
+
+	glog.V(3).Infoln("New Current Conf: ", nc.GetCur())
+	rs.Cur = nc.Cur
+	rs.CurC = nc.CurC
+
+	return &pb.NewCurReply{true}, nil
 }

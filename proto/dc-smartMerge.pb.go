@@ -886,6 +886,7 @@ type Manager struct {
 	sCommitqf    SCommitQuorumFn
 	sReadSqf     SReadSQuorumFn
 	sSetStateqf  SSetStateQuorumFn
+	sSetCurqf    SSetCurQuorumFn
 }
 
 /* Manager quorum functions */
@@ -1061,6 +1062,16 @@ func (m *Manager) setDefaultQuorumFuncs() {
 			return replies[0], true
 		}
 	}
+	if m.opts.sSetCurqf != nil {
+		m.sSetCurqf = m.opts.sSetCurqf
+	} else {
+		m.sSetCurqf = func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
 }
 
 /* Manager create/close streams */
@@ -1104,6 +1115,7 @@ type managerOptions struct {
 	sCommitqf    SCommitQuorumFn
 	sReadSqf     SReadSQuorumFn
 	sSetStateqf  SSetStateQuorumFn
+	sSetCurqf    SSetCurQuorumFn
 }
 
 // WithAReadSQuorumFunc returns a ManagerOption that sets a cumstom
@@ -1242,6 +1254,14 @@ func WithSSetStateQuorumFunc(f SSetStateQuorumFn) ManagerOption {
 	}
 }
 
+// WithSSetCurQuorumFunc returns a ManagerOption that sets a cumstom
+// SSetCurQuorumFunc.
+func WithSSetCurQuorumFunc(f SSetCurQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.sSetCurqf = f
+	}
+}
+
 // AReadSQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
 // then the function returns (nil, false). Otherwise, the function picks a
@@ -1343,6 +1363,12 @@ type SReadSQuorumFn func(c *Configuration, replies []*SReadReply) (*SReadReply, 
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
 type SSetStateQuorumFn func(c *Configuration, replies []*SStateReply) (*SStateReply, bool)
+
+// SSetCurQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type SSetCurQuorumFn func(c *Configuration, replies []*NewCurReply) (*NewCurReply, bool)
 
 /* Gorums Client API */
 
@@ -2109,6 +2135,51 @@ func (c *Configuration) SSetStateFuture(args *SState) *SSetStateFuture {
 // Get returns the reply and any error associated with the SSetStateFuture.
 // The method blocks until a reply or error is available.
 func (f *SSetStateFuture) Get() (*SSetStateReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// SSetCurReply encapsulates the reply from a SSetCur RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type SSetCurReply struct {
+	MachineIDs []int
+	Reply      *NewCurReply
+}
+
+func (r SSetCurReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// SSetCurReply invokes a SSetCur RPC on configuration c
+// and returns the result as a SSetCurReply.
+func (c *Configuration) SSetCur(args *NewCur) (*SSetCurReply, error) {
+	return c.mgr.sSetCur(c.id, args)
+}
+
+// SSetCurFuture is a reference to an asynchronous SSetCur RPC invocation.
+type SSetCurFuture struct {
+	reply *SSetCurReply
+	err   error
+	c     chan struct{}
+}
+
+// SSetCurFuture asynchronously invokes a SSetCur RPC on configuration c and
+// returns a SSetCurFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) SSetCurFuture(args *NewCur) *SSetCurFuture {
+	f := new(SSetCurFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.sSetCur(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the SSetCurFuture.
+// The method blocks until a reply or error is available.
+func (f *SSetCurFuture) Get() (*SSetCurReply, error) {
 	<-f.c
 	return f.reply, f.err
 }
@@ -3560,6 +3631,91 @@ func (m *Manager) sSetState(cid int, args *SState) (*SSetStateReply, error) {
 	}
 }
 
+type sSetCurReply struct {
+	mid   int
+	reply *NewCurReply
+	err   error
+}
+
+func (m *Manager) sSetCur(cid int, args *NewCur) (*SSetCurReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan sSetCurReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*NewCurReply, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &SSetCurReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(NewCurReply)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.SpSnRegister/SSetCur",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- sSetCurReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.sSetCurqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
 /* Static resources */
 
 /* config.go */
@@ -4514,6 +4670,7 @@ type SpSnRegisterClient interface {
 	SCommit(ctx context.Context, in *Commit, opts ...grpc.CallOption) (*CommitReply, error)
 	SReadS(ctx context.Context, in *SRead, opts ...grpc.CallOption) (*SReadReply, error)
 	SSetState(ctx context.Context, in *SState, opts ...grpc.CallOption) (*SStateReply, error)
+	SSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
 }
 
 type spSnRegisterClient struct {
@@ -4560,6 +4717,15 @@ func (c *spSnRegisterClient) SSetState(ctx context.Context, in *SState, opts ...
 	return out, nil
 }
 
+func (c *spSnRegisterClient) SSetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
+	out := new(NewCurReply)
+	err := grpc.Invoke(ctx, "/proto.SpSnRegister/SSetCur", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for SpSnRegister service
 
 type SpSnRegisterServer interface {
@@ -4567,6 +4733,7 @@ type SpSnRegisterServer interface {
 	SCommit(context.Context, *Commit) (*CommitReply, error)
 	SReadS(context.Context, *SRead) (*SReadReply, error)
 	SSetState(context.Context, *SState) (*SStateReply, error)
+	SSetCur(context.Context, *NewCur) (*NewCurReply, error)
 }
 
 func RegisterSpSnRegisterServer(s *grpc.Server, srv SpSnRegisterServer) {
@@ -4621,6 +4788,18 @@ func _SpSnRegister_SSetState_Handler(srv interface{}, ctx context.Context, dec f
 	return out, nil
 }
 
+func _SpSnRegister_SSetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(NewCur)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SpSnRegisterServer).SSetCur(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _SpSnRegister_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.SpSnRegister",
 	HandlerType: (*SpSnRegisterServer)(nil),
@@ -4640,6 +4819,10 @@ var _SpSnRegister_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SSetState",
 			Handler:    _SpSnRegister_SSetState_Handler,
+		},
+		{
+			MethodName: "SSetCur",
+			Handler:    _SpSnRegister_SSetCur_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

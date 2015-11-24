@@ -1,6 +1,8 @@
 package ssrclient
 
 import (
+	"errors"
+
 	"github.com/golang/glog"
 	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
@@ -13,10 +15,19 @@ type SSRClient struct {
 
 func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*SSRClient, error) {
 
-	sc, err := smc.New(initBlp, id, cp)
+	cnf := cp.FullC(initBlp)
 
+	glog.Infof("New Client with Id: %d\n", id)
+
+	_, err := cnf.SSetCur(&pb.NewCur{initBlp, uint32(initBlp.Len())})
 	if err != nil {
-		return nil, err
+		glog.Errorln("initial SetCur returned error: ", err)
+		return nil, errors.New("Initial SetCur failed.")
+	}
+
+	sc := &smc.SmClient{
+		Blueps: []*pb.Blueprint{initBlp},
+		Id:     id,
 	}
 
 	return &SSRClient{sc}, nil

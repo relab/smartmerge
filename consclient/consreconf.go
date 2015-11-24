@@ -10,7 +10,7 @@ import (
 	smc "github.com/relab/smartMerge/smclient"
 )
 
-func (cc *ConsClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
+func (cc *ConsClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular int, val []byte) (rst *pb.State, cnt int, err error) {
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconfiguration\n", cc.Id)
 	}
@@ -42,19 +42,25 @@ forconfiguration:
 			}
 		case 1:
 			// No proposal
-			var st *pb.State
-			var c int
-			st, cur, c, err = cc.Doread(cp, cur, i, nil)
-			if err != nil {
-				return nil, 0, err
+			if len(smc.Blueps) == i+1 && (cur == i || regular > 0) {
+				// We are in the current configuration, do a read, to check for next configurations. No need to recontact.
+				// If atomic: Need to read before writing.
+				var st *pb.State
+				var c int
+				st, cur, c, err = cc.Doread(cp, cur, i, nil)
+				if err != nil {
+					return nil, 0, err
+				}
+				cnt = +c
+				if rst.Compare(st) == 1 {
+					rst = st
+				}
+
 			}
 			if i+1 < len(cc.Blueps) {
 				next = cc.Blueps[i+1]
 			}
-			cnt = +c
-			if rst.Compare(st) == 1 {
-				rst = st
-			}
+
 		}
 		if i < cur {
 			continue forconfiguration
@@ -99,7 +105,7 @@ forconfiguration:
 				rst = writeN.Reply.GetState()
 			}
 
-		} else if i > cur || !regular {
+		} else if i > cur || regular > 1 {
 			//Establish new cur, or write value in write, atomic read.
 
 			rst = cc.WriteValue(&val, rst)

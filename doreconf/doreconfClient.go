@@ -9,7 +9,7 @@ import (
 )
 
 type Reconfer interface {
-	Doreconf(conf.Provider, *pb.Blueprint, bool, []byte) (*pb.State, int, error)
+	Doreconf(conf.Provider, *pb.Blueprint, int, []byte) (*pb.State, int, error)
 	Reconf(conf.Provider, *pb.Blueprint) (int, error)
 	GetCur(conf.Provider) *pb.Blueprint
 }
@@ -48,7 +48,7 @@ func (drc *DoreconfClient) Read(cp conf.Provider) (val []byte, cnt int) {
 	var st *pb.State
 	var err error
 
-	st, cnt, err = drc.Doreconf(cp, nil, false, nil)
+	st, cnt, err = drc.Doreconf(cp, nil, 2, nil)
 	if err != nil {
 		glog.Errorln("Error during Read", err)
 		return nil, 0
@@ -74,7 +74,7 @@ func (drc *DoreconfClient) RRead(cp conf.Provider) (val []byte, cnt int) {
 	var st *pb.State
 	var err error
 
-	st, cnt, err = drc.Doreconf(cp, nil, true, nil)
+	st, cnt, err = drc.Doreconf(cp, nil, 1, nil)
 
 	if err != nil {
 		glog.Errorln("Error during RRead")
@@ -98,7 +98,7 @@ func (drc *DoreconfClient) Write(cp conf.Provider, val []byte) (cnt int) {
 	}
 	var err error
 
-	_, cnt, err = drc.Doreconf(cp, nil, false, val)
+	_, cnt, err = drc.Doreconf(cp, nil, 2, val)
 
 	if err != nil {
 		glog.Errorln("Error during Write")

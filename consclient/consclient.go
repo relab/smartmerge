@@ -27,6 +27,6 @@ func (cc *ConsClient) Reconf(cp conf.Provider, prop *pb.Blueprint) (cnt int, err
 		return 0, nil
 	}
 
-	_, cnt, err = cc.Doreconf(cp, prop, true, nil)
+	_, cnt, err = cc.Doreconf(cp, prop, 0, nil)
 	return
 }

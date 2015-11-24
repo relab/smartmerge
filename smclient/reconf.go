@@ -15,11 +15,12 @@ func (smc *SmClient) Reconf(cp conf.Provider, prop *pb.Blueprint) (cnt int, err 
 		return 0, nil
 	}
 
-	_, cnt, err = smc.Doreconf(cp, prop, true, nil)
+	_, cnt, err = smc.Doreconf(cp, prop, 0, nil)
 	return
 }
 
-func (smc *SmClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular bool, val []byte) (rst *pb.State, cnt int, err error) {
+// Regular is: 0 for reconfiguration 1 for regular read, 2 for atomic read/write
+func (smc *SmClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular int, val []byte) (rst *pb.State, cnt int, err error) {
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconf\n", smc.Id)
 	}
@@ -48,9 +49,9 @@ forconfiguration:
 		}
 
 		if prop.LearnedCompare(smc.Blueps[i]) != -1 {
-			if len(smc.Blueps) <= i+1 && (cur == i || !regular) {
+			if len(smc.Blueps) == i+1 && (cur == i || regular > 0) {
 				// We are in the current configuration, do a read, to check for next configurations. No need to recontact.
-				// If atomic: Need to read before writing.
+				// If read or write operation: Need to read before writing.
 				var st *pb.State
 				var c int
 				st, cur, c, err = smc.Doread(cp, cur, i, rid)
@@ -99,7 +100,7 @@ forconfiguration:
 					break
 				}
 			}
-			
+
 			if i > 0 && glog.V(3) {
 				glog.Infof("C%d: WriteN in Configuration with length %d\n ", smc.Id, smc.Blueps[i].Len())
 			} else if glog.V(6) {
@@ -116,7 +117,7 @@ forconfiguration:
 				wid = pb.Union(wid, writeN.MachineIDs)
 				rid = pb.Union(rid, writeN.MachineIDs)
 			}
-		} else if i > cur || !regular {
+		} else if i > cur || regular > 1 {
 
 			rst = smc.WriteValue(&val, rst)
 

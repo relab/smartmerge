@@ -16,7 +16,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 
 	for i := 0; i < len(ssc.Blueps); i++ {
 
-		if i == 0 {
+		if i == 0 && prop != nil {
 			prop = prop.Merge(ssc.Blueps[0])
 		}
 

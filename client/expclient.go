@@ -160,7 +160,7 @@ func benchmain() {
 			continue
 		}
 
-		defer LogErrors(mgr)
+		defer PrintErrors(mgr)
 		glog.Infoln("starting client with id", (*clientid)+i)
 		cl, err := NewClient(initBlp, *alg, *opt, (*clientid)+i, cp)
 		if err != nil {

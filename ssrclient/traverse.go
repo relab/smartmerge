@@ -168,10 +168,6 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			}
 		}
 
-		if glog.V(6) {
-			glog.Infof("C%d: Phase1 returned in rnd %d.", ssc.Id, rnd)
-		}
-
 		// Abort on new Cur
 		if cr := collect.Reply.Cur; cr != nil {
 			ssc.Blueps = []*pb.Blueprint{cr}
@@ -190,11 +186,18 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 		}
 
 		if prop.Len() == 0 && commit {
+			if glog.V(6) {
+				glog.Infof("C%d: Empty Phase1 returned commit.\n", ssc.Id)
+			}
 			return nil, cnt, false, nil
 		}
 
 		if commit {
 			ssc.HandleOneCur(i, prop)
+		}
+
+		if glog.V(4) {
+			glog.Infof("C%d: Phase1 returned in rnd %d, commit is %v\n", ssc.Id, rnd, commit)
 		}
 
 		//Do SpSn Phase two.
@@ -228,10 +231,6 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			}
 		}
 
-		if glog.V(6) {
-			glog.Infof("C%d: Commit returned in rnd %d.", ssc.Id, rnd)
-		}
-
 		// Abort on new Cur.
 		if cr := commitR.Reply.Cur; cr != nil {
 			ssc.Blueps = []*pb.Blueprint{cr}
@@ -248,7 +247,14 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 
 		//If no uncommitted was collected, return.
 		if commitR.Reply.Collected.Len() == 0 {
+			if glog.V(4) {
+				glog.Infof("C%d: Commit returned in rnd %d, nothing collected.", ssc.Id, rnd)
+			}
 			return prop, cnt, false, nil
+		}
+
+		if glog.V(4) {
+			glog.Infof("C%d: Commit returned in rnd %d. Length collected is %d.\n", ssc.Id, rnd, commitR.Reply.Collected.Len())
 		}
 
 		//Merge with collected and go to next rnd.

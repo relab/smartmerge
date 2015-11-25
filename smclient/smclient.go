@@ -112,5 +112,5 @@ func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {
 
 func (smc *SmClient) GetCur(cp conf.Provider) *pb.Blueprint {
 	smc.set(cp, nil)
-	return smc.Blueps[0].Copy()
+	return smc.Blueps[len(smc.Blueps)-1].Copy()
 }

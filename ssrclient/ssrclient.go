@@ -115,3 +115,8 @@ func (ssc *SSRClient) Reconf(cp conf.Provider, prop *pb.Blueprint) (cnt int, err
 	_, cnt, err = ssc.Doreconf(cp, prop, true, nil)
 	return
 }
+
+func (ssc *SSRClient) GetCur(cp conf.Provider) *pb.Blueprint {
+	ssc.Doreconf(cp, nil, true, nil)
+	return ssc.Blueps[0].Copy()
+}

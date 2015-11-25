@@ -205,7 +205,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 		if commit {
 			ssc.HandleOneCur(i, prop)
 			if glog.V(3) {
-				glog.Infof("C%d: Committing Bluep with length %d.\n", prop.Len())
+				glog.Infof("C%d: Committing Bluep with length %d.\n", ssc.Id, prop.Len())
 			}
 		}
 

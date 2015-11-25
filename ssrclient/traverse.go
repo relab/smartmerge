@@ -198,12 +198,15 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			return nil, cnt, false, nil
 		}
 
-		if commit {
-			ssc.HandleOneCur(i, prop)
-		}
-
 		if glog.V(4) {
 			glog.Infof("C%d: Phase1 returned in rnd %d, commit is %v\n", ssc.Id, rnd, commit)
+		}
+
+		if commit {
+			ssc.HandleOneCur(i, prop)
+			if glog.V(3) {
+				glog.Infof("C%d: Committing Bluep with length %d.\n", prop.Len())
+			}
 		}
 
 		//Do SpSn Phase two.

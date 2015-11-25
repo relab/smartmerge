@@ -20,6 +20,11 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 			prop = prop.Merge(ssc.Blueps[0])
 		}
 
+		if prop.LearnedCompare(ssc.Blueps[i]) != -1 {
+			//This proposal is already present in this configration.
+			prop = nil
+		}
+
 		var c int
 		var newcur bool
 
@@ -59,7 +64,10 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 				return nil, 0, err
 			}
 		}
-		if glog.V(6) {
+
+		if glog.V(3) && prop != nil {
+			glog.Infof("C%d: ReadS returned.\n", ssc.Id)
+		} else if glog.V(6) {
 			glog.Infof("C%d: ReadS returned.\n", ssc.Id)
 		}
 

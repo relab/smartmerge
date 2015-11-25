@@ -74,7 +74,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 			rst = readS.Reply.GetState()
 		}
 
-		if i > 0 || !regular {
+		if i+1 == len(ssc.Blueps) && (!regular || i > 0) {
 			//Establish new cur, or write value in write, atomic read.
 
 			rst = ssc.WriteValue(&val, rst)

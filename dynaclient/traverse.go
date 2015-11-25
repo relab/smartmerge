@@ -114,7 +114,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			rst = writeN.Reply.GetState()
 		}
 
-		if len(next) == 0 && !regular {
+		if len(next) == 0 && (!regular || i > 0) {
 
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
@@ -173,7 +173,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			prop = dc.handleNext(i, next, prop, cp)
 		}
 
-		if len(next) > 0 { //Oups this is an else to the if above, but can also be used be true, after the WriteInView was executed.
+		if len(next) > 0 { //Oups this is not just an else to the if above, but can also be used be true, after the WriteInView was executed.
 			regular = false
 
 			cnf = cp.WriteC(dc.Blueps[i], nil)

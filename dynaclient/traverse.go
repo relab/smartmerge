@@ -1,120 +1,231 @@
 package dynaclient
 
 import (
-	//"errors"
-	"fmt"
-	"time"
+	"github.com/golang/glog"
 
+	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
+	sm "github.com/relab/smartMerge/smclient"
 )
 
-func (dc *DynaClient) Traverse(prop *pb.Blueprint, val []byte, regular bool) ([]byte, int, error) {
-	cnt := 0
+func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte, regular bool) (rval []byte, cnt int, err error) {
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Confs); i++ {
-		var curprop *pb.Blueprint
+		var curprop *pb.Blueprint // The current proposal
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot
-			getOne, err := dc.Confs[i].GetOneN(&pb.GetOne{uint32(dc.Blueps[i].Len()), prop})
-			//fmt.Println("invoke getone")
-			cnt++
-			isnew := dc.handleNewCur(i, getOne.Reply.GetCur())
+
+			cnf := cp.SingleC(dc.Blueps[i])
+
+			getOne := new(pb.GetOneNReply)
+
+			for j := 0; ; j++ {
+				getOne, err = cnf.GetOneN(&pb.GetOne{
+					Conf: &pb.Conf{
+						Cur:  uint32(dc.Blueps[0].Len()),
+						This: dc.Confs[i].GlobalID(),
+					},
+					Next: prop,
+				})
+
+				cnt++
+
+				if err != nil && j == 0 {
+					glog.Errorf("C%d: error from OptimizedGetOne: %v\n", dc.ID, err)
+					// Try again with full configuration.
+					cnf = dc.Confs[i]
+				}
+
+				if err != nil && j == sm.Retry {
+					glog.Errorf("C%d: error %v from WriteN after %d retries: ", dc.ID, err, sm.Retry)
+					return nil, 0, err
+				}
+
+				if err == nil {
+					break
+				}
+			}
+
+			if glog.V(4) {
+				glog.Infof("C%d: GetOne returned.\n", dc.ID)
+			}
+
+			isnew := dc.handleNewCur(i, getOne.Reply.GetCur(), cp)
 			if isnew {
 				prop = prop.Merge(getOne.Reply.GetCur())
 				i = -1
 				continue
 			}
-			
-			if err != nil {
-				fmt.Println("Error from GetOneN")
-				return nil, 0, err
-			}
-			
+
 			curprop = getOne.Reply.GetNext()
 
 		}
 
-		//ReadInView:
-		read, err := dc.Confs[i].DReadS(&pb.DRead{uint32(dc.Blueps[i].Len()), curprop})
-		//fmt.Println("invoke readS")
-		cnt++
-		isnew := dc.handleNewCur(i, read.Reply.GetCur())
+		//Update Snapshot and ReadInView:
+		cnf := cp.WriteC(dc.Blueps[i], nil)
+
+		writeN := new(pb.DWriteNReply)
+
+		for j := 0; ; j++ {
+			writeN, err = dc.Confs[i].DWriteN(
+				&pb.DRead{
+					Conf: &pb.Conf{
+						Cur:  uint32(dc.Blueps[0].Len()),
+						This: dc.Confs[i].GlobalID(),
+					},
+					Prop: curprop,
+				})
+			cnt++
+
+			if err != nil && j == 0 {
+				glog.Errorf("C%d: error from OptimizedWriteN: %v\n", dc.ID, err)
+				// Try again with full configuration.
+				cnf = dc.Confs[i]
+			}
+
+			if err != nil && j == sm.Retry {
+				glog.Errorf("C%d: error %v from WriteN after %d retries: ", dc.ID, err, sm.Retry)
+				return nil, 0, err
+			}
+
+			if err == nil {
+				break
+			}
+		}
+
+		if i > 0 && glog.V(3) {
+			glog.Infof("C%d: Read in View with length %d and id %d.\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
+		} else if glog.V(6) {
+			glog.Infof("C%d: Read returned.\n", dc.ID)
+		}
+
+		isnew := dc.handleNewCur(i, writeN.Reply.GetCur(), cp)
 		if isnew {
 			if prop != nil {
-				prop = prop.Merge(read.Reply.GetCur())
+				prop = prop.Merge(writeN.Reply.GetCur())
 			}
 			i = -1
 			continue
 		}
 
-		if err != nil {
-			fmt.Println("Error from DReadS")
-			return nil, 0, err
+		next := writeN.Reply.GetNext()
+		prop = dc.handleNext(i, next, prop, cp)
+		if rst.Compare(writeN.Reply.GetState()) == 1 {
+			rst = writeN.Reply.GetState()
 		}
 
-		next := read.Reply.GetNext()
-		prop = dc.handleNext(i, next, prop)
-		if rst.Compare(read.Reply.GetState()) == 1 {
-			rst = read.Reply.GetState()
-		}
+		if len(next) == 0 && (!regular || i > 0) {
 
-		if len(next) == 0 && !regular {
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
-			write, err := dc.Confs[i].DWriteS(&pb.AdvWriteS{wst, uint32(dc.Blueps[i].Len())})
-			//fmt.Println("invoke writeS")
-			cnt++
-			isnew = dc.handleNewCur(i, write.Reply.GetCur())
+
+			cnf = cp.WriteC(dc.Blueps[i], nil)
+
+			var setS *pb.DSetStateReply
+
+			for j := 0; ; j++ {
+				setS, err = cnf.DSetState(&pb.DNewState{
+					Conf: &pb.Conf{
+						Cur:  uint32(dc.Blueps[i].Len()),
+						This: dc.Confs[i].GlobalID(),
+					},
+					Cur:   dc.Blueps[i],
+					State: wst,
+				})
+				cnt++
+
+				if err != nil && j == 0 {
+					glog.Errorf("C%d: error from OptimizedSetState: %v\n", dc.ID, err)
+					// Try again with full configuration.
+					cnf = dc.Confs[i]
+				}
+
+				if err != nil && j == sm.Retry {
+					glog.Errorf("C%d: error %v from SetState after %d retries: ", dc.ID, err, sm.Retry)
+					return nil, 0, err
+				}
+
+				if err == nil {
+					break
+				}
+			}
+
+			if i > 0 && glog.V(3) {
+				glog.Infof("C%d: Write in view with length %d and id %d\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
+			} else if glog.V(6) {
+				glog.Infoln("Write returned.")
+			}
+
+			isnew = dc.handleNewCur(i, setS.Reply.GetCur(), cp)
 			if isnew {
 				if prop != nil {
-					prop = prop.Merge(write.Reply.GetCur())
+					prop = prop.Merge(setS.Reply.GetCur())
 				}
 				i = -1
 				continue
 			}
-		
-			if err != nil {
-				fmt.Println("Error from DWriteS")
-				return nil, 0, err
-			}
-			
-			next = write.Reply.GetNext()
-			prop = dc.handleNext(i, next, prop)
+
+			dc.Blueps = dc.Blueps[i:]
+			dc.Confs = dc.Confs[i:]
+			i = 0
+
+			next = setS.Reply.GetNext()
+			prop = dc.handleNext(i, next, prop, cp)
 		}
 
-		if len(next) > 0 {
+		if len(next) > 0 { //Oups this is not just an else to the if above, but can also be used be true, after the WriteInView was executed.
 			regular = false
-			writeN, err := dc.Confs[i].DWriteNSet(&pb.DWriteN{uint32(dc.Blueps[i].Len()),next})
-			//fmt.Println("invoke writeN")
-			cnt++
-			isnew = dc.handleNewCur(i, writeN.Reply.GetCur())
+
+			cnf = cp.WriteC(dc.Blueps[i], nil)
+
+			var writeNs *pb.DWriteNSetReply
+
+			for j := 0; ; j++ {
+				writeNs, err = cnf.DWriteNSet(&pb.DWriteNs{
+					Conf: &pb.Conf{
+						Cur:  uint32(dc.Blueps[0].Len()),
+						This: dc.Confs[i].GlobalID(),
+					},
+					Next: next,
+				})
+				cnt++
+
+				if err != nil && j == 0 {
+					glog.Errorf("C%d: error from OptimizedWriteNSet: %v\n", dc.ID, err)
+					// Try again with full configuration.
+					cnf = dc.Confs[i]
+				}
+
+				if err != nil && j == sm.Retry {
+					glog.Errorf("C%d: error %v from WriteNSet after %d retries.\n ", dc.ID, err, sm.Retry)
+					return nil, 0, err
+				}
+
+				if err == nil {
+					break
+				}
+			}
+
+			if glog.V(3) {
+				glog.Infof("C%d: WriteNSet returned.\n", dc.ID)
+				if writeNs.Reply.GetCur() != nil {
+					glog.Infof("C%d: WriteNSet did return new current.\n", dc.ID)
+				}
+			}
+
+			isnew = dc.handleNewCur(i, writeNs.Reply.GetCur(), cp)
 			if isnew {
 				if prop != nil {
-					prop = prop.Merge(writeN.Reply.GetCur())
+					prop = prop.Merge(writeNs.Reply.GetCur())
 				}
 				i = -1
 				continue
 			}
-			
-			if err != nil {
-				fmt.Println("Error from DWriteNSet")
-				return nil, 0, err
-			}
+			next = writeNs.Reply.GetNext()
+			prop = dc.handleNext(i, next, prop, cp)
 			continue
 		}
 	}
-
-	//TODO: Optimization: Integrate this into the writeS above.
-	if i:= len(dc.Confs)-1 ; i>0  {
-		dc.Confs[i].DSetCur(&pb.NewCur{dc.Blueps[i], uint32(dc.Blueps[i].Len())})
-		//fmt.Println("setcur")
-		cnt++
-		
-		dc.Blueps = dc.Blueps[i:]
-		dc.Confs = dc.Confs[i:]
-	}
-
-	
 
 	if val == nil {
 		return rst.Value, cnt, nil
@@ -122,76 +233,73 @@ func (dc *DynaClient) Traverse(prop *pb.Blueprint, val []byte, regular bool) ([]
 	return nil, cnt, nil
 }
 
-func (dc *DynaClient) handleNewCur(i int, newCur *pb.Blueprint) bool {
+func (dc *DynaClient) handleNewCur(i int, newCur *pb.Blueprint, cp conf.Provider) bool {
 	if newCur == nil {
 		return false
 	}
 	if newCur.Compare(dc.Blueps[i]) == 1 {
 		return false
 	}
-	
-	cnf, err := dc.mgr.NewConfiguration(newCur.Add, majQuorum(newCur), 2 *  time.Second)
-	if err != nil {
-		panic("could not get new config")
-	}
-	
-	dc.Blueps = make([]*pb.Blueprint,1,5)
-	dc.Confs = make([]*pb.Configuration,1,5)
+
+	glog.V(4).Infof("C%d: Found new current view with length\n", dc.ID, newCur.Len())
+
+	cnf := cp.FullC(newCur)
+
+	dc.Blueps = make([]*pb.Blueprint, 1, 5)
+	dc.Confs = make([]*pb.Configuration, 1, 5)
 	dc.Blueps[0] = newCur
 	dc.Confs[0] = cnf
-	
+
 	return true
-	
+
 }
 
-func (dc *DynaClient) handleNext(i int, next []*pb.Blueprint, prop *pb.Blueprint) *pb.Blueprint {
+func (dc *DynaClient) handleNext(i int, next []*pb.Blueprint, prop *pb.Blueprint, cp conf.Provider) *pb.Blueprint {
 	for _, nxt := range next {
 		if nxt != nil {
-			dc.findorinsert(i, nxt)
+			dc.findorinsert(i, nxt, cp)
 			prop = prop.Merge(nxt)
 		}
 	}
 	return prop
 }
 
-func (dc *DynaClient) findorinsert(i int, blp *pb.Blueprint) {
+func (dc *DynaClient) findorinsert(i int, blp *pb.Blueprint, cp conf.Provider) {
 	if (dc.Blueps[i]).Compare(blp) <= 0 {
 		return
 	}
-	for i++ ; i < len(dc.Blueps); i++ {
+	for i++; i < len(dc.Blueps); i++ {
 		switch (dc.Blueps[i]).Compare(blp) {
 		case 1, 0:
 			if blp.Compare(dc.Blueps[i]) == 1 {
 				//Are equal
-				//fmt.Println("Blueprints equal, return")
 				return
 			}
 			continue
 		case -1:
-			dc.insert(i, blp)
+			dc.insert(i, blp, cp)
 			return
 		}
 	}
 	//fmt.Println("Inserting new highest blueprint")
-	dc.insert(i, blp)
+	dc.insert(i, blp, cp)
 	return
 }
 
-func (dc *DynaClient) insert(i int, blp *pb.Blueprint) {
-	cnf, err := dc.mgr.NewConfiguration(blp.Add, majQuorum(blp),2 * time.Second)
-	if err != nil {
-		panic("could not get new config")
-	}
+func (dc *DynaClient) insert(i int, blp *pb.Blueprint, cp conf.Provider) {
+	glog.V(4).Infof("C%d: Found next blueprint.\n", dc.ID)
+
+	cnf := cp.FullC(blp)
 
 	dc.Blueps = append(dc.Blueps, blp)
 	dc.Confs = append(dc.Confs, cnf)
 
-	for j:= len(dc.Blueps)-1; j>i; j-- {
+	for j := len(dc.Blueps) - 1; j > i; j-- {
 		dc.Blueps[j] = dc.Blueps[j-1]
 		dc.Confs[j] = dc.Confs[j-1]
-	} 
+	}
 
-	if len(dc.Blueps) != i + 1 {
+	if len(dc.Blueps) != i+1 {
 		dc.Blueps[i] = blp
 		dc.Confs[i] = cnf
 	}

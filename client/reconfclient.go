@@ -1,12 +1,14 @@
 package main
 
 import (
-	"flag"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/golang/glog"
+	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
@@ -14,21 +16,25 @@ import (
 )
 
 func expmain() {
-	flag.Parse()
+	parseFlags()
+
 	addrs, ids := util.GetProcs(*confFile, false)
 
 	//Build initial blueprint.
 	if *initsize > len(ids) && *initsize < 100 {
-		glog.Errorln(os.Stderr, "Not enough servers to fulfill initsize.")
+		glog.Errorln("Not enough servers to fulfill initsize.")
 		return
 	}
 
 	initBlp := new(pb.Blueprint)
-	if *initsize >= 100 {
-		initBlp.Add = ids
-	} else {
-		initBlp.Add = ids[:*initsize]
+	initBlp.Nodes = make([]*pb.Node, 0, len(ids))
+	for i, id := range ids {
+		if i >= *initsize {
+			break
+		}
+		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
 	}
+	initBlp.FaultTolerance = uint32(15)
 
 	if *doelog {
 		elog.Enable()
@@ -40,7 +46,12 @@ func expmain() {
 
 	for i := 0; i < *nclients; i++ {
 		glog.Infoln("starting client number: ", i)
-		cl, mgr, err := NewClient(addrs, initBlp, *alg, *opt, (*clientid)+i)
+		cp, mgr, err := NewConfP(addrs, *cprov, (*clientid)+i)
+		if err != nil {
+			glog.Errorln("Error creating confProvider: ", err)
+			continue
+		}
+		cl, err := NewClient(initBlp, *alg, *opt, (*clientid)+i, cp)
 		if err != nil {
 			glog.Errorln("Error creating client: ", err)
 			continue
@@ -49,34 +60,121 @@ func expmain() {
 		defer PrintErrors(mgr)
 		wg.Add(1)
 		switch {
-		case *rm:
-			if *clientid+*nclients >= *initsize {
-				glog.Errorln("Not enough processes to remove.")
-				return
+		case *cont:
+			if i%2 == 0 {
+				go contremove(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
+			} else {
+				go contadd(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			}
-			go remove(cl, ids, syncchan, (*clientid)+i, &wg)
+		case *rm:
+			go remove(cl, cp, ids, syncchan, (*clientid)+i, &wg)
 		case *add:
-			go adds(cl, ids, syncchan, *initsize+i, &wg)
+			go adds(cl, cp, ids, syncchan, *initsize+i, &wg)
 		}
 	}
-	time.Sleep(1 * time.Second)
-	close(syncchan)
+
+	if *cont {
+		signalChan := make(chan os.Signal, 1)
+		signal.Notify(signalChan, os.Interrupt, os.Kill, syscall.SIGTERM)
+
+	loopSignals:
+		for {
+			select {
+			case signal := <-signalChan:
+				if exit := handleSignal(signal); exit {
+					glog.Infoln("stopping goroutines")
+					close(syncchan)
+					break loopSignals //break for loop, not only select
+				}
+			}
+		}
+	} else {
+		time.Sleep(1 * time.Second)
+		close(syncchan)
+	}
 
 	glog.Infoln("waiting for goroutines")
 	wg.Wait()
+	glog.Infoln("finished waiting")
 	return
+
 }
 
-func remove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+func contremove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+	if len(ids) <= i {
+		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
+		return
+	}
+
 	defer wg.Done()
-	cur := c.GetCur()
-	target := new(pb.Blueprint)
-	target.Rem = []uint32{ids[i]}
-	target = target.Merge(cur)
+	for {
+		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
+		if !target.Rem(ids[i]) {
+			glog.Infoln("Could not remove %v\n.", ids[i])
+		} else {
+			reqsent := time.Now()
+			cnt, err := c.Reconf(cp, target)
+			if err == nil || cnt == 0 {
+				elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
+			} else {
+				glog.Errorln("Reconf returned error:", err)
+			}
+		}
+
+		select {
+		case <-sc:
+			return
+		default:
+			continue
+		}
+	}
+}
+
+func contadd(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+	if len(ids) <= i {
+		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
+		return
+	}
+
+	defer wg.Done()
+	for {
+		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
+		if !target.Add(ids[i]) {
+			glog.V(4).Infoln("Could not add %v\n.", ids[i])
+		} else {
+			reqsent := time.Now()
+			cnt, err := c.Reconf(cp, target)
+			if err == nil || cnt == 0 {
+				elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
+			} else {
+				glog.Errorln("Reconf returned error:", err)
+			}
+		}
+
+		select {
+		case <-sc:
+			return
+		default:
+			continue
+		}
+	}
+}
+
+func remove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	cur := c.GetCur(cp)
+	if len(ids) <= i {
+		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
+		return
+	}
+	target := cur.Copy()
+	if !target.Rem(ids[i]) {
+		glog.Errorln("Remove did not result in new blueprint.")
+	}
 
 	<-sc
 	reqsent := time.Now()
-	cnt, err := c.Reconf(target)
+	cnt, err := c.Reconf(cp, target)
 	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 	if err != nil {
@@ -85,16 +183,15 @@ func remove(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) 
 	return
 }
 
-func adds(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+func adds(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	cur := c.GetCur()
+	cur := c.GetCur(cp)
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
 	}
-	target := new(pb.Blueprint)
-	target.Add = []uint32{ids[i]}
-	target = target.Merge(cur)
+	target := cur.Copy()
+	target.Add(ids[i])
 
 	if target.Equals(cur) {
 		glog.Errorln("Add did not result in a new configuration.")
@@ -103,7 +200,7 @@ func adds(c RWRer, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	<-sc
 
 	reqsent := time.Now()
-	cnt, err := c.Reconf(target)
+	cnt, err := c.Reconf(cp, target)
 	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
 
 	if err != nil {

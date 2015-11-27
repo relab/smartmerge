@@ -1,0 +1,21 @@
+#!/bin/sh
+
+Files=""
+for log in $1/client.*.*.elog 
+do 
+	Files="$Files,$log"
+done
+
+for log in $1/client.*.*.elog
+do
+	echo $log >> $1/debug
+	efmt -file="$log" -debug >> $1/debug 2>&1
+done
+
+#echo $Files
+if [ "$2" == "" ]; then  
+	efmt -file="$Files" -debug || exit 1
+else
+	echo Using normal=$2
+	efmt -file="$Files" -normal="$2" -debug || exit 1
+fi

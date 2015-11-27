@@ -4,7 +4,7 @@ import (
 	pr "github.com/relab/smartMerge/proto"
 )
 
-var DReadSQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvReadReply, bool) {
+var DWriteNQF = func(c *pr.Configuration, replies []*pr.DReadReply) (*pr.DReadReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -13,11 +13,12 @@ var DReadSQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvRea
 	}
 
 	// Return false, if not enough replies yet.
+	// This rpc is both reading and writing.
 	if len(replies) < c.MaxQuorum() {
 		return nil, false
 	}
 
-	lastrep = new(pr.AdvReadReply)
+	lastrep = new(pr.DReadReply)
 	for _, rep := range replies {
 		if lastrep.GetState().Compare(rep.GetState()) == 1 {
 			lastrep.State = rep.GetState()
@@ -29,12 +30,14 @@ var DReadSQF = func(c *pr.Configuration, replies []*pr.AdvReadReply) (*pr.AdvRea
 		next = DGetBlueprintSlice(next, rep)
 	}
 
-	lastrep.Next = next
+	if len(next) > 0 {
+		lastrep.Next = next
+	}
 
 	return lastrep, true
 }
 
-var DWriteSQF = func(c *pr.Configuration, replies []*pr.AdvWriteSReply) (*pr.AdvWriteSReply, bool) {
+var DSetStateQF = func(c *pr.Configuration, replies []*pr.NewStateReply) (*pr.NewStateReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -53,12 +56,14 @@ var DWriteSQF = func(c *pr.Configuration, replies []*pr.AdvWriteSReply) (*pr.Adv
 		next = DGetBlueprintSlice(next, rep)
 	}
 
-	lastrep.Next = next
+	if len(next) > 0 {
+		lastrep.Next = next
+	}
 
 	return lastrep, true
 }
 
-var DWriteNSetQF = func(c *pr.Configuration, replies []*pr.DWriteNReply) (*pr.DWriteNReply, bool) {
+var DWriteNSetQF = func(c *pr.Configuration, replies []*pr.DWriteNsReply) (*pr.DWriteNsReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -71,7 +76,16 @@ var DWriteNSetQF = func(c *pr.Configuration, replies []*pr.DWriteNReply) (*pr.DW
 		return nil, false
 	}
 
-	return nil, true
+	next := make([]*pr.Blueprint, 0, 1)
+	for _, rep := range replies {
+		next = DGetBlueprintSlice(next, rep)
+	}
+
+	if len(next) > 0 {
+		lastrep.Next = next
+	}
+
+	return lastrep, true
 }
 
 var GetOneNQF = func(c *pr.Configuration, replies []*pr.GetOneReply) (*pr.GetOneReply, bool) {

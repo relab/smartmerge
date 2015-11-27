@@ -32,7 +32,7 @@ func Stop() error {
 }
 
 func StartTest(port int) (*grpc.Server, error) {
-	rs := NewRegServer()
+	rs := NewRegServer(false)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -51,11 +51,11 @@ func StartTest(port int) (*grpc.Server, error) {
 
 ////////////////// Advanced Server //////////////////////
 
-func StartAdv(port int) (*RegServer, error) {
-	return StartAdvInConf(port, nil, uint32(0))
+func StartAdv(port int, noabort bool) (*RegServer, error) {
+	return StartAdvInConf(port, nil, uint32(0), noabort)
 }
 
-func StartAdvInConf(port int, init *pb.Blueprint, initC uint32) (*RegServer, error) {
+func StartAdvInConf(port int, init *pb.Blueprint, initC uint32, noabort bool) (*RegServer, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if haveServer == true {
@@ -63,7 +63,7 @@ func StartAdvInConf(port int, init *pb.Blueprint, initC uint32) (*RegServer, err
 		return nil, errors.New("There already exists an old server.")
 	}
 
-	rs := NewRegServerWithCur(init, initC)
+	rs := NewRegServerWithCur(init, initC, noabort)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -80,7 +80,7 @@ func StartAdvInConf(port int, init *pb.Blueprint, initC uint32) (*RegServer, err
 }
 
 func StartAdvTest(port int) (*grpc.Server, error) {
-	rs := NewRegServer()
+	rs := NewRegServer(false)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -127,13 +127,13 @@ func StartDynaInConf(port int, init *pb.Blueprint, initC uint32) (*DynaServer, e
 	return ds, nil
 }
 
-///////////////// Consensus Server ////////////////////
+////////////////// SSRegister Server //////////////////////
 
-func StartCons(port int) (*ConsServer, error) {
-	return StartConsInConf(port, nil, uint32(0))
+func StartSSR(port int) (*SSRServer, error) {
+	return StartSSRInConf(port, nil, uint32(0))
 }
 
-func StartConsInConf(port int, init *pb.Blueprint, initC uint32) (*ConsServer, error) {
+func StartSSRInConf(port int, init *pb.Blueprint, initC uint32) (*SSRServer, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if haveServer == true {
@@ -141,7 +141,37 @@ func StartConsInConf(port int, init *pb.Blueprint, initC uint32) (*ConsServer, e
 		return nil, errors.New("There already exists an old server.")
 	}
 
-	cs := NewConsServerWithCur(init, initC)
+	ds := NewSSRServerWithCur(init, initC)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	var opts []grpc.ServerOption
+	grpcServer = grpc.NewServer(opts...)
+	pb.RegisterSpSnRegisterServer(grpcServer, ds)
+	go grpcServer.Serve(lis)
+	haveServer = true
+
+	return ds, nil
+}
+
+///////////////// Consensus Server ////////////////////
+
+func StartCons(port int, noabort bool) (*ConsServer, error) {
+	return StartConsInConf(port, nil, uint32(0), noabort)
+}
+
+func StartConsInConf(port int, init *pb.Blueprint, initC uint32, noabort bool) (*ConsServer, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if haveServer == true {
+		log.Println("Abort start of grpc server, since old server exists.")
+		return nil, errors.New("There already exists an old server.")
+	}
+
+	cs := NewConsServerWithCur(init, initC, noabort)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {

@@ -5,11 +5,46 @@ import (
 	pr "github.com/relab/smartMerge/proto"
 )
 
+type ConfResponder interface {
+	GetCur() *pr.ConfReply
+}
+
+func checkConfResponder(cr ConfResponder) bool {
+	return checkConfReply(cr.GetCur())
+}
+
+func checkConfReply(cr *pr.ConfReply) bool {
+	if cr != nil && cr.Abort {
+		return true
+	}
+	return false
+}
+
+func handleConfResponder(old *pr.ConfReply, cr ConfResponder) *pr.ConfReply {
+	return handleConfReply(old, cr.GetCur())
+}
+
+func handleConfReply(old *pr.ConfReply, cr *pr.ConfReply) *pr.ConfReply {
+	if old == nil {
+		return cr
+	}
+
+	if cr == nil {
+		return old
+	}
+	if old.Cur.LearnedCompare(cr.Cur) == 1 {
+		old.Cur = cr.Cur
+	}
+
+	old.Next = GetBlueprintSlice(old.Next, cr)
+	return old
+}
+
 var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur().GetCur() != nil && lastrep.GetCur().Abort {
+	if checkConfResponder(lastrep) {
 		if glog.V(3) {
 			glog.Infoln("ReadS reported new Cur.")
 		}
@@ -29,28 +64,17 @@ var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply
 		if lastrep.GetState().Compare(rep.GetState()) == 1 {
 			lastrep.State = rep.GetState()
 		}
-		if rep.GetCur() != nil {
-			if rep.GetCur().GetCur().Len() > lastrep.GetCur().GetCur().Len() {
-				lastrep.Cur = rep.Cur
-			}
-		}
+		lastrep.Cur = handleConfResponder(lastrep.Cur, rep) // I think the assignment can be omitted.
 	}
-
-	next := make([]*pr.Blueprint, 0, 1)
-	for _, rep := range replies {
-		next = GetBlueprintSlice(next, rep)
-	}
-
-	lastrep.Next = next
 
 	return lastrep, true
 }
 
-var AWriteSQF = func(c *pr.Configuration, replies []*pr.WriteSReply) (*pr.WriteSReply, bool) {
+var AWriteSQF = func(c *pr.Configuration, replies []*pr.ConfReply) (*pr.ConfReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur().GetCur() != nil && lastrep.GetCur().Abort {
+	if checkConfReply(lastrep) {
 		if glog.V(3) {
 			glog.Infoln("WriteS reported new Cur.")
 		}
@@ -66,18 +90,10 @@ var AWriteSQF = func(c *pr.Configuration, replies []*pr.WriteSReply) (*pr.WriteS
 		return nil, false
 	}
 
-	lastrep = new(pr.WriteSReply)
-	next := make([]*pr.Blueprint, 0, 1)
+	lastrep = new(pr.ConfReply)
 	for _, rep := range replies {
-		next = GetBlueprintSlice(next, rep)
-		if rep.GetCur() != nil {
-			if rep.GetCur().GetCur().Len() > lastrep.GetCur().GetCur().Len() {
-				lastrep.Cur = rep.Cur
-			}
-		}
+		lastrep = handleConfReply(lastrep, rep)
 	}
-
-	lastrep.Next = next
 
 	return lastrep, true
 }
@@ -86,7 +102,7 @@ var AWriteNQF = func(c *pr.Configuration, replies []*pr.WriteNReply) (*pr.WriteN
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur() != nil {
+	if checkConfResponder(lastrep) {
 		if glog.V(3) {
 			glog.Infoln("WriteN reported new Cur.")
 		}
@@ -100,22 +116,13 @@ var AWriteNQF = func(c *pr.Configuration, replies []*pr.WriteNReply) (*pr.WriteN
 	}
 
 	lastrep = new(pr.WriteNReply)
-	for i, rep := range replies {
-		if i == len(replies)-1 {
-			break
-		}
+	for _, rep := range replies {
 		if lastrep.GetState().Compare(rep.GetState()) == 1 {
 			lastrep.State = rep.GetState()
 		}
 		lastrep.LAState = lastrep.GetLAState().Merge(rep.GetLAState())
+		lastrep.Cur = handleConfResponder(lastrep.Cur, rep)
 	}
-
-	next := make([]*pr.Blueprint, 0, 1)
-	for _, rep := range replies {
-		next = GetBlueprintSlice(next, rep)
-	}
-
-	lastrep.Next = next
 
 	return lastrep, true
 }
@@ -138,7 +145,7 @@ var LAPropQF = func(c *pr.Configuration, replies []*pr.LAReply) (*pr.LAReply, bo
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur() != nil {
+	if checkConfResponder(lastrep) {
 		if glog.V(3) {
 			glog.Infoln("LAProp reported new Cur.")
 		}
@@ -152,19 +159,10 @@ var LAPropQF = func(c *pr.Configuration, replies []*pr.LAReply) (*pr.LAReply, bo
 	}
 
 	lastrep = new(pr.LAReply)
-	for i, rep := range replies {
-		if i == len(replies)-1 {
-			break
-		}
-		lastrep.LAState = lastrep.GetLAState().Merge(rep.GetLAState())
-	}
-
-	next := make([]*pr.Blueprint, 0, 1)
 	for _, rep := range replies {
-		next = GetBlueprintSlice(next, rep)
+		lastrep.LAState = lastrep.GetLAState().Merge(rep.GetLAState())
+		lastrep.Cur = handleConfResponder(lastrep.Cur, rep)
 	}
-
-	lastrep.Next = next
 
 	return lastrep, true
 }
@@ -265,7 +263,15 @@ var AcceptQF = func(c *pr.Configuration, replies []*pr.Learn) (*pr.Learn, bool) 
 }
 
 func GetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {
-	for _, blp := range rep.GetNext() {
+	repNext := rep.GetNext()
+	if repNext == nil {
+		return next
+	}
+
+	if next == nil {
+		next = make([]*pr.Blueprint, 0, len(repNext))
+	}
+	for _, blp := range repNext {
 		next = addLearned(next, blp)
 	}
 

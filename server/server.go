@@ -17,8 +17,10 @@ import (
 var (
 	port     = flag.Int("port", 10000, "this servers address ip:port.")
 	gcoff    = flag.Bool("gcoff", false, "turn garbage collection off.")
-	alg      = flag.String("alg", "", "algorithm to use (sm | dyna | cons )")
+	alg      = flag.String("alg", "", "algorithm to use (sm | dyna | ssr | cons )")
 	allCores = flag.Bool("all-cores", false, "use all available logical CPUs")
+
+	noabort    = flag.Bool("no-abort", false, "do not send aborting new-cur information.")
 )
 
 func main() {
@@ -38,11 +40,13 @@ func main() {
 	glog.Infoln("Starting Server with port: ", *port)
 	switch *alg {
 	case "", "sm":
-		_, err = regserver.StartAdv(*port)
+		_, err = regserver.StartAdv(*port, *noabort)
 	case "dyna":
 		_, err = regserver.StartDyna(*port)
+	case "ssr" :
+		_, err = regserver.StartSSR(*port)
 	case "cons":
-		_, err = regserver.StartCons(*port)
+		_, err = regserver.StartCons(*port, *noabort)
 	}
 
 	if err != nil {

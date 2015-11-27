@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/golang/glog"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 )
 
 type DynaServer struct {
 	Cur    *pb.Blueprint
-	CurC   uint32
+	CurC   uint32 // This should be the length of cur, not its Gid.
 	RState *pb.State
 	Next   map[uint32][]*pb.Blueprint
 	mu     sync.RWMutex
@@ -47,7 +48,7 @@ func NewDynaServerWithCur(cur *pb.Blueprint, curc uint32) *DynaServer {
 func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	//defer rs.PrintState("SetCur")
+	glog.V(5).Infoln("Handling DSetCur")
 
 	if nc.CurC == rs.CurC {
 		return &pb.NewCurReply{false}, nil
@@ -63,105 +64,91 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 
 	rs.Cur = nc.Cur
 	rs.CurC = nc.CurC
-	return &pb.NewCurReply{false}, nil
+	return &pb.NewCurReply{true}, nil
 }
 
-func (rs *DynaServer) DReadS(ctx context.Context, rr *pb.DRead) (*pb.AdvReadReply, error) {
-	rs.mu.RLock()
-	defer rs.mu.RUnlock()
-	//defer rs.PrintState("DReadS")
+func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply, error) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	glog.V(5).Infoln("Handling WriteN")
+
+	if rr.Conf.Cur < rs.CurC {
+		return &pb.DReadReply{Cur: rs.Cur}, nil
+	}
 
 	if rr.Prop != nil {
-		if len(rs.Next[rr.CurC]) > 0 {
-			rs.Next[rr.CurC] = append(rs.Next[rr.CurC], rr.Prop)
+		if len(rs.Next[rr.Conf.This]) > 0 {
+			rs.Next[rr.Conf.This] = append(rs.Next[rr.Conf.This], rr.Prop)
 		} else {
-			rs.Next[rr.CurC] = []*pb.Blueprint{rr.Prop}
+			rs.Next[rr.Conf.This] = []*pb.Blueprint{rr.Prop}
 		}
 	}
 
-	var next []*pb.Blueprint
-	if len(rs.Next[rr.CurC]) > 0 {
-		next = rs.Next[rr.CurC]
-	}
-	if rr.CurC != rs.CurC {
-		//Not sure if we should return an empty Next and State in this case.
-		//Returning it is safer. The other faster.
-		return &pb.AdvReadReply{State: rs.RState, Cur: rs.Cur, Next: next}, nil
-	}
-
-	return &pb.AdvReadReply{State: rs.RState, Next: next}, nil
+	return &pb.DReadReply{State: rs.RState, Next: rs.Next[rr.Conf.This]}, nil
 }
 
-func (rs *DynaServer) DWriteS(ctx context.Context, wr *pb.AdvWriteS) (*pb.AdvWriteSReply, error) {
+func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewStateReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	//defer rs.PrintState("DWriteS")
-	if rs.RState.Compare(wr.State) == 1 {
-		rs.RState = wr.State
+	glog.V(4).Infoln("Handling SetState")
+
+	if ns.Conf.Cur < rs.CurC {
+		// Outdated
+		return &pb.NewStateReply{Cur: rs.Cur}, nil
 	}
 
-	if wr.CurC == 0 {
-		return &pb.AdvWriteSReply{}, nil
+	if rs.RState.Compare(ns.State) == 1 {
+		rs.RState = ns.State
 	}
 
-	var next []*pb.Blueprint
-	if len(rs.Next[wr.CurC]) > 0 {
-		next = rs.Next[wr.CurC]
+	if rs.CurC < ns.Conf.Cur {
+		glog.V(4).Infof("New Cur has length %d, previous has length %d\n", ns.Conf.Cur, rs.CurC)
+		rs.CurC = ns.Conf.Cur
+		rs.Cur = ns.Cur
 	}
-
-	if wr.CurC != rs.CurC {
-		//Not sure if we should return an empty Next in this case.
-		//Returning it is safer. The other faster.
-		return &pb.AdvWriteSReply{Cur: rs.Cur, Next: next}, nil
-	}
-
-	return &pb.AdvWriteSReply{Next: next}, nil
+	return &pb.NewStateReply{Next: rs.Next[ns.Conf.This]}, nil
 }
 
-func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteN) (*pb.DWriteNReply, error) {
+func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWriteNsReply, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	//defer rs.PrintState("DWriteNSet")
+	glog.V(4).Infoln("Handling WriteNSet")
 
-	if wr.Next == nil {
-		return &pb.DWriteNReply{}, nil
+	if wr.Conf.Cur < rs.CurC {
+		glog.V(4).Infoln("CLient has outdated cur.")
+		return &pb.DWriteNsReply{Cur: rs.Cur}, nil
 	}
 
-	if rs.Next[wr.CurC] == nil {
-		rs.Next[wr.CurC] = wr.Next
+	if rs.Next[wr.Conf.This] == nil {
+		rs.Next[wr.Conf.This] = wr.Next
 	}
 outerLoop:
 	for _, newBp := range wr.Next {
-		for _, bp := range rs.Next[wr.CurC] {
+		for _, bp := range rs.Next[wr.Conf.This] {
 			if bp.Equals(newBp) {
 				continue outerLoop
 			}
 		}
-		rs.Next[wr.CurC] = append(rs.Next[wr.CurC], newBp)
+		rs.Next[wr.Conf.This] = append(rs.Next[wr.Conf.This], newBp)
 	}
 
-	if wr.CurC != rs.CurC {
-		return &pb.DWriteNReply{Cur: rs.Cur}, nil
-	}
-
-	return &pb.DWriteNReply{}, nil
+	return &pb.DWriteNsReply{Next: rs.Next[wr.Conf.This]}, nil
 }
 
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	//defer rs.PrintState("GetOneN")
+	glog.V(5).Infoln("Handling GetOne")
 
-	if len(rs.Next[gt.CurC]) == 0 {
-		rs.Next[gt.CurC] = []*pb.Blueprint{gt.Next}
+	if gt.Conf.Cur < rs.CurC {
+		return &pb.GetOneReply{Cur: rs.Cur}, nil
 	}
 
-	var c *pb.Blueprint
-	if gt.CurC != rs.CurC {
-		c = rs.Cur
+	if len(rs.Next[gt.Conf.This]) == 0 {
+		rs.Next[gt.Conf.This] = []*pb.Blueprint{gt.Next}
 	}
 
-	return &pb.GetOneReply{Cur: c, Next: rs.Next[gt.CurC][0]}, nil
+	return &pb.GetOneReply{Next: rs.Next[gt.Conf.This][0]}, nil
 }
 
 func (ds *DynaServer) CheckNext(curc uint32, op string) {

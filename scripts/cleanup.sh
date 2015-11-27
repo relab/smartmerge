@@ -12,5 +12,6 @@ done
 echo stopping servers
 for Pi in 9 10 11 12 13 14 15 17 18 19
 do
+	echo stop pitter$Pi
 	ssh pitter"$Pi" "cd $GST/server && killall server && rm /local/scratch/ljehl/*log*"
 done

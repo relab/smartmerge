@@ -63,6 +63,7 @@ var (
 	//Reconf Exp
 	rm   = flag.Bool("rm", false, "remove nclients servers concurrently.")
 	add  = flag.Bool("add", false, "add nclients servers concurrently")
+	repl = flag.Bool("repl", false, "replace nclient many servers concurrently")
 	cont = flag.Bool("cont", false, "continuously reconfigure")
 	logT = flag.Bool("logThroughput", false, "Log reads per second.")
 )

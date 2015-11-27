@@ -206,7 +206,7 @@ func benchmain() {
 func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.Manager, err error) {
 	mgr, err = pb.NewManager(addrs, pb.WithGrpcDialOptions(
 		grpc.WithBlock(),
-		grpc.WithTimeout(1000*time.Millisecond),
+		grpc.WithTimeout(2000*time.Millisecond),
 		grpc.WithInsecure()),
 		pb.WithAReadSQuorumFunc(qf.AReadSQF),
 		pb.WithAWriteSQuorumFunc(qf.AWriteSQF),

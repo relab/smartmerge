@@ -89,7 +89,11 @@ func expmain() {
 			}
 		}
 	} else {
-		time.Sleep(1 * time.Second)
+		//time.Sleep(1 * time.Second)
+
+		// Hopefully this allows concurrent reconfigurations, between different reconfigurers.
+		ts := time.Now().Truncate(time.Second).Add(2 * time.Second)
+		time.Sleep(ts.Sub(time.Now()))
 		close(syncchan)
 	}
 

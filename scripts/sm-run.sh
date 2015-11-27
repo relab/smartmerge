@@ -81,7 +81,7 @@ sleep 1
 
 
 echo single write
-$SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=bench -writes=1 -size=1000 -nclients=1 -id=5 -initsize=100 
+$SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=bench -writes=1 -size=100 -nclients=1 -id=5 -initsize=100 
 
 echo starting Readers on
 for Pi in ${READS[@]}

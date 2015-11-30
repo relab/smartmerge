@@ -51,7 +51,7 @@ forconfiguration:
 				if err != nil {
 					return nil, 0, err
 				}
-				cnt = +c
+				cnt += c
 				if rst.Compare(st) == 1 {
 					rst = st
 				}

@@ -70,6 +70,8 @@ func expmain() {
 			go remove(cl, cp, ids, syncchan, (*clientid)+i, &wg)
 		case *add:
 			go adds(cl, cp, ids, syncchan, *initsize+i, &wg)
+		case *repl:
+			go replace(cl, cp, ids, syncchan, (*clientid)+i, &wg)
 		}
 	}
 
@@ -89,11 +91,7 @@ func expmain() {
 			}
 		}
 	} else {
-		//time.Sleep(1 * time.Second)
-
-		// Hopefully this allows concurrent reconfigurations, between different reconfigurers.
-		ts := time.Now().Truncate(time.Second).Add(2 * time.Second)
-		time.Sleep(ts.Sub(time.Now()))
+		time.Sleep(1 * time.Second)
 		close(syncchan)
 	}
 
@@ -162,6 +160,30 @@ func contadd(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, w
 			continue
 		}
 	}
+}
+
+func replace(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	cur := c.GetCur(cp)
+	if len(ids) <= *initsize+i {
+		glog.Errorf("Configuration file does not hold %d processes.\n", *initsize+i+1)
+		return
+	}
+	target := cur.Copy()
+	if !target.Rem(ids[i]) {
+		glog.Errorln("Remove did not result in new blueprint.")
+	}
+	target.Add(ids[*initsize+i])
+
+	<-sc
+	reqsent := time.Now()
+	cnt, err := c.Reconf(cp, target)
+	elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
+
+	if err != nil {
+		glog.Errorln("Reconf returned error: ", err)
+	}
+	return
 }
 
 func remove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {

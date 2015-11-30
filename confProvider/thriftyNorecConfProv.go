@@ -8,8 +8,8 @@ import (
 	pb "github.com/relab/smartMerge/proto"
 )
 
-var ConfTimeout = 5 * time.Second
-var TryTimeout = 1000 * time.Millisecond
+var ConfTimeout = 1 * time.Second
+var TryTimeout = 500 * time.Millisecond
 
 type Provider interface {
 	FullC(*pb.Blueprint) *pb.Configuration
@@ -101,7 +101,7 @@ func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
 
 func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	cids := cp.mgr.ToIds(blp.Ids())
-
+	
 	cids = cp.chooseQ(cids, 1)
 
 	cnf, err := cp.mgr.NewConfiguration(cids, 1, ConfTimeout)

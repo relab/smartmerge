@@ -3,28 +3,42 @@
 
 cd "$SM/sm_opt*" && echo "File sm_opt exists already. Abort." && exit
 
-for RMS in 0
+for RMS in 1 2 3
 do
 
 echo "$RMS replacement runs"
 
-for Opt in "no"
+for Opt in "no" "doreconf"
 do
 
-for ALG in "sm" "cons" "dyna" "ssr"; do
+for CP in "thrifty" "norecontact"
+do
+
+for ALG in "sm" "cons"; do
+
+if [ "$ALG" = "cons" -a "$CP" = "norecontact" -a "$Opt" = "doreconf" ]; then
+	echo Skipping alg $ALG with optimization $Opt cp: $CP 
+else
+
+
+if [ "$Opt" = "no" -a "$CP" = "thrifty" ]; then
+	echo Skip $ALG, $Opt, $CP.
+else
 
 cd $SM
-echo Alg $ALG with optimization $Opt
-mkdir "$ALG-opt$Opt-rm$RMS$*"
-for i in {1..1} 
+echo Alg $ALG with optimization $Opt conf provider $CP
+
+
+mkdir "$ALG-opt$Opt-cp$CP-repl$RMS$*"
+for i in {1..40} 
 do
 	echo make run $i
-	./scripts/sm-run.sh "$Opt" $ALG thrifty -rm "$RMS" " " 0
-	mv $SM/exlogs $SM/"$ALG-opt$Opt-rm$RMS$*"/"run$i"
+	./scripts/sm-run.sh "$Opt" $ALG $CP -repl "$RMS" " " 0
+	mv $SM/exlogs $SM/"$ALG-opt$Opt-cp$CP-repl$RMS$*"/"run$i"
 	echo sleeping 3 seconds
 	sleep 3
 done
-cd "$ALG-opt$Opt-rm$RMS$*"
+cd "$ALG-opt$Opt-cp$CP-repl$RMS$*"
 
 echo checking
 mkdir problem
@@ -34,7 +48,40 @@ for R in run*; do
 		cd ..
 		mv $R problem/
 	fi
-	cd $SM/"$ALG-opt$Opt-rm$RMS$*"
+	cd $SM/"$ALG-opt$Opt-cp$CP-repl$RMS$*"
+done
+for R in run*; do
+	$SM/scripts/checkall $R || mv $R problem/
+done
+rmdir problem || echo some runs had problems		
+echo analysing
+$SM/scripts/analyzeallsub analysis $RMS 12
+fi
+
+cd $SM
+echo Alg $ALG with optimization $Opt regular conf prov $CP
+
+
+mkdir "$ALG-regopt$Opt-cp$CP-repl$RMS$*"
+for i in {1..40} 
+do
+	echo make run $i
+	./scripts/sm-run.sh "$Opt" $ALG $CP -repl "$RMS" "-regular" 0
+	mv $SM/exlogs $SM/"$ALG-regopt$Opt-cp$CP-repl$RMS$*"/"run$i"
+	echo sleeping 3 seconds
+	sleep 3
+done
+cd "$ALG-regopt$Opt-cp$CP-repl$RMS$*"
+
+echo checking
+mkdir problem
+for R in run*; do
+	cd $R
+	if ls ./*ERROR* > /dev/null 2>&1; then
+		cd ..
+		mv $R problem/
+	fi
+	cd $SM/"$ALG-regopt$Opt-cp$CP-repl$RMS$*"
 done
 for R in run*; do
 	$SM/scripts/checkall $R || mv $R problem/
@@ -43,38 +90,13 @@ rmdir problem || echo some runs had problems
 echo analysing
 $SM/scripts/analyzeallsub analysis $RMS 12
 
-: <<'END'
-cd $SM
-echo SmartMerge with optimization $Opt regular reads
-mkdir "sm_regopt$Opt-rm$RMS"
-for i in {1..20} 
-do
-	echo make run $i
-	./scripts/sm-run.sh "$Opt" "sm" "$RMS" "-regular"
-	mv $SM/exlogs $SM/"sm_regopt$Opt-rm$RMS$*"/"run$i"
-	echo sleeping 5 seconds
-	sleep 5
-done
-cd "sm_regopt$Opt-rm$RMS$*"
+fi
 
-echo checking
-mkdir problem
-for R in run*; do
-	cd $R
-	if ls ./*ERROR* > /dev/null 2>&1; then
-		cd ..
-		mv $R problem/
-	fi
-	cd $SM/"sm_regopt$Opt-rm$RMS$*"
-done
-for R in run*; do
-	$SM/scripts/checkall $R 1 || mv $R problem/
-done
-rmdir problem || echo some runs had problems		
-echo analysing
-$SM/scripts/analyzeallsub analysis $RMS 5 1
+: <<'END'
+
 END
 
 done #for ALG
+done #for CP
 done #for Opt
 done #for RMS

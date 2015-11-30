@@ -7,7 +7,7 @@ if [ "$1" == "help" ]; then
 	echo "1 reader optimization: no | doreconf"
 	echo "2 alg: sm | cons"
 	echo "3 cprov: normal | thrifty | norecontact"
-	echo "4 reconfiguration: -rm -add -cont"
+	echo "4 reconfiguration: -rm -add -repl -cont"
 	echo "5 number of reconfiguration clients"
 	echo "6 more reader options, e.g. -regular | -logThroughput"
 	echo "7 V-level"
@@ -26,7 +26,7 @@ fi
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
-SERVS=(9 10 11 12 13 14 18 19)
+SERVS=(9 10 11 12 14 17 18 19)
 
 i=0
 while read R; do
@@ -155,20 +155,20 @@ do
 done
 
 echo safety stop reconfigurer:
-cd $SM/client && killall -9 client
+cd $SM/client && killall -9 client > /dev/null && echo -n "did kill something"
 cd -
 
 echo safety stop readers
 for Pi in ${READS[@]}
 do
 	echo -n "pitter$Pi "
-	ssh pitter"$Pi" "cd $SM/client && killall -9 client" 
+	ssh pitter"$Pi" "cd $SM/client && killall -9 client" > /dev/null && echo -n "did kill something"
 done
 
 echo safety stop servers
 for Pi in ${SERVS[@]}
 do
-	ssh pitter"$Pi" "cd $SM/server && killall -9 server" 
+	ssh pitter"$Pi" "cd $SM/server && killall -9 server" > /dev/null && echo -n "did kill something"
 done
 
 echo "sm-run $1 $2 $3 $4 $5 $6" > exlogs/command

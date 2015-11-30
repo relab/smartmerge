@@ -12,6 +12,8 @@ import (
 	e "github.com/relab/smartMerge/elog/event"
 )
 
+const normlat = 2470 * time.Microsecond
+
 func main() {
 	var file = flag.String("file", "", "elog files to parse, separated by comma")
 	//var filter = flag.Bool("filter", true, "filter out throughput samples")
@@ -19,8 +21,8 @@ func main() {
 	var list = flag.Bool("list", false, "print a list or latencies")
 	var debug = flag.Bool("debug", false, "print spike latencies")
 	var norm = flag.Int("normal", 2, "number of accesses in normal case.")
-	var recs = flag.Int("recs", 1, "number of reconfigurations per run.")
-	var cl = flag.Int("clients", 5, "number of clients.")
+	//var recs = flag.Int("recs", 1, "number of reconfigurations per run.")
+	//var cl = flag.Int("clients", 5, "number of clients.")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
@@ -159,72 +161,11 @@ func main() {
 		}
 		if affected > 0 {
 			fmt.Fprintf(of, "Mean latency for reads with more than %d acceses is: %v\n", normal, (totalaffected / affected))
-			nwavg := 3806 * time.Microsecond
-			if normal == 4 {
-				nwavg = 5700 * time.Microsecond
-			}
-			if normal == 1 {
-				nwavg = 1870 * time.Microsecond
-			}
-			overhead := totalaffected - (affected * nwavg)
-			fmt.Fprintf(of, "Total overhead is: %v\n", overhead)
-			runs := 0
-			runs += len(reconfe)
-			runs = runs / *recs
-			fmt.Fprintf(of, "Number of runs is: %d\n", runs)
-			if runs > 0 {
-				fmt.Fprintf(of, "Overhead per client is: %v\n", (overhead/time.Duration(*cl))/time.Duration(runs))
-			}
 		}
-		maxls := make([]time.Duration, 0, len(eventsperc))
-		for _, es := range eventsperc {
-			var max time.Duration
-			for _, evt := range es {
-				if evt.Type != e.ClientReadLatency {
-					break
-				}
-				if evt.Value <= normal {
-					continue
-				}
-				if evt.EndTime.Sub(evt.Time) > max {
-					max = evt.EndTime.Sub(evt.Time)
-				}
-			}
-			maxls = append(maxls, max)
-		}
-		if len(maxls) > 0 {
-			fmt.Fprintf(of, "Mean of maximum read latency: %v\n", MeanDuration(maxls...))
-		}
-
 	}
 
 	if len(writee) > 0 {
 		fmt.Println("Processing writes is outdated!")
-		/*
-			var totalaffected time.Duration
-			var affected time.Duration
-
-			_, err := fmt.Fprintln(of, "Write Latencies:")
-			if err != nil {
-				fmt.Println("Error writing to file:", err)
-			}
-			avgWrites := computeAverageDurations(writel)
-			for k, durs := range writel {
-				fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
-				if k != normal {
-					affected += time.Duration(len(durs))
-					totalaffected += time.Duration(len(durs)) * avgWrites[k]
-				}
-			}
-			if affected > 0 {
-				fmt.Fprintf(of, "Mean latency for writes with more than %d acceses is: %v\n", normal, (totalaffected / affected))
-				nwavg := 3300 * time.Microsecond
-				if normal == 4 {
-					nwavg = 5700 * time.Microsecond
-				}
-
-				fmt.Fprintf(of, "Total overhead is: %v\n", totalaffected-(affected*nwavg))
-			}*/
 	}
 
 	if len(reconfe) > 0 {
@@ -252,6 +193,54 @@ func main() {
 		PrintTputsAndReconfs(tupute, reconfe, of)
 	}
 
+	readc, _, _ := sortEvents(eventsperc)
+
+	if len(readc) > 0 {
+		maxlats := make([]time.Duration, 0, len(readc))
+		cumovers := make([]time.Duration, 0, len(readc))
+
+		for _, rc := range readc {
+			o, m := CumOverAndMax(rc, *norm, normlat)
+			if m > time.Duration(0) {
+				maxlats = append(maxlats, m)
+				cumovers = append(cumovers, o)
+			}
+		}
+		fmt.Fprintf(of, "%d readclients\n", len(maxlats))
+		fmt.Fprintf(of, "Average max-latency is %v.\n", MeanDuration(maxlats...))
+		fmt.Fprintf(of, "Average overhead is %v.\n", MeanDuration(cumovers...))
+		sort.Sort(durarr(maxlats))
+		sort.Sort(durarr(cumovers))
+		fmt.Fprintf(of, "Median max-latency is %v\n.", maxlats[len(maxlats)/2])
+		fmt.Fprintf(of, "Max-latency 95perc is %v\n.", maxlats[(len(maxlats)*19)/20])
+		fmt.Fprintf(of, "Median overhead is %v\n.", cumovers[len(cumovers)/2])
+		fmt.Fprintf(of, "Overhead 95perc is %v\n.", maxlats[(len(cumovers)*19)/20])
+	}
+
+}
+
+func sortEvents(eventsperc [][]e.Event) (reade, writee, reconfe [][]e.Event) {
+	reade = make([][]e.Event, 0, len(eventsperc))
+	writee = make([][]e.Event, 0, 1)
+	reconfe = make([][]e.Event, 0, 1)
+
+	for _, clevs := range eventsperc {
+		if len(clevs) == 0 {
+			continue
+		}
+		switch clevs[0].Type {
+		case e.ClientReadLatency:
+			reade = append(reade, clevs)
+		case e.ClientWriteLatency:
+			writee = append(writee, clevs)
+		case e.ClientReconfLatency:
+			reconfe = append(reconfe, clevs)
+		case e.ThroughputSample:
+			fmt.Printf("Found throughput sample, stop handling events.")
+			return
+		}
+	}
+	return
 }
 
 func sortLatencies(events []e.Event) (reade, writee, reconfe, tupute []e.Event) {
@@ -391,4 +380,24 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 		fmt.Fprintf(of, "Initialized %d reconfigurations before: ", count)
 		fmt.Fprintf(of, "%v\n", tput)
 	}
+}
+
+func CumOverAndMax(evts []e.Event, normal int, normlat time.Duration) (cumOver, maxlat time.Duration) {
+	for i, ev := range evts {
+		if i > 0 {
+			if ev.Type != evts[i-1].Type {
+				fmt.Println("Different types submitted to CumOverMax")
+				return
+			}
+		}
+		if int(ev.Value) == normal {
+			continue
+		}
+		dur := ev.EndTime.Sub(ev.Time)
+		if dur > maxlat {
+			maxlat = dur
+		}
+		cumOver += dur - normlat
+	}
+	return
 }

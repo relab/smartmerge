@@ -37,7 +37,7 @@ func shortHostname(hostname string) string {
 
 func logName() (name, link string) {
 	now := time.Now()
-	return fmt.Sprintf("%s.%s.%s.log.%04d%02d%02d-%02d%02d%02d.pid%d.elog",
+	return fmt.Sprintf("/local/scratch/ljehl/%s.%s.%s.log.%04d%02d%02d-%02d%02d%02d.pid%d.elog",
 		program,
 		host,
 		userName,

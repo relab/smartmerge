@@ -173,7 +173,6 @@ message DWriteNsReply {
 service SpSnRegister {
 	rpc SpSnOne(SWriteN) returns (SWriteNReply) {}
 	rpc SCommit(Commit) returns (CommitReply) {}
-	rpc SReadS(SRead) returns (SReadReply) {}
 	rpc SSetState(SState) returns (SStateReply) {}
 	rpc SSetCur(NewCur) returns (NewCurReply) {}
 }
@@ -188,6 +187,7 @@ message SWriteN {
 message SWriteNReply {
 	Blueprint Cur = 1;
 	repeated Blueprint Next = 2;
+	State State = 3;
 }
 
 message Commit {
@@ -202,15 +202,6 @@ message CommitReply {
 	Blueprint Cur = 1;
 	Blueprint Committed = 2;
 	Blueprint Collected = 3;
-}
-
-message SRead {
-	uint32 CurL = 1;
-}
-
-message SReadReply {
-	Blueprint Cur = 1;
-	State State = 2;
 }
 
 message SState {

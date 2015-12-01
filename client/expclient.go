@@ -224,7 +224,6 @@ func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.M
 		pb.WithGetOneNQuorumFunc(qf.GetOneNQF),
 		pb.WithSpSnOneQuorumFunc(qf.SpSnOneQF),
 		pb.WithSCommitQuorumFunc(qf.SCommitQF),
-		pb.WithSReadSQuorumFunc(qf.SReadSQF),
 		pb.WithSSetStateQuorumFunc(qf.SSetStateQF),
 	)
 	if err != nil {

@@ -24,11 +24,15 @@ var SpSnOneQF = func(c *pb.Configuration, replies []*pb.SWriteNReply) (*pb.SWrit
 	}
 
 	var next []*pb.Blueprint
+	var rst *pb.State
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
+		if rst.Compare(rep.GetState()) == 1 {
+			rst = rep.GetState()
+		}
 	}
 
-	return &pb.SWriteNReply{Next: next}, true
+	return &pb.SWriteNReply{Next: next, State: rst}, true
 }
 
 var SCommitQF = func(c *pb.Configuration, replies []*pb.CommitReply) (*pb.CommitReply, bool) {
@@ -61,34 +65,35 @@ var SCommitQF = func(c *pb.Configuration, replies []*pb.CommitReply) (*pb.Commit
 
 }
 
-var SReadSQF = func(c *pb.Configuration, replies []*pb.SReadReply) (*pb.SReadReply, bool) {
-
-	lastrep := replies[len(replies)-1]
-	if lastrep.GetCur() != nil {
-		if glog.V(4) {
-			glog.Infoln("SReadReply reported new Cur.")
-		}
-		return lastrep, true
-	}
-
-	// Return false, if not enough replies yet.
-	if len(replies) < c.ReadQuorum() {
-		if glog.V(7) {
-			glog.Infoln("Not enough SReadReplies yet.")
-		}
-		return nil, false
-	}
-
-	rst := new(pb.SReadReply)
-	for _, rep := range replies {
-		if rst.State.Compare(rep.State) == 1 {
-			rst.State = rep.State
-		}
-	}
-
-	return rst, true
-
-}
+//Dead code. Remove eventually.
+// var SReadSQF = func(c *pb.Configuration, replies []*pb.SReadReply) (*pb.SReadReply, bool) {
+//
+// 	lastrep := replies[len(replies)-1]
+// 	if lastrep.GetCur() != nil {
+// 		if glog.V(4) {
+// 			glog.Infoln("SReadReply reported new Cur.")
+// 		}
+// 		return lastrep, true
+// 	}
+//
+// 	// Return false, if not enough replies yet.
+// 	if len(replies) < c.ReadQuorum() {
+// 		if glog.V(7) {
+// 			glog.Infoln("Not enough SReadReplies yet.")
+// 		}
+// 		return nil, false
+// 	}
+//
+// 	rst := new(pb.SReadReply)
+// 	for _, rep := range replies {
+// 		if rst.State.Compare(rep.State) == 1 {
+// 			rst.State = rep.State
+// 		}
+// 	}
+//
+// 	return rst, true
+//
+// }
 
 var SSetStateQF = func(c *pb.Configuration, replies []*pb.SStateReply) (*pb.SStateReply, bool) {
 	//Oups here we don't abort when a new cur is reported, since this is not always processed.

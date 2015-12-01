@@ -3,18 +3,19 @@
 
 cd "$SM/sm_opt*" && echo "File sm_opt exists already. Abort." && exit
 
-for RMS in 1 2 3
+for RMS in 1 2
 do
 
 echo "$RMS replacement runs"
 
-for Opt in "no" "doreconf"
+for Opt in "doreconf" #"no"
 do
 
-for CP in "thrifty" "norecontact"
+for CP in "thrifty" #"norecontact"
 do
 
-for ALG in "sm" "cons"; do
+for ALG in "cons" #"sm"
+ do
 
 if [ "$ALG" = "cons" -a "$CP" = "norecontact" -a "$Opt" = "doreconf" ]; then
 	echo Skipping alg $ALG with optimization $Opt cp: $CP 
@@ -55,7 +56,7 @@ for R in run*; do
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis $RMS 12
+$SM/scripts/analyzeallsub analysis
 fi
 
 cd $SM
@@ -88,7 +89,7 @@ for R in run*; do
 done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis $RMS 12
+$SM/scripts/analyzeallsub analysis
 
 fi
 

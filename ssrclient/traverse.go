@@ -27,8 +27,9 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 
 		var c int
 		var newcur bool
+		var st *pb.State
 
-		prop, c, newcur, err = ssc.spsn(cp, i, prop)
+		prop, c, newcur, st, err = ssc.spsn(cp, i, prop)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -41,45 +42,8 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 			continue
 		}
 
-		cnf := cp.ReadC(ssc.Blueps[i], nil)
-
-		// Maybe we can omit this for reconfigurations in the last configuration.
-		readS := new(pb.SReadSReply)
-		for j := 0; cnf != nil; j++ {
-			readS, err = cnf.SReadS(&pb.SRead{
-				CurL: uint32(ssc.Blueps[0].Len()),
-			})
-			cnt++
-			if err == nil {
-				break
-			}
-
-			if err != nil && j == 0 {
-				glog.Errorf("C%d: error from ThriftyReadS: %v\n", ssc.Id, err)
-				// Try again with full configuration.
-				cnf = cp.FullC(ssc.Blueps[i])
-			}
-			if err != nil && j == smc.Retry {
-				glog.Errorf("C%d: error %v from ReadS after %d retries: ", ssc.Id, err, smc.Retry)
-				return nil, 0, err
-			}
-		}
-
-		if glog.V(3) && prop != nil {
-			glog.Infof("C%d: ReadS returned.\n", ssc.Id)
-		} else if glog.V(6) {
-			glog.Infof("C%d: ReadS returned.\n", ssc.Id)
-		}
-
-		if cr := readS.Reply.Cur; cr != nil {
-			ssc.Blueps = []*pb.Blueprint{cr}
-			glog.V(3).Infof("C%d: ReadS returned new current conf of length %d.\n", ssc.Id, cr.Len())
-			i = -1
-			continue
-		}
-
-		if rst.Compare(readS.Reply.GetState()) == 1 {
-			rst = readS.Reply.GetState()
+		if rst.Compare(st) == 1 {
+			rst = st
 		}
 
 		if i+1 == len(ssc.Blueps) && (!regular || i > 0) {
@@ -87,7 +51,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 
 			rst = ssc.WriteValue(&val, rst)
 
-			cnf = cp.WriteC(ssc.Blueps[i], nil)
+			cnf := cp.WriteC(ssc.Blueps[i], nil)
 
 			var setS *pb.SSetStateReply
 
@@ -142,7 +106,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 	return rst, cnt, nil
 }
 
-func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt int, cur bool, err error) {
+func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt int, cur bool, rst *pb.State, err error) {
 
 	for rnd := 0; ; rnd++ {
 		//Do SpSn Phase 1:
@@ -166,7 +130,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 
 			if err != nil && j == smc.Retry {
 				glog.Errorf("C%d: error %v from Phase1 after %d retries.\n", ssc.Id, err, smc.Retry)
-				return nil, 0, false, err
+				return nil, 0, false, nil, err
 			}
 
 			if err == nil {
@@ -178,7 +142,11 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 		if cr := collect.Reply.Cur; cr != nil {
 			ssc.Blueps = []*pb.Blueprint{cr}
 			glog.V(3).Infof("C%d: Phase1 returned new current conf of length %d.\n", ssc.Id, cr.Len())
-			return prop, cnt, true, nil
+			return prop, cnt, true, nil, nil
+		}
+
+		if rnd == 0 {
+			rst = collect.Reply.GetState()
 		}
 
 		// Merge with other proposals, or commit.
@@ -195,7 +163,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			if glog.V(6) {
 				glog.Infof("C%d: Empty Phase1 returned commit.\n", ssc.Id)
 			}
-			return nil, cnt, false, nil
+			return nil, cnt, false, rst, nil
 		}
 
 		if glog.V(4) {
@@ -232,7 +200,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 
 			if err != nil && j == smc.Retry {
 				glog.Errorf("C%d: error %v from Commit after %d retries: ", ssc.Id, err, smc.Retry)
-				return nil, 0, false, err
+				return nil, 0, false, nil, err
 			}
 
 			if err == nil {
@@ -244,7 +212,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 		if cr := commitR.Reply.Cur; cr != nil {
 			ssc.Blueps = []*pb.Blueprint{cr}
 			glog.V(3).Infof("C%d: Commit returned new current conf of length %d.\n", ssc.Id, cr.Len())
-			return prop, cnt, true, nil
+			return prop, cnt, true, nil, nil
 		}
 
 		//Insert Committed Blueprint
@@ -259,7 +227,7 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 			if glog.V(4) {
 				glog.Infof("C%d: Commit returned in rnd %d, nothing collected.", ssc.Id, rnd)
 			}
-			return prop, cnt, false, nil
+			return prop, cnt, false, rst, nil
 		}
 
 		if glog.V(4) {

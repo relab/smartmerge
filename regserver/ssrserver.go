@@ -44,12 +44,18 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 		if wn.CurL < srs.CurC {
 			return &pb.SWriteNReply{Cur: srs.Cur}, nil
 		}
+
+		var s *pb.State
+		if wn.Rnd == 0 {
+			s = srs.RState
+		}
+
 		proposed := srs.proposed(wn.This, wn.Rnd)
 
 		if len(proposed) == 0 {
-			return &pb.SWriteNReply{}, nil
+			return &pb.SWriteNReply{State: s}, nil
 		}
-		return &pb.SWriteNReply{Next: proposed}, nil
+		return &pb.SWriteNReply{Next: proposed, State: s}, nil
 	}
 
 	srs.mu.Lock()
@@ -58,6 +64,11 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 
 	if wn.CurL < srs.CurC {
 		return &pb.SWriteNReply{Cur: srs.Cur}, nil
+	}
+
+	var s *pb.State
+	if wn.Rnd == 0 {
+		s = srs.RState
 	}
 
 	proposed := srs.proposed(wn.This, wn.Rnd)
@@ -73,7 +84,7 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 		srs.Proposed[wn.This][wn.Rnd] = append(proposed, wn.Prop)
 	}
 
-	return &pb.SWriteNReply{Next: proposed}, nil
+	return &pb.SWriteNReply{Next: proposed, State: s}, nil
 }
 
 func (srs *SSRServer) proposed(this, rnd uint32) []*pb.Blueprint {
@@ -124,17 +135,17 @@ func (srs *SSRServer) collected(this, rnd uint32) *pb.Blueprint {
 	return srs.Collected[this][rnd]
 }
 
-func (srs *SSRServer) SReadS(ctx context.Context, rd *pb.SRead) (*pb.SReadReply, error) {
-	srs.mu.RLock()
-	defer srs.mu.RUnlock()
-	glog.V(5).Infoln("handling SRead")
-
-	if rd.CurL < srs.CurC {
-		return &pb.SReadReply{Cur: srs.Cur}, nil
-	}
-
-	return &pb.SReadReply{State: srs.RState}, nil
-}
+// func (srs *SSRServer) SReadS(ctx context.Context, rd *pb.SRead) (*pb.SReadReply, error) {
+// 	srs.mu.RLock()
+// 	defer srs.mu.RUnlock()
+// 	glog.V(5).Infoln("handling SRead")
+//
+// 	if rd.CurL < srs.CurC {
+// 		return &pb.SReadReply{Cur: srs.Cur}, nil
+// 	}
+//
+// 	return &pb.SReadReply{State: srs.RState}, nil
+// }
 
 func (srs *SSRServer) SSetState(ctx context.Context, ss *pb.SState) (*pb.SStateReply, error) {
 	srs.mu.Lock()

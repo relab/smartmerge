@@ -10,7 +10,7 @@ import (
 
 func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte, regular bool) (rval []byte, cnt int, err error) {
 	rst := new(pb.State)
-	for i := 0; i < len(dc.Confs); i++ {
+	for i := 0; i < len(dc.Blueps); i++ {
 		var curprop *pb.Blueprint // The current proposal
 		if prop != nil && !prop.Equals(dc.Blueps[i]) {
 			//Update Snapshot

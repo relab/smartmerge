@@ -12,7 +12,7 @@ import (
 	e "github.com/relab/smartMerge/elog/event"
 )
 
-const normlat = 2470 * time.Microsecond
+var normlat time.Duration
 
 func main() {
 	var file = flag.String("file", "", "elog files to parse, separated by comma")
@@ -21,6 +21,7 @@ func main() {
 	var list = flag.Bool("list", false, "print a list or latencies")
 	var debug = flag.Bool("debug", false, "print spike latencies")
 	var norm = flag.Int("normal", 2, "number of accesses in normal case.")
+	var normL = flag.Int("normlat", 2470, "normal case latency.")
 	//var recs = flag.Int("recs", 1, "number of reconfigurations per run.")
 	//var cl = flag.Int("clients", 5, "number of clients.")
 
@@ -31,6 +32,8 @@ func main() {
 	}
 
 	flag.Parse()
+
+	normlat = time.Duration(*normL) * time.Microsecond
 
 	if *file == "" {
 		flag.Usage()
@@ -159,6 +162,12 @@ func main() {
 				totalaffected += time.Duration(len(durs)) * avgWrites[k]
 			}
 		}
+		if len(readl) == 1 {
+			for k, durs := range readl {
+				sort.Sort(durarr(durs))
+				fmt.Fprintf(of, "For %d accesses, 95perc is %v\n", k, durs[(len(durs)*19)/20])
+			}
+		}
 		if affected > 0 {
 			fmt.Fprintf(of, "Mean latency for reads with more than %d acceses is: %v\n", normal, (totalaffected / affected))
 		}
@@ -184,6 +193,22 @@ func main() {
 		}
 		fmt.Fprintf(of, "Average reconfiguration latency: %v\n", (total / number))
 		fmt.Fprintf(of, "In total: %d reconfigurations\n", number)
+
+		recds := make([]time.Duration,len(reconfe))
+		p := 0
+		//fmt.Println("Len reconfe is", len(reconfe))
+		for _,durs := range reconfl {
+			//fmt.Printf("%d durations with %d accesses.\n", len(durs),k)
+			copy(recds[p:], durs)
+			p += len(durs)
+		}
+		if p < len(recds) {
+			fmt.Fprintln(of, "Something wrong here.")
+		}
+		sort.Sort(durarr(recds))
+		fmt.Fprintf(of, "Median reconf-latency is %v\n.", recds[len(recds)/2])
+		fmt.Fprintf(of, "Reconf-latency 95perc is %v\n.", recds[(len(recds)*19)/20])
+
 	}
 
 	if len(tupute) > 0 {
@@ -209,12 +234,15 @@ func main() {
 		fmt.Fprintf(of, "%d readclients\n", len(maxlats))
 		fmt.Fprintf(of, "Average max-latency is %v.\n", MeanDuration(maxlats...))
 		fmt.Fprintf(of, "Average overhead is %v.\n", MeanDuration(cumovers...))
-		sort.Sort(durarr(maxlats))
-		sort.Sort(durarr(cumovers))
-		fmt.Fprintf(of, "Median max-latency is %v\n.", maxlats[len(maxlats)/2])
-		fmt.Fprintf(of, "Max-latency 95perc is %v\n.", maxlats[(len(maxlats)*19)/20])
-		fmt.Fprintf(of, "Median overhead is %v\n.", cumovers[len(cumovers)/2])
-		fmt.Fprintf(of, "Overhead 95perc is %v\n.", maxlats[(len(cumovers)*19)/20])
+
+		if len(maxlats) > 10 {
+			sort.Sort(durarr(maxlats))
+			sort.Sort(durarr(cumovers))
+			fmt.Fprintf(of, "Median max-latency is %v\n.", maxlats[len(maxlats)/2])
+			fmt.Fprintf(of, "Max-latency 95perc is %v\n.", maxlats[(len(maxlats)*19)/20])
+			fmt.Fprintf(of, "Median overhead is %v\n.", cumovers[len(cumovers)/2])
+			fmt.Fprintf(of, "Overhead 95perc is %v\n.", cumovers[(len(cumovers)*19)/20])
+		}
 	}
 
 }

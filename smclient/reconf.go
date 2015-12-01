@@ -75,6 +75,9 @@ forconfiguration:
 			// There exists a proposal => do WriteN
 
 			cnf := cp.WriteC(smc.Blueps[i], wid)
+			if cnf == nil {
+				cnt++
+			}
 
 			writeN := new(pb.AWriteNReply)
 
@@ -230,7 +233,9 @@ func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Bluep
 
 func (smc *SmClient) Doread(cp conf.Provider, curin, i int, rid []int) (st *pb.State, cur, cnt int, err error) {
 	cnf := cp.ReadC(smc.Blueps[i], rid)
-
+	if cnf == nil {
+		cnt++
+	}
 	read := new(pb.AReadSReply)
 
 	for j := 0; cnf != nil; j++ {

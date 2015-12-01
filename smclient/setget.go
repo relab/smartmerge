@@ -15,6 +15,9 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 		}
 
 		cnf := cp.ReadC(smc.Blueps[i], rid)
+		if cnf == nil {
+			cnt++
+		}
 
 		read := new(pb.AReadSReply)
 		var err error
@@ -71,6 +74,9 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 		}
 
 		cnf := cp.WriteC(smc.Blueps[i], rid)
+		if cnf == nil {
+			cnt++
+		}
 
 		write := new(pb.AWriteSReply)
 		var err error

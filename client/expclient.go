@@ -47,10 +47,11 @@ var (
 	doelog = flag.Bool("elog", false, "log latencies in user or exp mode.")
 
 	//Config
-	confFile = flag.String("conf", "config", "the config file, a list of host:port addresses.")
-	clientid = flag.Int("id", 0, "the client id")
-	nclients = flag.Int("nclients", 1, "the number of clients")
-	initsize = flag.Int("initsize", 1, "the number of servers in the initial configuration")
+	confFile  = flag.String("conf", "config", "the config file, a list of host:port addresses.")
+	clientid  = flag.Int("id", 0, "the client id")
+	nclients  = flag.Int("nclients", 1, "the number of clients")
+	initsize  = flag.Int("initsize", 1, "the number of servers in the initial configuration")
+	useleader = flag.Bool("useleader", false, "let a leader handle reconfigurations.")
 
 	//Read or Write Bench
 	contW  = flag.Bool("contW", false, "continuously write")

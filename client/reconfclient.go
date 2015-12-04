@@ -57,6 +57,18 @@ func expmain() {
 			continue
 		}
 
+		if *useleader {
+			if *alg == "sm" || *alg == "" {
+				cl, err = createForwarder(cl, mgr, ids[0])
+				if err != nil {
+					glog.Errorln("Error creating forwarder:", err)
+					continue
+				}
+			} else {
+				glog.Errorln("Can not create forwarder for algorithm ", *alg)
+			}
+		}
+
 		defer PrintErrors(mgr)
 		wg.Add(1)
 		switch {
@@ -233,4 +245,13 @@ func adds(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *
 		glog.Errorln("Reconf returned error: ", err)
 	}
 	return
+}
+
+func createForwarder(cl RWRer, mgr *pb.Manager, lid uint32) (RWRer, error) {
+	ids := mgr.ToIds([]uint32{lid})
+	cnf, err := mgr.NewConfiguration(ids, 1, conf.ConfTimeout)
+	if err != nil {
+		return nil, err
+	}
+	return &FwdClient{cl, cnf}, nil
 }

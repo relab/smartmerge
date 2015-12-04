@@ -59,7 +59,7 @@ func expmain() {
 
 		if *useleader {
 			if *alg == "sm" || *alg == "" {
-				cl, err = createForwarder(cl, mgr, ids[0])
+				cl, err = createForwarder(cl, mgr, ids[len(ids)-1])
 				if err != nil {
 					glog.Errorln("Error creating forwarder:", err)
 					continue

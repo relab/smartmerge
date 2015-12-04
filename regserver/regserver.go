@@ -49,11 +49,10 @@ func NewRegServer(noabort bool) *RegServer {
 	return rs
 }
 
-func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool, leader *l.Leader) *RegServer {
+func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *RegServer {
 	rs := NewRegServer(noabort)
 	rs.Cur = cur
 	rs.CurC = curc
-	rs.Leader = leader
 
 	return rs
 }
@@ -288,4 +287,10 @@ func (rs *RegServer) Fwd(ctx context.Context, p *pb.Proposal) (*pb.Ack, error) {
 	}
 	rs.Leader.Propose(p.GetProp())
 	return &pb.Ack{}, nil
+}
+
+func (rs *RegServer) AddLeader(leader *l.Leader) {
+	rs.Lock()
+	defer rs.Unlock()
+	rs.Leader = leader
 }

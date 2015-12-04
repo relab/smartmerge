@@ -7,7 +7,6 @@ import (
 	"net"
 	"sync"
 
-	l "github.com/relab/smartMerge/leader"
 	pb "github.com/relab/smartMerge/proto"
 	grpc "google.golang.org/grpc"
 )
@@ -52,11 +51,11 @@ func StartTest(port int) (*grpc.Server, error) {
 
 ////////////////// Advanced Server //////////////////////
 
-func StartAdv(port int, noabort bool, leader *l.Leader) (*RegServer, error) {
-	return StartAdvInConf(port, nil, uint32(0), noabort, leader)
+func StartAdv(port int, noabort bool) (*RegServer, error) {
+	return StartAdvInConf(port, nil, uint32(0), noabort)
 }
 
-func StartAdvInConf(port int, init *pb.Blueprint, initC uint32, noabort bool, leader *l.Leader) (*RegServer, error) {
+func StartAdvInConf(port int, init *pb.Blueprint, initC uint32, noabort bool) (*RegServer, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if haveServer == true {
@@ -64,7 +63,7 @@ func StartAdvInConf(port int, init *pb.Blueprint, initC uint32, noabort bool, le
 		return nil, errors.New("There already exists an old server.")
 	}
 
-	rs := NewRegServerWithCur(init, initC, noabort, leader)
+	rs := NewRegServerWithCur(init, initC, noabort)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {

@@ -40,7 +40,7 @@ func main() {
 	glog.Infoln("Starting Server with port: ", *port)
 	switch *alg {
 	case "", "sm":
-		_, err = regserver.StartAdv(*port, *noabort, nil)
+		_, err = regserver.StartAdv(*port, *noabort)
 	case "dyna":
 		_, err = regserver.StartDyna(*port)
 	case "ssr":

@@ -57,8 +57,25 @@ func main() {
 		return
 	}
 
-	var l *leader.Leader
-	if *alg == "sm" || *alg == "" {
+	var err error
+	var rs *regserver.RegServer
+	glog.Infoln("Starting Server with port: ", *port)
+	switch *alg {
+	case "", "sm":
+		rs, err = regserver.StartAdv(*port, *noabort)
+	case "dyna":
+		_, err = regserver.StartDyna(*port)
+	case "ssr":
+		_, err = regserver.StartSSR(*port)
+	case "cons":
+		_, err = regserver.StartCons(*port, *noabort)
+	}
+
+	if err != nil {
+		glog.Fatalln("Starting server returned error", err)
+	} else {
+
+		time.Sleep(2 * time.Second)
 
 		initBlp := new(pb.Blueprint)
 		initBlp.Nodes = make([]*pb.Node, 0, len(ids))
@@ -79,7 +96,7 @@ func main() {
 
 		defer LogErrors(mgr)
 		glog.Infoln("starting client with id", (*clientid))
-		l, err = leader.New(initBlp, uint32(*clientid), cp)
+		l, err := leader.New(initBlp, uint32(*clientid), cp)
 		if err != nil {
 			glog.Errorln("Error creating leader: ", err)
 			return
@@ -87,23 +104,8 @@ func main() {
 
 		l.Run()
 		defer l.Stop()
-	}
 
-	var err error
-	glog.Infoln("Starting Server with port: ", *port)
-	switch *alg {
-	case "", "sm":
-		_, err = regserver.StartAdv(*port, *noabort, l)
-	case "dyna":
-		_, err = regserver.StartDyna(*port)
-	case "ssr":
-		_, err = regserver.StartSSR(*port)
-	case "cons":
-		_, err = regserver.StartCons(*port, *noabort)
-	}
-
-	if err != nil {
-		glog.Fatalln("Starting server returned error", err)
+		rs.AddLeader(l)
 	}
 
 	signalChan := make(chan os.Signal, 1)

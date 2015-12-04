@@ -20,7 +20,7 @@ func NewConsServer(noabort bool) *ConsServer {
 
 func NewConsServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *ConsServer {
 	return &ConsServer{
-		NewRegServerWithCur(cur, curc, noabort, nil),
+		NewRegServerWithCur(cur, curc, noabort),
 	}
 }
 

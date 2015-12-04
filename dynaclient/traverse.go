@@ -62,9 +62,11 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		}
 
 		//Update Snapshot and ReadInView:
-		cnf := cp.WriteC(dc.Blueps[i], nil)
+		var cnf *pb.Configuration
 		if curprop == nil {
 			cnf = cp.ReadC(dc.Blueps[i], nil)
+		} else {
+			cnf = cp.WriteC(dc.Blueps[i], nil)
 		}
 		writeN := new(pb.DWriteNReply)
 

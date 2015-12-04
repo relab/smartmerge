@@ -3,7 +3,7 @@ export GST=$GOPATH/src/github.com/relab/gorums-stress-test
 
 echo stopping readers
 
-for Pi in 23 25 30 33 35
+for Pi in 23 25 30 31 32 33 35
 do
 ssh pitter"$Pi" "cd $GST/client && killall client"
 ssh pitter"$Pi" "rm /local/scratch/ljehl/*log*"

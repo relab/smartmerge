@@ -91,7 +91,9 @@ func main() {
 	}
 
 	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
+		filename := *cpuprofile + fmt.Sprint(*clientid)
+		glog.Infoln("Starting cpuprofiling in file", filename)
+		f, err := os.Create(filename)
 		if err != nil {
 			fmt.Println("err")
 			return

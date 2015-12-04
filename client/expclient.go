@@ -427,9 +427,9 @@ func LogErrors(mgr *pb.Manager) {
 	founderrs := false
 	for id, e := range errs {
 		if !founderrs {
-			glog.Infoln("Printing connection errors.")
+			glog.Errorln("Printing connection errors.")
 		}
-		glog.Infof("id %d: error %v\n", id, e)
+		glog.Errorf("id %d: error %v\n", id, e)
 		founderrs = true
 	}
 	if !founderrs {

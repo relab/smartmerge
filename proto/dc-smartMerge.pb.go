@@ -30,6 +30,8 @@
 		Promise
 		Propose
 		Learn
+		Proposal
+		Ack
 		GetOne
 		GetOneReply
 		DRead
@@ -473,6 +475,28 @@ func (m *Learn) GetDec() *Blueprint {
 	return nil
 }
 
+type Proposal struct {
+	Prop *Blueprint `protobuf:"bytes,1,opt,name=Prop" json:"Prop,omitempty"`
+}
+
+func (m *Proposal) Reset()         { *m = Proposal{} }
+func (m *Proposal) String() string { return proto1.CompactTextString(m) }
+func (*Proposal) ProtoMessage()    {}
+
+func (m *Proposal) GetProp() *Blueprint {
+	if m != nil {
+		return m.Prop
+	}
+	return nil
+}
+
+type Ack struct {
+}
+
+func (m *Ack) Reset()         { *m = Ack{} }
+func (m *Ack) String() string { return proto1.CompactTextString(m) }
+func (*Ack) ProtoMessage()    {}
+
 type GetOne struct {
 	Conf *Conf      `protobuf:"bytes,1,opt,name=Conf" json:"Conf,omitempty"`
 	Next *Blueprint `protobuf:"bytes,2,opt,name=Next" json:"Next,omitempty"`
@@ -811,6 +835,8 @@ func init() {
 	proto1.RegisterType((*Promise)(nil), "proto.Promise")
 	proto1.RegisterType((*Propose)(nil), "proto.Propose")
 	proto1.RegisterType((*Learn)(nil), "proto.Learn")
+	proto1.RegisterType((*Proposal)(nil), "proto.Proposal")
+	proto1.RegisterType((*Ack)(nil), "proto.Ack")
 	proto1.RegisterType((*GetOne)(nil), "proto.GetOne")
 	proto1.RegisterType((*GetOneReply)(nil), "proto.GetOneReply")
 	proto1.RegisterType((*DRead)(nil), "proto.DRead")
@@ -850,6 +876,7 @@ type Manager struct {
 	setStateqf   SetStateQuorumFn
 	getPromiseqf GetPromiseQuorumFn
 	acceptqf     AcceptQuorumFn
+	fwdqf        FwdQuorumFn
 	getOneNqf    GetOneNQuorumFn
 	dWriteNqf    DWriteNQuorumFn
 	dSetStateqf  DSetStateQuorumFn
@@ -938,6 +965,16 @@ func (m *Manager) setDefaultQuorumFuncs() {
 		m.acceptqf = m.opts.acceptqf
 	} else {
 		m.acceptqf = func(c *Configuration, replies []*Learn) (*Learn, bool) {
+			if len(replies) < c.Quorum() {
+				return nil, false
+			}
+			return replies[0], true
+		}
+	}
+	if m.opts.fwdqf != nil {
+		m.fwdqf = m.opts.fwdqf
+	} else {
+		m.fwdqf = func(c *Configuration, replies []*Ack) (*Ack, bool) {
 			if len(replies) < c.Quorum() {
 				return nil, false
 			}
@@ -1068,6 +1105,7 @@ type managerOptions struct {
 	setStateqf   SetStateQuorumFn
 	getPromiseqf GetPromiseQuorumFn
 	acceptqf     AcceptQuorumFn
+	fwdqf        FwdQuorumFn
 	getOneNqf    GetOneNQuorumFn
 	dWriteNqf    DWriteNQuorumFn
 	dSetStateqf  DSetStateQuorumFn
@@ -1140,6 +1178,14 @@ func WithGetPromiseQuorumFunc(f GetPromiseQuorumFn) ManagerOption {
 func WithAcceptQuorumFunc(f AcceptQuorumFn) ManagerOption {
 	return func(o *managerOptions) {
 		o.acceptqf = f
+	}
+}
+
+// WithFwdQuorumFunc returns a ManagerOption that sets a cumstom
+// FwdQuorumFunc.
+func WithFwdQuorumFunc(f FwdQuorumFn) ManagerOption {
+	return func(o *managerOptions) {
+		o.fwdqf = f
 	}
 }
 
@@ -1262,6 +1308,12 @@ type GetPromiseQuorumFn func(c *Configuration, replies []*Promise) (*Promise, bo
 // then the function returns (nil, false). Otherwise, the function picks a
 // reply among the replies and returns (reply, true).
 type AcceptQuorumFn func(c *Configuration, replies []*Learn) (*Learn, bool)
+
+// FwdQuorumFn is used to pick a reply from the replies if there is a quorum.
+// If there was not enough replies to satisfy the quorum requirement,
+// then the function returns (nil, false). Otherwise, the function picks a
+// reply among the replies and returns (reply, true).
+type FwdQuorumFn func(c *Configuration, replies []*Ack) (*Ack, bool)
 
 // GetOneNQuorumFn is used to pick a reply from the replies if there is a quorum.
 // If there was not enough replies to satisfy the quorum requirement,
@@ -1677,6 +1729,51 @@ func (c *Configuration) AcceptFuture(args *Propose) *AcceptFuture {
 // Get returns the reply and any error associated with the AcceptFuture.
 // The method blocks until a reply or error is available.
 func (f *AcceptFuture) Get() (*AcceptReply, error) {
+	<-f.c
+	return f.reply, f.err
+}
+
+// FwdReply encapsulates the reply from a Fwd RPC invocation.
+// It contains the id of each machine in the quorum that replied and a single
+// reply.
+type FwdReply struct {
+	MachineIDs []int
+	Reply      *Ack
+}
+
+func (r FwdReply) String() string {
+	return fmt.Sprintf("Machine IDs: %v | Answer: %v", r.MachineIDs, r.Reply)
+}
+
+// FwdReply invokes a Fwd RPC on configuration c
+// and returns the result as a FwdReply.
+func (c *Configuration) Fwd(args *Proposal) (*FwdReply, error) {
+	return c.mgr.fwd(c.id, args)
+}
+
+// FwdFuture is a reference to an asynchronous Fwd RPC invocation.
+type FwdFuture struct {
+	reply *FwdReply
+	err   error
+	c     chan struct{}
+}
+
+// FwdFuture asynchronously invokes a Fwd RPC on configuration c and
+// returns a FwdFuture which can be used to inspect the RPC reply and error
+// when available.
+func (c *Configuration) FwdFuture(args *Proposal) *FwdFuture {
+	f := new(FwdFuture)
+	f.c = make(chan struct{}, 1)
+	go func() {
+		defer close(f.c)
+		f.reply, f.err = c.mgr.fwd(c.id, args)
+	}()
+	return f
+}
+
+// Get returns the reply and any error associated with the FwdFuture.
+// The method blocks until a reply or error is available.
+func (f *FwdFuture) Get() (*FwdReply, error) {
 	<-f.c
 	return f.reply, f.err
 }
@@ -2755,6 +2852,91 @@ func (m *Manager) accept(cid int, args *Propose) (*AcceptReply, error) {
 			replyValues = append(replyValues, r.reply)
 			reply.MachineIDs = append(reply.MachineIDs, r.mid)
 			if reply.Reply, quorum = m.acceptqf(c, replyValues); quorum {
+				return reply, nil
+			}
+		case <-time.After(c.timeout):
+			return reply, TimeoutRPCError{c.timeout, errCount, len(replyValues)}
+		}
+
+	terminationCheck:
+		if errCount+len(replyValues) == c.Size() {
+			return reply, IncompleteRPCError{errCount, len(replyValues)}
+		}
+	}
+}
+
+type fwdReply struct {
+	mid   int
+	reply *Ack
+	err   error
+}
+
+func (m *Manager) fwd(cid int, args *Proposal) (*FwdReply, error) {
+	c, found := m.Configuration(cid)
+	if !found {
+		panic("execptional: config not found")
+	}
+
+	var (
+		replyChan   = make(chan fwdReply, c.quorum)
+		stopSignal  = make(chan struct{})
+		replyValues = make([]*Ack, 0, c.quorum)
+		errCount    int
+		quorum      bool
+		reply       = &FwdReply{MachineIDs: make([]int, 0, c.quorum)}
+	)
+
+	for _, mid := range c.machines {
+		machine, found := m.Machine(mid)
+		if !found {
+			panic("exceptional: machine not found")
+		}
+		go func() {
+			reply := new(Ack)
+			ce := make(chan error, 1)
+			start := time.Now()
+			go func() {
+				select {
+				case ce <- grpc.Invoke(
+					c.defCtx,
+					"/proto.AdvRegister/Fwd",
+					args,
+					reply,
+					machine.conn,
+				):
+				case <-stopSignal:
+					return
+				}
+			}()
+			select {
+			case err := <-ce:
+				switch grpc.Code(err) {
+				case codes.OK, codes.Aborted, codes.Canceled:
+					machine.setLatency(time.Since(start))
+				default:
+					machine.setLastErr(err)
+				}
+				replyChan <- fwdReply{machine.id, reply, err}
+			case <-stopSignal:
+				return
+			}
+		}()
+	}
+
+	defer close(stopSignal)
+
+	for {
+
+		select {
+		case r := <-replyChan:
+			if r.err != nil {
+				errCount++
+				goto terminationCheck
+			}
+
+			replyValues = append(replyValues, r.reply)
+			reply.MachineIDs = append(reply.MachineIDs, r.mid)
+			if reply.Reply, quorum = m.fwdqf(c, replyValues); quorum {
 				return reply, nil
 			}
 		case <-time.After(c.timeout):
@@ -4080,6 +4262,7 @@ type AdvRegisterClient interface {
 	SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error)
 	GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error)
 	Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error)
+	Fwd(ctx context.Context, in *Proposal, opts ...grpc.CallOption) (*Ack, error)
 }
 
 type advRegisterClient struct {
@@ -4162,6 +4345,15 @@ func (c *advRegisterClient) Accept(ctx context.Context, in *Propose, opts ...grp
 	return out, nil
 }
 
+func (c *advRegisterClient) Fwd(ctx context.Context, in *Proposal, opts ...grpc.CallOption) (*Ack, error) {
+	out := new(Ack)
+	err := grpc.Invoke(ctx, "/proto.AdvRegister/Fwd", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for AdvRegister service
 
 type AdvRegisterServer interface {
@@ -4173,6 +4365,7 @@ type AdvRegisterServer interface {
 	SetState(context.Context, *NewState) (*NewStateReply, error)
 	GetPromise(context.Context, *Prepare) (*Promise, error)
 	Accept(context.Context, *Propose) (*Learn, error)
+	Fwd(context.Context, *Proposal) (*Ack, error)
 }
 
 func RegisterAdvRegisterServer(s *grpc.Server, srv AdvRegisterServer) {
@@ -4275,6 +4468,18 @@ func _AdvRegister_Accept_Handler(srv interface{}, ctx context.Context, dec func(
 	return out, nil
 }
 
+func _AdvRegister_Fwd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(Proposal)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdvRegisterServer).Fwd(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _AdvRegister_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.AdvRegister",
 	HandlerType: (*AdvRegisterServer)(nil),
@@ -4310,6 +4515,10 @@ var _AdvRegister_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Accept",
 			Handler:    _AdvRegister_Accept_Handler,
+		},
+		{
+			MethodName: "Fwd",
+			Handler:    _AdvRegister_Fwd_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -5410,6 +5619,52 @@ func (m *Learn) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *Proposal) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *Proposal) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Prop != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
+		n27, err := m.Prop.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n27
+	}
+	return i, nil
+}
+
+func (m *Ack) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *Ack) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
 func (m *GetOne) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -5429,21 +5684,21 @@ func (m *GetOne) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n27, err := m.Conf.MarshalTo(data[i:])
+		n28, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n27
+		i += n28
 	}
 	if m.Next != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
-		n28, err := m.Next.MarshalTo(data[i:])
+		n29, err := m.Next.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n28
+		i += n29
 	}
 	return i, nil
 }
@@ -5467,21 +5722,21 @@ func (m *GetOneReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
-		n29, err := m.Next.MarshalTo(data[i:])
+		n30, err := m.Next.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n29
+		i += n30
 	}
 	if m.Cur != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n30, err := m.Cur.MarshalTo(data[i:])
+		n31, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n30
+		i += n31
 	}
 	return i, nil
 }
@@ -5505,21 +5760,21 @@ func (m *DRead) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n31, err := m.Conf.MarshalTo(data[i:])
+		n32, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n31
+		i += n32
 	}
 	if m.Prop != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n32, err := m.Prop.MarshalTo(data[i:])
+		n33, err := m.Prop.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n32
+		i += n33
 	}
 	return i, nil
 }
@@ -5543,21 +5798,21 @@ func (m *DReadReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n33, err := m.State.MarshalTo(data[i:])
+		n34, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n33
+		i += n34
 	}
 	if m.Cur != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n34, err := m.Cur.MarshalTo(data[i:])
+		n35, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n34
+		i += n35
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -5593,31 +5848,31 @@ func (m *DNewState) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n35, err := m.Conf.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n35
-	}
-	if m.Cur != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n36, err := m.Cur.MarshalTo(data[i:])
+		n36, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n36
 	}
-	if m.State != nil {
-		data[i] = 0x1a
+	if m.Cur != nil {
+		data[i] = 0x12
 		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n37, err := m.State.MarshalTo(data[i:])
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
+		n37, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n37
+	}
+	if m.State != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
+		n38, err := m.State.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n38
 	}
 	return i, nil
 }
@@ -5641,11 +5896,11 @@ func (m *DWriteNs) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n38, err := m.Conf.MarshalTo(data[i:])
+		n39, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n38
+		i += n39
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -5681,11 +5936,11 @@ func (m *DWriteNsReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n39, err := m.Cur.MarshalTo(data[i:])
+		n40, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n39
+		i += n40
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -5736,11 +5991,11 @@ func (m *SWriteN) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x22
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n40, err := m.Prop.MarshalTo(data[i:])
+		n41, err := m.Prop.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n40
+		i += n41
 	}
 	return i, nil
 }
@@ -5764,11 +6019,11 @@ func (m *SWriteNReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n41, err := m.Cur.MarshalTo(data[i:])
+		n42, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n41
+		i += n42
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -5786,11 +6041,11 @@ func (m *SWriteNReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n42, err := m.State.MarshalTo(data[i:])
+		n43, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n42
+		i += n43
 	}
 	return i, nil
 }
@@ -5839,11 +6094,11 @@ func (m *Commit) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Collect.Size()))
-		n43, err := m.Collect.MarshalTo(data[i:])
+		n44, err := m.Collect.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n43
+		i += n44
 	}
 	return i, nil
 }
@@ -5867,31 +6122,31 @@ func (m *CommitReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n44, err := m.Cur.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n44
-	}
-	if m.Committed != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Committed.Size()))
-		n45, err := m.Committed.MarshalTo(data[i:])
+		n45, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n45
 	}
-	if m.Collected != nil {
-		data[i] = 0x1a
+	if m.Committed != nil {
+		data[i] = 0x12
 		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.Collected.Size()))
-		n46, err := m.Collected.MarshalTo(data[i:])
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Committed.Size()))
+		n46, err := m.Committed.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n46
+	}
+	if m.Collected != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintDcSmartMerge(data, i, uint64(m.Collected.Size()))
+		n47, err := m.Collected.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n47
 	}
 	return i, nil
 }
@@ -5920,21 +6175,21 @@ func (m *SState) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n47, err := m.Cur.MarshalTo(data[i:])
+		n48, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n47
+		i += n48
 	}
 	if m.State != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n48, err := m.State.MarshalTo(data[i:])
+		n49, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n48
+		i += n49
 	}
 	return i, nil
 }
@@ -5968,11 +6223,11 @@ func (m *SStateReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n49, err := m.Cur.MarshalTo(data[i:])
+		n50, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n49
+		i += n50
 	}
 	return i, nil
 }
@@ -6312,6 +6567,22 @@ func (m *Learn) Size() (n int) {
 	if m.Learned {
 		n += 2
 	}
+	return n
+}
+
+func (m *Proposal) Size() (n int) {
+	var l int
+	_ = l
+	if m.Prop != nil {
+		l = m.Prop.Size()
+		n += 1 + l + sovDcSmartMerge(uint64(l))
+	}
+	return n
+}
+
+func (m *Ack) Size() (n int) {
+	var l int
+	_ = l
 	return n
 }
 
@@ -8921,6 +9192,139 @@ func (m *Learn) Unmarshal(data []byte) error {
 				}
 			}
 			m.Learned = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Proposal) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Proposal: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Proposal: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Prop", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDcSmartMerge
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Prop == nil {
+				m.Prop = &Blueprint{}
+			}
+			if err := m.Prop.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDcSmartMerge(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDcSmartMerge
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Ack) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDcSmartMerge
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Ack: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Ack: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipDcSmartMerge(data[iNdEx:])

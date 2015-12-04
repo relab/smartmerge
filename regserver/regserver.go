@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
+	l "github.com/relab/smartMerge/leader"
 	pb "github.com/relab/smartMerge/proto"
 	"golang.org/x/net/context"
 )
@@ -21,6 +22,7 @@ type RegServer struct {
 	Rnd     map[uint32]uint32        //Used only for Consensus based
 	Val     map[uint32]*pb.CV        //Used only for Consensus based
 	noabort bool
+	Leader  *l.Leader
 }
 
 func (rs *RegServer) PrintState(op string) {
@@ -47,10 +49,11 @@ func NewRegServer(noabort bool) *RegServer {
 	return rs
 }
 
-func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *RegServer {
+func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool, leader *l.Leader) *RegServer {
 	rs := NewRegServer(noabort)
 	rs.Cur = cur
 	rs.CurC = curc
+	rs.Leader = leader
 
 	return rs
 }
@@ -60,11 +63,11 @@ func (rs *RegServer) handleConf(conf *pb.Conf, n *pb.Blueprint) (cr *pb.ConfRepl
 		//The client is using an outdated configuration, abort.
 		return &pb.ConfReply{Cur: rs.Cur, Abort: false}
 	}
-	
+
 	if n != nil {
 		found := false
-		for _,nxt := range rs.Next {
-			if  n.LearnedEquals(nxt) {
+		for _, nxt := range rs.Next {
+			if n.LearnedEquals(nxt) {
 				found = true
 				break
 			}
@@ -276,4 +279,13 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 	rs.Next = newNext
 
 	return &pb.NewCurReply{true}, nil
+}
+
+func (rs *RegServer) Fwd(ctx context.Context, p *pb.Proposal) (*pb.Ack, error) {
+	if rs.Leader == nil {
+		glog.Errorln("Received Fwd request but have no leader.")
+		return nil, errors.New("Not implemented.")
+	}
+	rs.Leader.Propose(p.GetProp())
+	return &pb.Ack{}, nil
 }

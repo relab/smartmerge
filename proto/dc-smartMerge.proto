@@ -11,6 +11,7 @@ service AdvRegister {
 	rpc SetState(NewState) returns (NewStateReply) {}
 	rpc GetPromise(Prepare) returns (Promise) {}
 	rpc Accept(Propose) returns (Learn) {}
+	rpc Fwd(Proposal) returns (Ack) {}
 }
 
 message State {
@@ -124,6 +125,12 @@ message Learn {
 	Blueprint Dec = 2;
 	bool Learned = 3;
 }
+
+message Proposal {
+	Blueprint Prop = 1;
+}
+
+message Ack {}
 
 service DynaDisk {
 	rpc GetOneN(GetOne) returns (GetOneReply) {}

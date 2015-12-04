@@ -20,7 +20,7 @@ var (
 	alg      = flag.String("alg", "", "algorithm to use (sm | dyna | ssr | cons )")
 	allCores = flag.Bool("all-cores", false, "use all available logical CPUs")
 
-	noabort    = flag.Bool("no-abort", false, "do not send aborting new-cur information.")
+	noabort = flag.Bool("no-abort", false, "do not send aborting new-cur information.")
 )
 
 func main() {
@@ -40,10 +40,10 @@ func main() {
 	glog.Infoln("Starting Server with port: ", *port)
 	switch *alg {
 	case "", "sm":
-		_, err = regserver.StartAdv(*port, *noabort)
+		_, err = regserver.StartAdv(*port, *noabort, nil)
 	case "dyna":
 		_, err = regserver.StartDyna(*port)
-	case "ssr" :
+	case "ssr":
 		_, err = regserver.StartSSR(*port)
 	case "cons":
 		_, err = regserver.StartCons(*port, *noabort)

@@ -46,7 +46,7 @@ echo starting servers on
 for Pi in ${SERVS[@]}
 do
 
-if [ "$3" == "norecontact" ]; then
+if [ "$3" = "norecontact" ]; then
 
 	echo -n "sm-pitter$Pi "
 	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -no-abort -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"

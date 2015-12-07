@@ -3,15 +3,15 @@
 
 cd "$SM/sm_opt*" && echo "File sm_opt exists already. Abort." && exit
 
-for RMS in 3 4
+for RMS in 1 2
 do
 
 echo "$RMS replacement runs"
 
-for Opt in "no" "doreconf" 
+for Opt in "no" #"doreconf" 
 do
 
-for CP in "norecontact" "thrifty"
+for CP in  "thrifty" #"norecontact"
 do
 
 for ALG in "sm" "cons"

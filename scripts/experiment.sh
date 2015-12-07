@@ -11,7 +11,7 @@ echo "$RMS replacement runs"
 for Opt in "no" #"doreconf" 
 do
 
-for CP in  "thrifty" #"norecontact"
+for CP in "thrifty" #"norecontact" 
 do
 
 for ALG in "sm" "cons"
@@ -31,7 +31,7 @@ echo Alg $ALG with optimization $Opt conf provider $CP
 
 
 mkdir "$ALG-opt$Opt-cp$CP-repl$RMS$*"
-for i in {1..40} 
+for i in {1..20} 
 do
 	echo make run $i
 	./scripts/sm-run.sh "$Opt" $ALG $CP -repl "$RMS" " " 0

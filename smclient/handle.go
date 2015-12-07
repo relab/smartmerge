@@ -3,6 +3,7 @@ package smclient
 import (
 	"github.com/golang/glog"
 
+	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
 )
 
@@ -87,5 +88,30 @@ func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
 
 	if len(smc.Blueps) != i+1 {
 		smc.Blueps[i] = blp
+	}
+}
+
+func (smc *SmClient) SetCur(cp conf.Provider, cur *pb.Blueprint) {
+	cnf := cp.WriteC(cur, nil)
+
+	for j := 0; ; j++ {
+		_, err := cnf.SetCur(&pb.NewCur{
+			CurC: uint32(cur.Len()),
+			Cur:  cur})
+
+		if err != nil && j == 0 {
+			glog.Errorf("C%d: error from Thrifty New Cur: %v\n", smc.Id, err)
+			// Try again with full configuration.
+			cnf = cp.FullC(cur)
+		}
+
+		if err != nil && j == Retry {
+			glog.Errorf("C%d: error %v from NewCur after %d retries: ", smc.Id, err, Retry)
+			break
+		}
+
+		if err == nil {
+			break
+		}
 	}
 }

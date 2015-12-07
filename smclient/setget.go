@@ -14,6 +14,10 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 			continue
 		}
 
+		if i > 0 && i == cur {
+			go smc.SetCur(cp, smc.Blueps[cur])
+		}
+
 		cnf := cp.ReadC(smc.Blueps[i], rid)
 		if cnf == nil {
 			cnt++
@@ -71,6 +75,10 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 	for i := 0; i < len(smc.Blueps); i++ {
 		if i < cur {
 			continue
+		}
+
+		if i > 0 && i == cur {
+			go smc.SetCur(cp, smc.Blueps[cur])
 		}
 
 		cnf := cp.WriteC(smc.Blueps[i], rid)

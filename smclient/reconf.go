@@ -131,7 +131,6 @@ forconfiguration:
 			for j := 0; ; j++ {
 				setS, err = cnf.SetState(&pb.NewState{
 					CurC:    uint32(smc.Blueps[i].Len()),
-					Cur:     smc.Blueps[i],
 					State:   rst,
 					LAState: las})
 				cnt++
@@ -160,10 +159,13 @@ forconfiguration:
 
 			cur = smc.HandleOneCur(i, setS.Reply.GetCur())
 			smc.HandleNext(i, setS.Reply.GetNext())
+
 		}
 	}
 
 	smc.SetNewCur(cur)
+	smc.SetCur(cp, smc.Blueps[0])
+	cnt++
 	return rst, cnt, nil
 }
 

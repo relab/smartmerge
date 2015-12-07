@@ -159,3 +159,5 @@ do
 done
 
 echo "sm-run $1 $2 $3 $4 $5 $6" > exlogs/command
+git rev-parse --abbrev-ref HEAD >> exlogs/command
+git rev-parse --short HEAD >> exlogs/command

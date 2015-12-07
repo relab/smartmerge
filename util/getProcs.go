@@ -7,7 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
-	
+
 	"github.com/golang/glog"
 )
 
@@ -35,7 +35,7 @@ func GetProcs(confFile string, prnt bool) (addrs []string, ids []uint32) {
 	} else {
 		glog.Infoln("Processes from Config file:")
 	}
-	
+
 	for scanner.Scan() {
 		s := strings.TrimSpace(scanner.Text())
 		_, err = net.ResolveTCPAddr("tcp", s)

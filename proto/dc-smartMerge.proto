@@ -184,9 +184,10 @@ service SpSnRegister {
 
 message SWriteN {
 	uint32 CurL = 1;
-	uint32 This = 2;
-	uint32 Rnd = 3;
-	Blueprint Prop = 4;
+	Blueprint Cur = 2;
+	uint32 This = 3;
+	uint32 Rnd = 4;
+	Blueprint Prop = 5;
 }
 
 message SWriteNReply {
@@ -211,8 +212,7 @@ message CommitReply {
 
 message SState {
 	uint32 CurL = 1;
-	Blueprint Cur = 2;
-	State State = 3;
+	State State = 2;
 }
 
 message SStateReply {

@@ -16,6 +16,7 @@ type Provider interface {
 	ReadC(*pb.Blueprint, []int) *pb.Configuration
 	WriteC(*pb.Blueprint, []int) *pb.Configuration
 	SingleC(*pb.Blueprint) *pb.Configuration
+	GIDs([]int) []uint32
 }
 
 type ThriftyNorecConfP struct {
@@ -101,7 +102,7 @@ func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
 
 func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	cids := cp.mgr.ToIds(blp.Ids())
-	
+
 	cids = cp.chooseQ(cids, 1)
 
 	cnf, err := cp.mgr.NewConfiguration(cids, 1, ConfTimeout)
@@ -110,4 +111,8 @@ func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	}
 
 	return cnf
+}
+
+func (cp *ThriftyNorecConfP) GIDs(in []int) []uint32 {
+	return cp.mgr.ToGids(in)
 }

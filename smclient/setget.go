@@ -14,6 +14,8 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 			continue
 		}
 
+		smc.checkrid(i, rid, cp)
+
 		cnf := cp.ReadC(smc.Blueps[i], rid)
 		if cnf == nil {
 			cnt++
@@ -73,6 +75,8 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 			continue
 		}
 
+		smc.checkrid(i, rid, cp)
+
 		cnf := cp.WriteC(smc.Blueps[i], rid)
 		if cnf == nil {
 			cnt++
@@ -121,4 +125,40 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 
 	smc.SetNewCur(cur)
 	return cnt
+}
+
+func (smc *SmClient) checkrid(new int, rid []int, cp conf.Provider) []int {
+	if new == 0 {
+		return nil
+	}
+
+	gids := cp.GIDs(rid)
+	if gids == nil {
+		return rid
+	}
+
+	remove := make([]bool, len(rid))
+	for k, gid := range gids {
+	for_old:
+		for _, n := range smc.Blueps[new-1].Nodes {
+			if n.Id == gid {
+				for _, nn := range smc.Blueps[new].Nodes {
+					if nn.Id == gid {
+						if n.Version < nn.Version {
+							remove[k] = true
+							//remove
+						}
+						break for_old
+					}
+				}
+			}
+		}
+	}
+	nrid := make([]int, 0, len(rid))
+	for k, id := range rid {
+		if !remove[k] {
+			nrid = append(nrid, id)
+		}
+	}
+	return nrid
 }

@@ -163,8 +163,7 @@ message DReadReply {
 
 message DNewState {
 	Conf Conf = 1;
-	Blueprint Cur = 2;
-	State State = 3;
+	State State = 2;
 }
 
 message DWriteNs {

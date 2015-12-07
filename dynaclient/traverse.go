@@ -133,7 +133,6 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 						Cur:  uint32(dc.Blueps[i].Len()),
 						This: dc.Confs[i].GlobalID(),
 					},
-					Cur:   dc.Blueps[i],
 					State: wst,
 				})
 				cnt++
@@ -231,6 +230,10 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		}
 	}
 
+	if cnt > 2 {
+		dc.SetCur(cp, dc.Blueps[0])
+	}
+
 	if val == nil {
 		return rst.Value, cnt, nil
 	}
@@ -314,4 +317,29 @@ func (dc *DynaClient) WriteValue(val []byte, st *pb.State) *pb.State {
 		return st
 	}
 	return &pb.State{Value: val, Timestamp: st.Timestamp + 1, Writer: dc.ID}
+}
+
+func (dc *DynaClient) SetCur(cp conf.Provider, cur *pb.Blueprint) {
+	cnf := cp.WriteC(cur, nil)
+
+	for j := 0; ; j++ {
+		_, err := cnf.DSetCur(&pb.NewCur{
+			CurC: uint32(cur.Len()),
+			Cur:  cur})
+
+		if err != nil && j == 0 {
+			glog.Errorf("C%d: error from Thrifty New Cur: %v\n", dc.ID, err)
+			// Try again with full configuration.
+			cnf = cp.FullC(cur)
+		}
+
+		if err != nil && j == sm.Retry {
+			glog.Errorf("C%d: error %v from NewCur after %d retries: ", dc.ID, err, sm.Retry)
+			break
+		}
+
+		if err == nil {
+			break
+		}
+	}
 }

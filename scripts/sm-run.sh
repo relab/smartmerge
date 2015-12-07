@@ -48,7 +48,7 @@ do
 
 if [ "$3" = "norecontact" ]; then
 
-	echo -n "sm-pitter$Pi "
+	echo -n "sm-no-pitter$Pi "
 	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -no-abort -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
 	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -no-abort -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
@@ -92,7 +92,7 @@ echo " "
 
 sleep 1
 
-if [ "$4" == "-cont" ]; then
+if [ "$4" = "-cont" ]; then
 
 	echo starting Reconfigurers
 	nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=8 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &
@@ -100,7 +100,7 @@ if [ "$4" == "-cont" ]; then
 	echo sleeping 30 seconds
 	sleep 30
 
-elif ! [ "$5" == 0 ]; then
+elif ! [ $5 == 0 ]; then
 	echo starting Reconfigurers
 	$SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=8 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
 else

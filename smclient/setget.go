@@ -65,10 +65,7 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 
 	}
 
-	if cur > 0 {
-		smc.SetNewCur(cur)
-		cnt++
-	}
+	smc.SetNewCur(cur)
 	return
 }
 
@@ -130,9 +127,6 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 
 	}
 
-	if cur > 0 {
-		smc.SetNewCur(cur)
-		cnt++
-	}
+	smc.SetNewCur(cur)
 	return cnt
 }

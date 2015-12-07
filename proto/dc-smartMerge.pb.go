@@ -249,9 +249,8 @@ func (m *WriteN) GetNext() *Blueprint {
 }
 
 type WriteNReply struct {
-	Cur     *ConfReply `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
-	State   *State     `protobuf:"bytes,2,opt,name=State" json:"State,omitempty"`
-	LAState *Blueprint `protobuf:"bytes,3,opt,name=LAState" json:"LAState,omitempty"`
+	Cur   *ConfReply `protobuf:"bytes,1,opt,name=Cur" json:"Cur,omitempty"`
+	State *State     `protobuf:"bytes,2,opt,name=State" json:"State,omitempty"`
 }
 
 func (m *WriteNReply) Reset()         { *m = WriteNReply{} }
@@ -268,13 +267,6 @@ func (m *WriteNReply) GetCur() *ConfReply {
 func (m *WriteNReply) GetState() *State {
 	if m != nil {
 		return m.State
-	}
-	return nil
-}
-
-func (m *WriteNReply) GetLAState() *Blueprint {
-	if m != nil {
-		return m.LAState
 	}
 	return nil
 }
@@ -326,10 +318,9 @@ func (m *LAReply) GetLAState() *Blueprint {
 }
 
 type NewState struct {
-	CurC    uint32     `protobuf:"varint,1,opt,name=CurC,proto3" json:"CurC,omitempty"`
-	Cur     *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
-	State   *State     `protobuf:"bytes,3,opt,name=State" json:"State,omitempty"`
-	LAState *Blueprint `protobuf:"bytes,4,opt,name=LAState" json:"LAState,omitempty"`
+	CurC  uint32     `protobuf:"varint,1,opt,name=CurC,proto3" json:"CurC,omitempty"`
+	Cur   *Blueprint `protobuf:"bytes,2,opt,name=Cur" json:"Cur,omitempty"`
+	State *State     `protobuf:"bytes,3,opt,name=State" json:"State,omitempty"`
 }
 
 func (m *NewState) Reset()         { *m = NewState{} }
@@ -346,13 +337,6 @@ func (m *NewState) GetCur() *Blueprint {
 func (m *NewState) GetState() *State {
 	if m != nil {
 		return m.State
-	}
-	return nil
-}
-
-func (m *NewState) GetLAState() *Blueprint {
-	if m != nil {
-		return m.LAState
 	}
 	return nil
 }
@@ -1521,9 +1505,6 @@ func (this *WriteNReply) VerboseEqual(that interface{}) error {
 	if !this.State.Equal(that1.State) {
 		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
 	}
-	if !this.LAState.Equal(that1.LAState) {
-		return fmt.Errorf("LAState this(%v) Not Equal that(%v)", this.LAState, that1.LAState)
-	}
 	return nil
 }
 func (this *WriteNReply) Equal(that interface{}) bool {
@@ -1550,9 +1531,6 @@ func (this *WriteNReply) Equal(that interface{}) bool {
 		return false
 	}
 	if !this.State.Equal(that1.State) {
-		return false
-	}
-	if !this.LAState.Equal(that1.LAState) {
 		return false
 	}
 	return true
@@ -1698,9 +1676,6 @@ func (this *NewState) VerboseEqual(that interface{}) error {
 	if !this.State.Equal(that1.State) {
 		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
 	}
-	if !this.LAState.Equal(that1.LAState) {
-		return fmt.Errorf("LAState this(%v) Not Equal that(%v)", this.LAState, that1.LAState)
-	}
 	return nil
 }
 func (this *NewState) Equal(that interface{}) bool {
@@ -1730,9 +1705,6 @@ func (this *NewState) Equal(that interface{}) bool {
 		return false
 	}
 	if !this.State.Equal(that1.State) {
-		return false
-	}
-	if !this.LAState.Equal(that1.LAState) {
 		return false
 	}
 	return true
@@ -7415,16 +7387,6 @@ func (m *WriteNReply) MarshalTo(data []byte) (int, error) {
 		}
 		i += n10
 	}
-	if m.LAState != nil {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.LAState.Size()))
-		n11, err := m.LAState.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n11
-	}
 	return i, nil
 }
 
@@ -7447,21 +7409,21 @@ func (m *LAProposal) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n12, err := m.Conf.MarshalTo(data[i:])
+		n11, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n12
+		i += n11
 	}
 	if m.Prop != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n13, err := m.Prop.MarshalTo(data[i:])
+		n12, err := m.Prop.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n13
+		i += n12
 	}
 	return i, nil
 }
@@ -7485,21 +7447,21 @@ func (m *LAReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n14, err := m.Cur.MarshalTo(data[i:])
+		n13, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n14
+		i += n13
 	}
 	if m.LAState != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.LAState.Size()))
-		n15, err := m.LAState.MarshalTo(data[i:])
+		n14, err := m.LAState.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n15
+		i += n14
 	}
 	return i, nil
 }
@@ -7528,31 +7490,21 @@ func (m *NewState) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n16, err := m.Cur.MarshalTo(data[i:])
+		n15, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n16
+		i += n15
 	}
 	if m.State != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n17, err := m.State.MarshalTo(data[i:])
+		n16, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n17
-	}
-	if m.LAState != nil {
-		data[i] = 0x22
-		i++
-		i = encodeVarintDcSmartMerge(data, i, uint64(m.LAState.Size()))
-		n18, err := m.LAState.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n18
+		i += n16
 	}
 	return i, nil
 }
@@ -7576,11 +7528,11 @@ func (m *NewStateReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n19, err := m.Cur.MarshalTo(data[i:])
+		n17, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n19
+		i += n17
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -7621,11 +7573,11 @@ func (m *CV) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Val.Size()))
-		n20, err := m.Val.MarshalTo(data[i:])
+		n18, err := m.Val.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n20
+		i += n18
 	}
 	return i, nil
 }
@@ -7677,11 +7629,11 @@ func (m *Promise) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n21, err := m.Cur.MarshalTo(data[i:])
+		n19, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n21
+		i += n19
 	}
 	if m.Rnd != 0 {
 		data[i] = 0x10
@@ -7692,21 +7644,21 @@ func (m *Promise) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Val.Size()))
-		n22, err := m.Val.MarshalTo(data[i:])
+		n20, err := m.Val.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n22
+		i += n20
 	}
 	if m.Dec != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Dec.Size()))
-		n23, err := m.Dec.MarshalTo(data[i:])
+		n21, err := m.Dec.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n23
+		i += n21
 	}
 	return i, nil
 }
@@ -7735,11 +7687,11 @@ func (m *Propose) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Val.Size()))
-		n24, err := m.Val.MarshalTo(data[i:])
+		n22, err := m.Val.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n24
+		i += n22
 	}
 	return i, nil
 }
@@ -7763,21 +7715,21 @@ func (m *Learn) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n25, err := m.Cur.MarshalTo(data[i:])
+		n23, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n25
+		i += n23
 	}
 	if m.Dec != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Dec.Size()))
-		n26, err := m.Dec.MarshalTo(data[i:])
+		n24, err := m.Dec.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n26
+		i += n24
 	}
 	if m.Learned {
 		data[i] = 0x18
@@ -7811,11 +7763,11 @@ func (m *Proposal) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n27, err := m.Prop.MarshalTo(data[i:])
+		n25, err := m.Prop.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n27
+		i += n25
 	}
 	return i, nil
 }
@@ -7857,21 +7809,21 @@ func (m *GetOne) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n28, err := m.Conf.MarshalTo(data[i:])
+		n26, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n28
+		i += n26
 	}
 	if m.Next != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
-		n29, err := m.Next.MarshalTo(data[i:])
+		n27, err := m.Next.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n29
+		i += n27
 	}
 	return i, nil
 }
@@ -7895,21 +7847,21 @@ func (m *GetOneReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Next.Size()))
-		n30, err := m.Next.MarshalTo(data[i:])
+		n28, err := m.Next.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n30
+		i += n28
 	}
 	if m.Cur != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n31, err := m.Cur.MarshalTo(data[i:])
+		n29, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n31
+		i += n29
 	}
 	return i, nil
 }
@@ -7933,21 +7885,21 @@ func (m *DRead) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n32, err := m.Conf.MarshalTo(data[i:])
+		n30, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n32
+		i += n30
 	}
 	if m.Prop != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n33, err := m.Prop.MarshalTo(data[i:])
+		n31, err := m.Prop.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n33
+		i += n31
 	}
 	return i, nil
 }
@@ -7971,21 +7923,21 @@ func (m *DReadReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n34, err := m.State.MarshalTo(data[i:])
+		n32, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n34
+		i += n32
 	}
 	if m.Cur != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n35, err := m.Cur.MarshalTo(data[i:])
+		n33, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n35
+		i += n33
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -8021,31 +7973,31 @@ func (m *DNewState) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n36, err := m.Conf.MarshalTo(data[i:])
+		n34, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n36
+		i += n34
 	}
 	if m.Cur != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n37, err := m.Cur.MarshalTo(data[i:])
+		n35, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n37
+		i += n35
 	}
 	if m.State != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n38, err := m.State.MarshalTo(data[i:])
+		n36, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n38
+		i += n36
 	}
 	return i, nil
 }
@@ -8069,11 +8021,11 @@ func (m *DWriteNs) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Conf.Size()))
-		n39, err := m.Conf.MarshalTo(data[i:])
+		n37, err := m.Conf.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n39
+		i += n37
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -8109,11 +8061,11 @@ func (m *DWriteNsReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n40, err := m.Cur.MarshalTo(data[i:])
+		n38, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n40
+		i += n38
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -8164,11 +8116,11 @@ func (m *SWriteN) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x22
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Prop.Size()))
-		n41, err := m.Prop.MarshalTo(data[i:])
+		n39, err := m.Prop.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n41
+		i += n39
 	}
 	return i, nil
 }
@@ -8192,11 +8144,11 @@ func (m *SWriteNReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n42, err := m.Cur.MarshalTo(data[i:])
+		n40, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n42
+		i += n40
 	}
 	if len(m.Next) > 0 {
 		for _, msg := range m.Next {
@@ -8214,11 +8166,11 @@ func (m *SWriteNReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n43, err := m.State.MarshalTo(data[i:])
+		n41, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n43
+		i += n41
 	}
 	return i, nil
 }
@@ -8267,11 +8219,11 @@ func (m *Commit) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Collect.Size()))
-		n44, err := m.Collect.MarshalTo(data[i:])
+		n42, err := m.Collect.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n44
+		i += n42
 	}
 	return i, nil
 }
@@ -8295,31 +8247,31 @@ func (m *CommitReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n45, err := m.Cur.MarshalTo(data[i:])
+		n43, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n45
+		i += n43
 	}
 	if m.Committed != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Committed.Size()))
-		n46, err := m.Committed.MarshalTo(data[i:])
+		n44, err := m.Committed.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n46
+		i += n44
 	}
 	if m.Collected != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Collected.Size()))
-		n47, err := m.Collected.MarshalTo(data[i:])
+		n45, err := m.Collected.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n47
+		i += n45
 	}
 	return i, nil
 }
@@ -8348,21 +8300,21 @@ func (m *SState) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n48, err := m.Cur.MarshalTo(data[i:])
+		n46, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n48
+		i += n46
 	}
 	if m.State != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.State.Size()))
-		n49, err := m.State.MarshalTo(data[i:])
+		n47, err := m.State.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n49
+		i += n47
 	}
 	return i, nil
 }
@@ -8396,11 +8348,11 @@ func (m *SStateReply) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintDcSmartMerge(data, i, uint64(m.Cur.Size()))
-		n50, err := m.Cur.MarshalTo(data[i:])
+		n48, err := m.Cur.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n50
+		i += n48
 	}
 	return i, nil
 }
@@ -8595,10 +8547,6 @@ func (m *WriteNReply) Size() (n int) {
 		l = m.State.Size()
 		n += 1 + l + sovDcSmartMerge(uint64(l))
 	}
-	if m.LAState != nil {
-		l = m.LAState.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
 	return n
 }
 
@@ -8642,10 +8590,6 @@ func (m *NewState) Size() (n int) {
 	}
 	if m.State != nil {
 		l = m.State.Size()
-		n += 1 + l + sovDcSmartMerge(uint64(l))
-	}
-	if m.LAState != nil {
-		l = m.LAState.Size()
 		n += 1 + l + sovDcSmartMerge(uint64(l))
 	}
 	return n
@@ -10222,39 +10166,6 @@ func (m *WriteNReply) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LAState", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.LAState == nil {
-				m.LAState = &Blueprint{}
-			}
-			if err := m.LAState.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipDcSmartMerge(data[iNdEx:])
@@ -10619,39 +10530,6 @@ func (m *NewState) Unmarshal(data []byte) error {
 				m.State = &State{}
 			}
 			if err := m.State.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LAState", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDcSmartMerge
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDcSmartMerge
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.LAState == nil {
-				m.LAState = &Blueprint{}
-			}
-			if err := m.LAState.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

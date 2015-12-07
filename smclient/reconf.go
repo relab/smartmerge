@@ -25,20 +25,7 @@ func (smc *SmClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular int,
 		glog.Infof("C%d: Starting reconf\n", smc.Id)
 	}
 
-	if prop.Compare(smc.Blueps[0]) != 1 {
-		// A new blueprint was proposed. Need to solve Lattice Agreement:
-		prop, cnt, err = smc.lagree(cp, prop)
-		if err != nil {
-			return nil, 0, err
-		}
-		if len(prop.Ids()) < MinSize {
-			glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
-			return nil, cnt, errors.New("Abort before moving to unacceptable configuration.")
-		}
-	}
-
 	cur := 0
-	las := new(pb.Blueprint)
 	var wid []int // Did already write to these processes.
 	var rid []int // Did already read from these processes.
 
@@ -46,6 +33,23 @@ forconfiguration:
 	for i := 0; i < len(smc.Blueps); i++ {
 		if i < cur {
 			continue
+		}
+
+		if prop.Compare(smc.Blueps[i]) != 1 {
+			// A new blueprint was proposed. Need to solve Lattice Agreement:
+			var cr int
+			prop, cnt, cr, err = smc.lagree(cp, i, prop)
+			if err != nil {
+				return nil, 0, err
+			}
+			if len(prop.Ids()) < MinSize {
+				glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
+				return nil, cnt, errors.New("Abort before moving to unacceptable configuration.")
+			}
+			if cr > i {
+				cur = cr
+				continue
+			}
 		}
 
 		if prop.LearnedCompare(smc.Blueps[i]) != -1 {
@@ -111,7 +115,6 @@ forconfiguration:
 			}
 
 			cur = smc.HandleNewCur(cur, writeN.Reply.GetCur())
-			las = las.Merge(writeN.Reply.GetLAState())
 			if rst.Compare(writeN.Reply.GetState()) == 1 {
 				rst = writeN.Reply.GetState()
 			}
@@ -130,9 +133,8 @@ forconfiguration:
 
 			for j := 0; ; j++ {
 				setS, err = cnf.SetState(&pb.NewState{
-					CurC:    uint32(smc.Blueps[i].Len()),
-					State:   rst,
-					LAState: las})
+					CurC:  uint32(smc.Blueps[i].Len()),
+					State: rst})
 				cnt++
 
 				if err != nil && j == 0 {
@@ -169,15 +171,10 @@ forconfiguration:
 	return rst, cnt, nil
 }
 
-func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Blueprint, cnt int, err error) {
-	cur := 0
+func (smc *SmClient) lagree(cp conf.Provider, i int, prop *pb.Blueprint) (dec *pb.Blueprint, cnt, cur int, err error) {
 	var rid []int
-	prop = prop.Merge(smc.Blueps[0])
-	for i := 0; i < len(smc.Blueps); i++ {
-		if i < cur {
-			continue
-		}
-
+	prop = prop.Merge(smc.Blueps[i])
+	for {
 		cnf := cp.WriteC(smc.Blueps[i], rid)
 
 		laProp := new(pb.LAPropReply)
@@ -186,7 +183,7 @@ func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Bluep
 			laProp, err = cnf.LAProp(&pb.LAProposal{
 				Conf: &pb.Conf{
 					This: uint32(smc.Blueps[i].Len()),
-					Cur:  uint32(smc.Blueps[cur].Len())},
+					Cur:  uint32(smc.Blueps[i].Len())},
 				Prop: prop})
 			cnt++
 
@@ -198,7 +195,7 @@ func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Bluep
 
 			if err != nil && j == Retry {
 				glog.Errorf("C%d: error %v from LAProp after %d retries: ", smc.Id, err, Retry)
-				return nil, 0, err
+				return nil, 0, i, err
 			}
 
 			if err == nil {
@@ -210,27 +207,21 @@ func (smc *SmClient) lagree(cp conf.Provider, prop *pb.Blueprint) (dec *pb.Bluep
 			glog.Infof("C%d: LAProp returned.\n", smc.Id)
 		}
 
-		cur = smc.HandleNewCur(cur, laProp.Reply.GetCur())
+		cur = smc.HandleNewCur(i, laProp.Reply.GetCur())
 		la := laProp.Reply.GetLAState()
 		if la != nil && !prop.LearnedEquals(la) {
 			if glog.V(3) {
 				glog.Infof("C%d: LAProp returned new state, try again.\n", smc.Id)
 			}
 			prop = la
-			i--
-			rid = nil
 			continue
+		} else {
+			break
 		}
 
-		if len(smc.Blueps) > i+1 {
-			if c := laProp.Reply.GetCur(); c == nil || !c.Abort {
-				rid = pb.Union(rid, laProp.MachineIDs)
-			}
-		}
 	}
 
-	smc.SetNewCur(cur)
-	return prop, cnt, nil
+	return prop, cnt, cur, nil
 }
 
 func (smc *SmClient) Doread(cp conf.Provider, curin, i int, rid []int) (st *pb.State, cur, cnt int, err error) {

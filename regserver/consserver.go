@@ -87,7 +87,7 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 		return &pb.WriteNReply{Cur: cr}, nil
 	}
 
-	return &pb.WriteNReply{Cur: cr, State: cs.RState, LAState: cs.LAState}, nil
+	return &pb.WriteNReply{Cur: cr, State: cs.RState}, nil
 }
 
 func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {
@@ -104,19 +104,6 @@ func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewSta
 
 	if cs.RState.Compare(ns.State) == 1 {
 		cs.RState = ns.State
-	}
-
-	// The compare below is not necessary. But better safe than sorry.
-	if cs.CurC < ns.CurC && cs.Cur.Compare(ns.Cur) == 1 {
-		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
-		cs.Cur = ns.Cur
-		cs.CurC = ns.CurC
-		for nc, _ := range cs.NextMap {
-			if nc < cs.CurC {
-				delete(cs.NextMap, nc)
-			}
-		}
-
 	}
 
 	var next []*pb.Blueprint

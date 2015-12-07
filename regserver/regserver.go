@@ -134,7 +134,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 
 	rs.NextMap[wr.CurC] = wr.Next // This is nor necessary for sm, but only for running Consensus using norecontact.
 
-	return &pb.WriteNReply{Cur: cr, State: rs.RState, LAState: rs.LAState}, nil
+	return &pb.WriteNReply{Cur: cr, State: rs.RState}, nil
 }
 
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
@@ -171,7 +171,6 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 		return nil, errors.New("Empty NewState message")
 	}
 
-	rs.LAState = rs.LAState.Merge(ns.LAState)
 	if rs.RState.Compare(ns.State) == 1 {
 		rs.RState = ns.State
 	}

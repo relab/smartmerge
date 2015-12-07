@@ -57,7 +57,6 @@ import (
 	"errors"
 	"hash/fnv"
 	"log"
-	"net"
 	"sort"
 	"sync"
 	"time"
@@ -3908,10 +3907,10 @@ func (p ByLatency) Less(i, j int) bool {
 
 /* mgr.go */
 
-// NewManager attempts to connect to the given set of machines addresses and if
-// successful returns a new Manager containing connections to those machines.
-func NewManager(machineAddrs []string, opts ...ManagerOption) (*Manager, error) {
-	if len(machineAddrs) == 0 {
+// NewManager attempts to connect to the given machines, and returns a new
+// Manager containing those machines if successful.
+func NewManager(machines []string, opts ...ManagerOption) (*Manager, error) {
+	if len(machines) == 0 {
 		return nil, fmt.Errorf("could not create manager: no machines provided")
 	}
 
@@ -3927,8 +3926,8 @@ func NewManager(machineAddrs []string, opts ...ManagerOption) (*Manager, error) 
 		m.logger = m.opts.logger
 	}
 
-	for _, maddr := range machineAddrs {
-		err := m.createMachine(maddr)
+	for _, mn := range machines {
+		err := m.createMachine(mn)
 		if err != nil {
 			return nil, fmt.Errorf("could not create manager: %v", err)
 		}
@@ -4097,33 +4096,27 @@ func (m *Manager) AddMachine(addr string) error {
 	return m.createMachine(addr)
 }
 
-func (m *Manager) createMachine(addr string) error {
+func (m *Manager) createMachine(mn string) error {
 	m.Lock()
 	defer m.Unlock()
-
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
-	if err != nil {
-		return fmt.Errorf("create machine %s error: %v", addr, err)
-	}
-
 	h := fnv.New32a()
-	_, _ = h.Write([]byte(tcpAddr.String()))
+	_, _ = h.Write([]byte(mn))
 	gid := h.Sum32()
 	if _, machineExists := m.machineGidToID[gid]; machineExists {
-		return fmt.Errorf("create machine %s error: machine already exists", addr)
+		return fmt.Errorf("create machine %s error: machine already exists", mn)
 	}
 	id := len(m.machines)
 
 	ma := &Machine{
 		id:      id,
 		gid:     gid,
-		addr:    tcpAddr.String(),
+		addr:    mn,
 		latency: -1 * time.Second,
 	}
 
-	err = m.connect(ma)
+	err := m.connect(ma)
 	if err != nil {
-		return fmt.Errorf("create machine %s error: %v", addr, err)
+		return fmt.Errorf("create machine %s error: %v", mn, err)
 	}
 
 	m.machines = append(m.machines, ma)
@@ -4246,7 +4239,8 @@ func WithLogger(logger *log.Logger) ManagerOption {
 }
 
 // WithNoConnect returns a ManagerOption which instructs the Manager not to
-// connect to any of its machines. Mainly used for testing purposes.
+// connect to any of its machines .  the Manager. Mainly used for
+// testing purposes.
 func WithNoConnect() ManagerOption {
 	return func(o *managerOptions) {
 		o.noConnect = true

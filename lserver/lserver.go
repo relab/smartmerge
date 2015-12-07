@@ -102,6 +102,7 @@ func main() {
 			return
 		}
 
+		glog.Infoln("starting to run")
 		l.Run()
 		defer l.Stop()
 

@@ -52,19 +52,6 @@ if [ "$3" == "norecontact" ]; then
 	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -no-abort -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
 	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -no-abort -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
-
-elif [ "$2" == "sm" ]; then
-
-	echo -n "sm-pitter$Pi "
-	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
-
-elif [ "$2" == "cons" ]; then
-
-	echo -n "c-pitter$Pi "
-	ssh pitter"$Pi" "nohup $SM/server/server -alg=cons -port 13000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-	ssh pitter"$Pi" "nohup $SM/server/server -alg=cons -port 12000 -v=$7  -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-
 else
 
 	echo -n "$2-pitter$Pi "
@@ -172,3 +159,5 @@ do
 done
 
 echo "sm-run $1 $2 $3 $4 $5 $6" > exlogs/command
+git rev-parse --abbrev-ref HEAD >> exlogs/command
+git rev-parse --short HEAD >> exlogs/command

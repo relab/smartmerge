@@ -117,7 +117,6 @@ forconfiguration:
 			for j := 0; ; j++ {
 				setS, err = cnf.SetState(&pb.NewState{
 					CurC:  uint32(cc.Blueps[i].Len()),
-					Cur:   cc.Blueps[i],
 					State: rst,
 				})
 				cnt++
@@ -155,6 +154,11 @@ forconfiguration:
 	}
 
 	cc.SetNewCur(cur)
+	if cnt > 2 {
+		cc.SetCur(cp, cc.Blueps[0])
+		cnt++
+	}
+
 	return rst, cnt, nil
 }
 

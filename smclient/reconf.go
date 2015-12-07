@@ -166,8 +166,10 @@ forconfiguration:
 	}
 
 	smc.SetNewCur(cur)
-	smc.SetCur(cp, smc.Blueps[0])
-	cnt++
+	if cnt > 2 {
+		smc.SetCur(cp, smc.Blueps[0])
+		cnt++
+	}
 	return rst, cnt, nil
 }
 

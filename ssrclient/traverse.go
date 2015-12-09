@@ -53,10 +53,10 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 
 			cnf := cp.WriteC(ssc.Blueps[i], nil)
 
-			var setS *pb.SSetStateReply
+			//var setS *pb.SSetStateReply
 
 			for j := 0; ; j++ {
-				setS, err = cnf.SSetState(&pb.SState{
+				_, err = cnf.SSetState(&pb.SState{
 					CurL:  uint32(ssc.Blueps[i].Len()),
 					State: rst,
 				})

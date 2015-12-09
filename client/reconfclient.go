@@ -73,7 +73,10 @@ func expmain() {
 		wg.Add(1)
 		switch {
 		case *cont:
-			if i%2 == 0 {
+			if *repl {
+				go contreplace(cl, cp, ids, syncchan, (*clientid)+i, &wg)
+
+			} else if i%2 == 0 {
 				go contremove(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			} else {
 				go contadd(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)

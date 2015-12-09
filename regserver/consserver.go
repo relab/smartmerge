@@ -106,19 +106,6 @@ func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewSta
 		cs.RState = ns.State
 	}
 
-	// The compare below is not necessary. But better safe than sorry.
-	if cs.CurC < ns.CurC && cs.Cur.Compare(ns.Cur) == 1 {
-		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
-		cs.Cur = ns.Cur
-		cs.CurC = ns.CurC
-		for nc, _ := range cs.NextMap {
-			if nc < cs.CurC {
-				delete(cs.NextMap, nc)
-			}
-		}
-
-	}
-
 	var next []*pb.Blueprint
 	if cs.NextMap[ns.CurC] != nil {
 		next = []*pb.Blueprint{cs.NextMap[ns.CurC]}

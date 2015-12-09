@@ -259,7 +259,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 
 	newNext := make([]*pb.Blueprint, 0, len(rs.Next))
 	for _, blp := range rs.Next {
-		if blp.Len() > rs.CurC {
+		if uint32(blp.Len()) > rs.CurC {
 			newNext = append(newNext, blp)
 		}
 	}

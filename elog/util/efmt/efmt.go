@@ -393,6 +393,14 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 	rar := evtarr(reconfe)
 	sort.Sort(rar)
 
+
+	out, err = os.Create("TPutTable")
+	if err != nil {
+		fmt.Println("Could not create file: ", *outfile)
+		return
+	}
+	defer out.Close()
+
 	i := 0
 	for _, tput := range tpute {
 		count := 0
@@ -405,6 +413,7 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 				break for_rec
 			}
 		}
+		fmt.Fprintf(out, "%d,%d", count, tput)
 		fmt.Fprintf(of, "Initialized %d reconfigurations before: ", count)
 		fmt.Fprintf(of, "%v\n", tput)
 	}

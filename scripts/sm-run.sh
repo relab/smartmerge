@@ -26,7 +26,7 @@ fi
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
-SERVS=(9 10 11 12 14 17 18 19)
+SERVS=(9 10 11 12 14 17 15 19)
 
 i=0
 while read R; do

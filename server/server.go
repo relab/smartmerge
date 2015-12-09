@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"syscall"
+	"runtime/pprof"
 
 	"github.com/golang/glog"
 
@@ -16,6 +17,7 @@ import (
 
 var (
 	port     = flag.Int("port", 10000, "this servers address ip:port.")
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	gcoff    = flag.Bool("gcoff", false, "turn garbage collection off.")
 	alg      = flag.String("alg", "", "algorithm to use (sm | dyna | ssr | cons )")
 	allCores = flag.Bool("all-cores", false, "use all available logical CPUs")
@@ -29,6 +31,17 @@ func main() {
 
 	if *gcoff {
 		debug.SetGCPercent(-1)
+	}
+
+	if *cpuprofile != "" {
+		glog.Infoln("Starting cpuprofiling in file", *cpuprofile)
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			glog.Errorln("err")
+			return
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 
 	if *allCores {

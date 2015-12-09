@@ -285,6 +285,7 @@ func (rs *RegServer) Fwd(ctx context.Context, p *pb.Proposal) (*pb.Ack, error) {
 		glog.Errorln("Received Fwd request but have no leader.")
 		return nil, errors.New("Not implemented.")
 	}
+	glog.V(4).Infoln("Handling Reconf Proposal")
 	rs.Leader.Propose(p.GetProp())
 	return &pb.Ack{}, nil
 }

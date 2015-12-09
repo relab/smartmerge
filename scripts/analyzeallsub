@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$1" == "help" ]; then
-	echo "arg1: outfile, arg2: normallatency arg3: normal steps"
+	echo "arg1: outfile, [arg2: normallatency arg3: normal steps]"
 	exit
 fi
 
@@ -11,10 +11,10 @@ do
 	Files="$Files,$log"
 done
 #echo $Files
-if [ "$3" == "" ]; then  
+if [ "$2" == "" ]; then  
 	echo Using default value for normal
-	efmt -file="$Files" -outfile="$1" -normlat="$2"
+	efmt -file="$Files" -outfile="$1"
 else
-	echo Using normal=$4
+	echo Using normal=$3
 	efmt -file="$Files" -outfile="$1" -normlat="$2" -normal="$3"
 fi

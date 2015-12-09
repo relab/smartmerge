@@ -75,7 +75,7 @@ func main() {
 		glog.Fatalln("Starting server returned error", err)
 	} else {
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		initBlp := new(pb.Blueprint)
 		initBlp.Nodes = make([]*pb.Node, 0, len(ids))
@@ -140,7 +140,7 @@ func handleSignal(signal os.Signal) bool {
 func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.Manager, err error) {
 	mgr, err = pb.NewManager(addrs, pb.WithGrpcDialOptions(
 		grpc.WithBlock(),
-		grpc.WithTimeout(1000*time.Millisecond),
+		grpc.WithTimeout(5000*time.Millisecond),
 		grpc.WithInsecure()),
 		pb.WithAReadSQuorumFunc(qf.AReadSQF),
 		pb.WithAWriteSQuorumFunc(qf.AWriteSQF),

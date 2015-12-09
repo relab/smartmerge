@@ -87,7 +87,7 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 		return &pb.WriteNReply{Cur: cr}, nil
 	}
 
-	return &pb.WriteNReply{Cur: cr, State: cs.RState, LAState: cs.LAState}, nil
+	return &pb.WriteNReply{Cur: cr, State: cs.RState}, nil
 }
 
 func (cs *ConsServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStateReply, error) {

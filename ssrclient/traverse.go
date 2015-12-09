@@ -85,18 +85,18 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 				glog.Infof("Set state returned.")
 			}
 
-			if cr := setS.Reply.Cur; !regular && cr != nil {
-				ssc.Blueps = []*pb.Blueprint{cr}
-				glog.V(3).Infof("C%d: SetState returned new current conf of length %d.\n", ssc.Id, cr.Len())
-				i = -1
-				continue
-			}
-
-			if !regular && setS.Reply.HasNext {
-				glog.V(4).Infoln("There is a next configuration. Restart.")
-				i--
-				continue
-			}
+			// if cr := setS.Reply.Cur; !regular && cr != nil {
+			// 				ssc.Blueps = []*pb.Blueprint{cr}
+			// 				glog.V(3).Infof("C%d: SetState returned new current conf of length %d.\n", ssc.Id, cr.Len())
+			// 				i = -1
+			// 				continue
+			// 			}
+			//
+			// 			if !regular && setS.Reply.HasNext {
+			// 				glog.V(4).Infoln("There is a next configuration. Restart.")
+			// 				i--
+			// 				continue
+			// 			}
 
 			ssc.Blueps = []*pb.Blueprint{ssc.Blueps[i]}
 			return

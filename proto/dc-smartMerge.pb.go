@@ -3959,10 +3959,8 @@ func (m *Manager) MachineGlobalIDs() []uint32 {
 	m.RLock()
 	defer m.RUnlock()
 	gids := make([]uint32, len(m.machineGidToID))
-	i := 0
-	for gid := range m.machineGidToID {
-		gids[i] = gid
-		i++
+	for gid, id := range m.machineGidToID {
+		gids[id] = gid
 	}
 	return gids
 }

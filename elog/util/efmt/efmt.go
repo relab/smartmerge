@@ -402,7 +402,7 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 	defer out.Close()
 
 	i := 0
-	for _, tput := range tpute {
+	for k, tput := range tpute {
 		count := 0
 	for_rec:
 		for i < len(reconfe) {
@@ -413,9 +413,14 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 				break for_rec
 			}
 		}
-		fmt.Fprintf(out, "%d,%d", count, tput)
-		fmt.Fprintf(of, "Initialized %d reconfigurations before: ", count)
-		fmt.Fprintf(of, "%v\n", tput)
+
+		if k < 1 || tput.Time.Sub(tpute[k-1].Time()) < 800*time.Millisecond || tput.Time.Sub(tpute[k-1].Time()) > 1200*time.Millisecond {
+			continue
+		}
+			fmt.Fprintf(out, "%d,%d", count, tput.Value)
+			fmt.Fprintf(of, "Initialized %d reconfigurations before: ", count)
+			fmt.Fprintf(of, "%v\n", tput)
+		}
 	}
 }
 

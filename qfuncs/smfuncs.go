@@ -120,6 +120,7 @@ var AWriteNQF = func(c *pr.Configuration, replies []*pr.WriteNReply) (*pr.WriteN
 		if lastrep.GetState().Compare(rep.GetState()) == 1 {
 			lastrep.State = rep.GetState()
 		}
+		lastrep.LAState = lastrep.GetLAState().Merge(rep.GetLAState())
 		lastrep.Cur = handleConfResponder(lastrep.Cur, rep)
 	}
 

@@ -73,6 +73,7 @@ message WriteN {
 message WriteNReply {
 	ConfReply Cur = 1;
 	State State = 2;
+	Blueprint LAState = 3;
 }
 
 message LAProposal {
@@ -88,6 +89,7 @@ message LAReply {
 message NewState {
 	uint32 CurC = 1;
 	State State = 2;
+	Blueprint LAState = 3;
 }
 
 message NewStateReply {

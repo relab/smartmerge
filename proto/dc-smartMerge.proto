@@ -73,7 +73,6 @@ message WriteN {
 message WriteNReply {
 	ConfReply Cur = 1;
 	State State = 2;
-	Blueprint LAState = 3;
 }
 
 message LAProposal {
@@ -88,9 +87,7 @@ message LAReply {
 
 message NewState {
 	uint32 CurC = 1;
-	Blueprint Cur = 2;
-	State State = 3;
-	Blueprint LAState = 4;
+	State State = 2;
 }
 
 message NewStateReply {
@@ -163,8 +160,7 @@ message DReadReply {
 
 message DNewState {
 	Conf Conf = 1;
-	Blueprint Cur = 2;
-	State State = 3;
+	State State = 2;
 }
 
 message DWriteNs {
@@ -186,9 +182,10 @@ service SpSnRegister {
 
 message SWriteN {
 	uint32 CurL = 1;
-	uint32 This = 2;
-	uint32 Rnd = 3;
-	Blueprint Prop = 4;
+	Blueprint Cur = 2;
+	uint32 This = 3;
+	uint32 Rnd = 4;
+	Blueprint Prop = 5;
 }
 
 message SWriteNReply {
@@ -213,8 +210,7 @@ message CommitReply {
 
 message SState {
 	uint32 CurL = 1;
-	Blueprint Cur = 2;
-	State State = 3;
+	State State = 2;
 }
 
 message SStateReply {

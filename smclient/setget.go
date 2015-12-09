@@ -14,6 +14,9 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 			continue
 		}
 
+		if i > 0 && i == cur {
+			go smc.SetCur(cp, smc.Blueps[cur])
+		}
 		smc.checkrid(i, rid, cp)
 
 		cnf := cp.ReadC(smc.Blueps[i], rid)
@@ -75,6 +78,9 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 			continue
 		}
 
+		if i > 0 && i == cur {
+			go smc.SetCur(cp, smc.Blueps[cur])
+		}
 		smc.checkrid(i, rid, cp)
 
 		cnf := cp.WriteC(smc.Blueps[i], rid)

@@ -1,7 +1,6 @@
 package regserver
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -50,16 +49,8 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 	defer rs.mu.Unlock()
 	glog.V(5).Infoln("Handling DSetCur")
 
-	if nc.CurC == rs.CurC {
+	if nc.CurC <= rs.CurC {
 		return &pb.NewCurReply{false}, nil
-	}
-
-	if nc.CurC == 0 || nc.Cur.Compare(rs.Cur) == 1 {
-		return &pb.NewCurReply{false}, nil
-	}
-
-	if rs.Cur != nil && rs.Cur.Compare(nc.Cur) == 0 {
-		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
 	}
 
 	rs.Cur = nc.Cur
@@ -113,11 +104,6 @@ func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewS
 		rs.RState = ns.State
 	}
 
-	if rs.CurC < ns.Conf.Cur {
-		glog.V(4).Infof("New Cur has length %d, previous has length %d\n", ns.Conf.Cur, rs.CurC)
-		rs.CurC = ns.Conf.Cur
-		rs.Cur = ns.Cur
-	}
 	return &pb.NewStateReply{Next: rs.Next[ns.Conf.This]}, nil
 }
 

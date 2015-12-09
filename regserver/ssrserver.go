@@ -71,6 +71,11 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 		s = srs.RState
 	}
 
+	if wn.CurL > srs.CurC {
+		srs.CurC = wn.CurL
+		srs.Cur = wn.Cur
+	}
+
 	proposed := srs.proposed(wn.This, wn.Rnd)
 
 	found := false
@@ -159,11 +164,6 @@ func (srs *SSRServer) SSetState(ctx context.Context, ss *pb.SState) (*pb.SStateR
 
 	if srs.RState.Compare(ss.State) == 1 {
 		srs.RState = ss.State
-	}
-
-	if srs.CurC < ss.CurL {
-		srs.CurC = ss.CurL
-		srs.Cur = ss.Cur
 	}
 
 	if len(srs.proposed(ss.CurL, 0)) != 0 {

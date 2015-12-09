@@ -58,7 +58,6 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 			for j := 0; ; j++ {
 				setS, err = cnf.SSetState(&pb.SState{
 					CurL:  uint32(ssc.Blueps[i].Len()),
-					Cur:   ssc.Blueps[i],
 					State: rst,
 				})
 				cnt++
@@ -113,10 +112,15 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 		cnf := cp.WriteC(ssc.Blueps[i], nil)
 
 		var collect *pb.SpSnOneReply
+		var c *pb.Blueprint
+		if i == 0 && rnd == 0 {
+			c = ssc.Blueps[0]
+		}
 
 		for j := 0; ; j++ {
 			collect, err = cnf.SpSnOne(&pb.SWriteN{
 				CurL: uint32(ssc.Blueps[0].Len()),
+				Cur:  c,
 				This: uint32(ssc.Blueps[i].Len()),
 				Rnd:  uint32(rnd),
 				Prop: prop,

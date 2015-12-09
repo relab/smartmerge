@@ -134,7 +134,7 @@ func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRepl
 
 	rs.NextMap[wr.CurC] = wr.Next // This is nor necessary for sm, but only for running Consensus using norecontact.
 
-	return &pb.WriteNReply{Cur: cr, State: rs.RState, LAState: rs.LAState}, nil
+	return &pb.WriteNReply{Cur: cr, State: rs.RState}, nil
 }
 
 func (rs *RegServer) LAProp(ctx context.Context, lap *pb.LAProposal) (lar *pb.LAReply, err error) {
@@ -171,7 +171,6 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 		return nil, errors.New("Empty NewState message")
 	}
 
-	rs.LAState = rs.LAState.Merge(ns.LAState)
 	if rs.RState.Compare(ns.State) == 1 {
 		rs.RState = ns.State
 	}
@@ -180,21 +179,14 @@ func (rs *RegServer) SetState(ctx context.Context, ns *pb.NewState) (*pb.NewStat
 		return &pb.NewStateReply{Cur: rs.Cur}, nil
 	}
 
-	if rs.CurC < ns.CurC && rs.Cur.Compare(ns.Cur) == 1 {
-		glog.V(3).Infoln("New Current Conf: ", ns.Cur)
-		rs.Cur = ns.Cur
-		rs.CurC = ns.CurC
-		next := make([]*pb.Blueprint, 0, len(rs.Next))
-		for _, nxt := range rs.Next {
-			if nxt.Len() > rs.Cur.Len() {
-				next = append(next, nxt)
-			}
+	next := make([]*pb.Blueprint, 0, len(rs.Next))
+	this := int(ns.CurC)
+	for _, nxt := range rs.Next {
+		if nxt.Len() > this {
+			next = append(next, nxt)
 		}
-		rs.Next = next
 	}
 
-	next := make([]*pb.Blueprint, len(rs.Next))
-	copy(next, rs.Next)
 	return &pb.NewStateReply{Next: next}, nil
 }
 
@@ -260,18 +252,13 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 		return &pb.NewCurReply{false}, nil
 	}
 
-	// This could be removed. Not sure this is necessary.
-	if rs.Cur.Compare(nc.Cur) == 0 {
-		return &pb.NewCurReply{false}, errors.New("New Current Blueprint was uncomparable to previous.")
-	}
-
 	glog.V(3).Infoln("New Current Conf: ", nc.GetCur())
 	rs.Cur = nc.Cur
 	rs.CurC = nc.CurC
 
 	newNext := make([]*pb.Blueprint, 0, len(rs.Next))
 	for _, blp := range rs.Next {
-		if blp.LearnedCompare(rs.Cur) == -1 {
+		if uint32(blp.Len()) > rs.CurC {
 			newNext = append(newNext, blp)
 		}
 	}

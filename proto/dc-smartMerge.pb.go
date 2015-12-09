@@ -52,13 +52,11 @@ import proto1 "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
 
-import bytes "bytes"
-
 import (
 	"encoding/binary"
+	"errors"
 	"hash/fnv"
 	"log"
-	"net"
 	"sort"
 	"sync"
 	"time"
@@ -837,2164 +835,6 @@ func init() {
 	proto1.RegisterType((*SState)(nil), "proto.SState")
 	proto1.RegisterType((*SStateReply)(nil), "proto.SStateReply")
 }
-func (this *State) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*State)
-	if !ok {
-		return fmt.Errorf("that is not of type *State")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *State but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *State but is not nil && this == nil")
-	}
-	if !bytes.Equal(this.Value, that1.Value) {
-		return fmt.Errorf("Value this(%v) Not Equal that(%v)", this.Value, that1.Value)
-	}
-	if this.Timestamp != that1.Timestamp {
-		return fmt.Errorf("Timestamp this(%v) Not Equal that(%v)", this.Timestamp, that1.Timestamp)
-	}
-	if this.Writer != that1.Writer {
-		return fmt.Errorf("Writer this(%v) Not Equal that(%v)", this.Writer, that1.Writer)
-	}
-	return nil
-}
-func (this *State) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*State)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !bytes.Equal(this.Value, that1.Value) {
-		return false
-	}
-	if this.Timestamp != that1.Timestamp {
-		return false
-	}
-	if this.Writer != that1.Writer {
-		return false
-	}
-	return true
-}
-func (this *Conf) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Conf)
-	if !ok {
-		return fmt.Errorf("that is not of type *Conf")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Conf but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Conf but is not nil && this == nil")
-	}
-	if this.This != that1.This {
-		return fmt.Errorf("This this(%v) Not Equal that(%v)", this.This, that1.This)
-	}
-	if this.Cur != that1.Cur {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	return nil
-}
-func (this *Conf) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Conf)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.This != that1.This {
-		return false
-	}
-	if this.Cur != that1.Cur {
-		return false
-	}
-	return true
-}
-func (this *ConfReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*ConfReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *ConfReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *ConfReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *ConfReply but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if this.Abort != that1.Abort {
-		return fmt.Errorf("Abort this(%v) Not Equal that(%v)", this.Abort, that1.Abort)
-	}
-	if len(this.Next) != len(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", len(this.Next), len(that1.Next))
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return fmt.Errorf("Next this[%v](%v) Not Equal that[%v](%v)", i, this.Next[i], i, that1.Next[i])
-		}
-	}
-	return nil
-}
-func (this *ConfReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*ConfReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if this.Abort != that1.Abort {
-		return false
-	}
-	if len(this.Next) != len(that1.Next) {
-		return false
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *Node) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Node)
-	if !ok {
-		return fmt.Errorf("that is not of type *Node")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Node but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Node but is not nil && this == nil")
-	}
-	if this.Id != that1.Id {
-		return fmt.Errorf("Id this(%v) Not Equal that(%v)", this.Id, that1.Id)
-	}
-	if this.Version != that1.Version {
-		return fmt.Errorf("Version this(%v) Not Equal that(%v)", this.Version, that1.Version)
-	}
-	return nil
-}
-func (this *Node) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Node)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.Id != that1.Id {
-		return false
-	}
-	if this.Version != that1.Version {
-		return false
-	}
-	return true
-}
-func (this *Blueprint) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Blueprint)
-	if !ok {
-		return fmt.Errorf("that is not of type *Blueprint")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Blueprint but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Blueprint but is not nil && this == nil")
-	}
-	if len(this.Nodes) != len(that1.Nodes) {
-		return fmt.Errorf("Nodes this(%v) Not Equal that(%v)", len(this.Nodes), len(that1.Nodes))
-	}
-	for i := range this.Nodes {
-		if !this.Nodes[i].Equal(that1.Nodes[i]) {
-			return fmt.Errorf("Nodes this[%v](%v) Not Equal that[%v](%v)", i, this.Nodes[i], i, that1.Nodes[i])
-		}
-	}
-	if this.FaultTolerance != that1.FaultTolerance {
-		return fmt.Errorf("FaultTolerance this(%v) Not Equal that(%v)", this.FaultTolerance, that1.FaultTolerance)
-	}
-	if this.Epoch != that1.Epoch {
-		return fmt.Errorf("Epoch this(%v) Not Equal that(%v)", this.Epoch, that1.Epoch)
-	}
-	return nil
-}
-func (this *Blueprint) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Blueprint)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if len(this.Nodes) != len(that1.Nodes) {
-		return false
-	}
-	for i := range this.Nodes {
-		if !this.Nodes[i].Equal(that1.Nodes[i]) {
-			return false
-		}
-	}
-	if this.FaultTolerance != that1.FaultTolerance {
-		return false
-	}
-	if this.Epoch != that1.Epoch {
-		return false
-	}
-	return true
-}
-func (this *NewCur) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*NewCur)
-	if !ok {
-		return fmt.Errorf("that is not of type *NewCur")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *NewCur but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *NewCur but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if this.CurC != that1.CurC {
-		return fmt.Errorf("CurC this(%v) Not Equal that(%v)", this.CurC, that1.CurC)
-	}
-	return nil
-}
-func (this *NewCur) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*NewCur)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if this.CurC != that1.CurC {
-		return false
-	}
-	return true
-}
-func (this *NewCurReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*NewCurReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *NewCurReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *NewCurReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *NewCurReply but is not nil && this == nil")
-	}
-	if this.New != that1.New {
-		return fmt.Errorf("New this(%v) Not Equal that(%v)", this.New, that1.New)
-	}
-	return nil
-}
-func (this *NewCurReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*NewCurReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.New != that1.New {
-		return false
-	}
-	return true
-}
-func (this *Read) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Read)
-	if !ok {
-		return fmt.Errorf("that is not of type *Read")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Read but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Read but is not nil && this == nil")
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return fmt.Errorf("Conf this(%v) Not Equal that(%v)", this.Conf, that1.Conf)
-	}
-	return nil
-}
-func (this *Read) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Read)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return false
-	}
-	return true
-}
-func (this *ReadReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*ReadReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *ReadReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *ReadReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *ReadReply but is not nil && this == nil")
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	return nil
-}
-func (this *ReadReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*ReadReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	return true
-}
-func (this *WriteS) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*WriteS)
-	if !ok {
-		return fmt.Errorf("that is not of type *WriteS")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *WriteS but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *WriteS but is not nil && this == nil")
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return fmt.Errorf("Conf this(%v) Not Equal that(%v)", this.Conf, that1.Conf)
-	}
-	return nil
-}
-func (this *WriteS) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*WriteS)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return false
-	}
-	return true
-}
-func (this *WriteN) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*WriteN)
-	if !ok {
-		return fmt.Errorf("that is not of type *WriteN")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *WriteN but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *WriteN but is not nil && this == nil")
-	}
-	if this.CurC != that1.CurC {
-		return fmt.Errorf("CurC this(%v) Not Equal that(%v)", this.CurC, that1.CurC)
-	}
-	if !this.Next.Equal(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", this.Next, that1.Next)
-	}
-	return nil
-}
-func (this *WriteN) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*WriteN)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.CurC != that1.CurC {
-		return false
-	}
-	if !this.Next.Equal(that1.Next) {
-		return false
-	}
-	return true
-}
-func (this *WriteNReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*WriteNReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *WriteNReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *WriteNReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *WriteNReply but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	if !this.LAState.Equal(that1.LAState) {
-		return fmt.Errorf("LAState this(%v) Not Equal that(%v)", this.LAState, that1.LAState)
-	}
-	return nil
-}
-func (this *WriteNReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*WriteNReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	if !this.LAState.Equal(that1.LAState) {
-		return false
-	}
-	return true
-}
-func (this *LAProposal) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*LAProposal)
-	if !ok {
-		return fmt.Errorf("that is not of type *LAProposal")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *LAProposal but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *LAProposal but is not nil && this == nil")
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return fmt.Errorf("Conf this(%v) Not Equal that(%v)", this.Conf, that1.Conf)
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return fmt.Errorf("Prop this(%v) Not Equal that(%v)", this.Prop, that1.Prop)
-	}
-	return nil
-}
-func (this *LAProposal) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*LAProposal)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return false
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return false
-	}
-	return true
-}
-func (this *LAReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*LAReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *LAReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *LAReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *LAReply but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if !this.LAState.Equal(that1.LAState) {
-		return fmt.Errorf("LAState this(%v) Not Equal that(%v)", this.LAState, that1.LAState)
-	}
-	return nil
-}
-func (this *LAReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*LAReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if !this.LAState.Equal(that1.LAState) {
-		return false
-	}
-	return true
-}
-func (this *NewState) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*NewState)
-	if !ok {
-		return fmt.Errorf("that is not of type *NewState")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *NewState but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *NewState but is not nil && this == nil")
-	}
-	if this.CurC != that1.CurC {
-		return fmt.Errorf("CurC this(%v) Not Equal that(%v)", this.CurC, that1.CurC)
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	if !this.LAState.Equal(that1.LAState) {
-		return fmt.Errorf("LAState this(%v) Not Equal that(%v)", this.LAState, that1.LAState)
-	}
-	return nil
-}
-func (this *NewState) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*NewState)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.CurC != that1.CurC {
-		return false
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	if !this.LAState.Equal(that1.LAState) {
-		return false
-	}
-	return true
-}
-func (this *NewStateReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*NewStateReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *NewStateReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *NewStateReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *NewStateReply but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if len(this.Next) != len(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", len(this.Next), len(that1.Next))
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return fmt.Errorf("Next this[%v](%v) Not Equal that[%v](%v)", i, this.Next[i], i, that1.Next[i])
-		}
-	}
-	return nil
-}
-func (this *NewStateReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*NewStateReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if len(this.Next) != len(that1.Next) {
-		return false
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *CV) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*CV)
-	if !ok {
-		return fmt.Errorf("that is not of type *CV")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *CV but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *CV but is not nil && this == nil")
-	}
-	if this.Rnd != that1.Rnd {
-		return fmt.Errorf("Rnd this(%v) Not Equal that(%v)", this.Rnd, that1.Rnd)
-	}
-	if !this.Val.Equal(that1.Val) {
-		return fmt.Errorf("Val this(%v) Not Equal that(%v)", this.Val, that1.Val)
-	}
-	return nil
-}
-func (this *CV) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*CV)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.Rnd != that1.Rnd {
-		return false
-	}
-	if !this.Val.Equal(that1.Val) {
-		return false
-	}
-	return true
-}
-func (this *Prepare) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Prepare)
-	if !ok {
-		return fmt.Errorf("that is not of type *Prepare")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Prepare but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Prepare but is not nil && this == nil")
-	}
-	if this.CurC != that1.CurC {
-		return fmt.Errorf("CurC this(%v) Not Equal that(%v)", this.CurC, that1.CurC)
-	}
-	if this.Rnd != that1.Rnd {
-		return fmt.Errorf("Rnd this(%v) Not Equal that(%v)", this.Rnd, that1.Rnd)
-	}
-	return nil
-}
-func (this *Prepare) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Prepare)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.CurC != that1.CurC {
-		return false
-	}
-	if this.Rnd != that1.Rnd {
-		return false
-	}
-	return true
-}
-func (this *Promise) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Promise)
-	if !ok {
-		return fmt.Errorf("that is not of type *Promise")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Promise but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Promise but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if this.Rnd != that1.Rnd {
-		return fmt.Errorf("Rnd this(%v) Not Equal that(%v)", this.Rnd, that1.Rnd)
-	}
-	if !this.Val.Equal(that1.Val) {
-		return fmt.Errorf("Val this(%v) Not Equal that(%v)", this.Val, that1.Val)
-	}
-	if !this.Dec.Equal(that1.Dec) {
-		return fmt.Errorf("Dec this(%v) Not Equal that(%v)", this.Dec, that1.Dec)
-	}
-	return nil
-}
-func (this *Promise) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Promise)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if this.Rnd != that1.Rnd {
-		return false
-	}
-	if !this.Val.Equal(that1.Val) {
-		return false
-	}
-	if !this.Dec.Equal(that1.Dec) {
-		return false
-	}
-	return true
-}
-func (this *Propose) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Propose)
-	if !ok {
-		return fmt.Errorf("that is not of type *Propose")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Propose but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Propose but is not nil && this == nil")
-	}
-	if this.CurC != that1.CurC {
-		return fmt.Errorf("CurC this(%v) Not Equal that(%v)", this.CurC, that1.CurC)
-	}
-	if !this.Val.Equal(that1.Val) {
-		return fmt.Errorf("Val this(%v) Not Equal that(%v)", this.Val, that1.Val)
-	}
-	return nil
-}
-func (this *Propose) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Propose)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.CurC != that1.CurC {
-		return false
-	}
-	if !this.Val.Equal(that1.Val) {
-		return false
-	}
-	return true
-}
-func (this *Learn) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Learn)
-	if !ok {
-		return fmt.Errorf("that is not of type *Learn")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Learn but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Learn but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if !this.Dec.Equal(that1.Dec) {
-		return fmt.Errorf("Dec this(%v) Not Equal that(%v)", this.Dec, that1.Dec)
-	}
-	if this.Learned != that1.Learned {
-		return fmt.Errorf("Learned this(%v) Not Equal that(%v)", this.Learned, that1.Learned)
-	}
-	return nil
-}
-func (this *Learn) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Learn)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if !this.Dec.Equal(that1.Dec) {
-		return false
-	}
-	if this.Learned != that1.Learned {
-		return false
-	}
-	return true
-}
-func (this *Proposal) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Proposal)
-	if !ok {
-		return fmt.Errorf("that is not of type *Proposal")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Proposal but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Proposal but is not nil && this == nil")
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return fmt.Errorf("Prop this(%v) Not Equal that(%v)", this.Prop, that1.Prop)
-	}
-	return nil
-}
-func (this *Proposal) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Proposal)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return false
-	}
-	return true
-}
-func (this *Ack) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Ack)
-	if !ok {
-		return fmt.Errorf("that is not of type *Ack")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Ack but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Ack but is not nil && this == nil")
-	}
-	return nil
-}
-func (this *Ack) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Ack)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	return true
-}
-func (this *GetOne) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*GetOne)
-	if !ok {
-		return fmt.Errorf("that is not of type *GetOne")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *GetOne but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *GetOne but is not nil && this == nil")
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return fmt.Errorf("Conf this(%v) Not Equal that(%v)", this.Conf, that1.Conf)
-	}
-	if !this.Next.Equal(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", this.Next, that1.Next)
-	}
-	return nil
-}
-func (this *GetOne) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*GetOne)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return false
-	}
-	if !this.Next.Equal(that1.Next) {
-		return false
-	}
-	return true
-}
-func (this *GetOneReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*GetOneReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *GetOneReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *GetOneReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *GetOneReply but is not nil && this == nil")
-	}
-	if !this.Next.Equal(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", this.Next, that1.Next)
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	return nil
-}
-func (this *GetOneReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*GetOneReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Next.Equal(that1.Next) {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	return true
-}
-func (this *DRead) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*DRead)
-	if !ok {
-		return fmt.Errorf("that is not of type *DRead")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *DRead but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *DRead but is not nil && this == nil")
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return fmt.Errorf("Conf this(%v) Not Equal that(%v)", this.Conf, that1.Conf)
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return fmt.Errorf("Prop this(%v) Not Equal that(%v)", this.Prop, that1.Prop)
-	}
-	return nil
-}
-func (this *DRead) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*DRead)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return false
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return false
-	}
-	return true
-}
-func (this *DReadReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*DReadReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *DReadReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *DReadReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *DReadReply but is not nil && this == nil")
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if len(this.Next) != len(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", len(this.Next), len(that1.Next))
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return fmt.Errorf("Next this[%v](%v) Not Equal that[%v](%v)", i, this.Next[i], i, that1.Next[i])
-		}
-	}
-	return nil
-}
-func (this *DReadReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*DReadReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if len(this.Next) != len(that1.Next) {
-		return false
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *DNewState) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*DNewState)
-	if !ok {
-		return fmt.Errorf("that is not of type *DNewState")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *DNewState but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *DNewState but is not nil && this == nil")
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return fmt.Errorf("Conf this(%v) Not Equal that(%v)", this.Conf, that1.Conf)
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	return nil
-}
-func (this *DNewState) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*DNewState)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return false
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	return true
-}
-func (this *DWriteNs) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*DWriteNs)
-	if !ok {
-		return fmt.Errorf("that is not of type *DWriteNs")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *DWriteNs but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *DWriteNs but is not nil && this == nil")
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return fmt.Errorf("Conf this(%v) Not Equal that(%v)", this.Conf, that1.Conf)
-	}
-	if len(this.Next) != len(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", len(this.Next), len(that1.Next))
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return fmt.Errorf("Next this[%v](%v) Not Equal that[%v](%v)", i, this.Next[i], i, that1.Next[i])
-		}
-	}
-	return nil
-}
-func (this *DWriteNs) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*DWriteNs)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Conf.Equal(that1.Conf) {
-		return false
-	}
-	if len(this.Next) != len(that1.Next) {
-		return false
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *DWriteNsReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*DWriteNsReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *DWriteNsReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *DWriteNsReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *DWriteNsReply but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if len(this.Next) != len(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", len(this.Next), len(that1.Next))
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return fmt.Errorf("Next this[%v](%v) Not Equal that[%v](%v)", i, this.Next[i], i, that1.Next[i])
-		}
-	}
-	return nil
-}
-func (this *DWriteNsReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*DWriteNsReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if len(this.Next) != len(that1.Next) {
-		return false
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *SWriteN) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*SWriteN)
-	if !ok {
-		return fmt.Errorf("that is not of type *SWriteN")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *SWriteN but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *SWriteN but is not nil && this == nil")
-	}
-	if this.CurL != that1.CurL {
-		return fmt.Errorf("CurL this(%v) Not Equal that(%v)", this.CurL, that1.CurL)
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if this.This != that1.This {
-		return fmt.Errorf("This this(%v) Not Equal that(%v)", this.This, that1.This)
-	}
-	if this.Rnd != that1.Rnd {
-		return fmt.Errorf("Rnd this(%v) Not Equal that(%v)", this.Rnd, that1.Rnd)
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return fmt.Errorf("Prop this(%v) Not Equal that(%v)", this.Prop, that1.Prop)
-	}
-	return nil
-}
-func (this *SWriteN) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*SWriteN)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.CurL != that1.CurL {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if this.This != that1.This {
-		return false
-	}
-	if this.Rnd != that1.Rnd {
-		return false
-	}
-	if !this.Prop.Equal(that1.Prop) {
-		return false
-	}
-	return true
-}
-func (this *SWriteNReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*SWriteNReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *SWriteNReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *SWriteNReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *SWriteNReply but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if len(this.Next) != len(that1.Next) {
-		return fmt.Errorf("Next this(%v) Not Equal that(%v)", len(this.Next), len(that1.Next))
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return fmt.Errorf("Next this[%v](%v) Not Equal that[%v](%v)", i, this.Next[i], i, that1.Next[i])
-		}
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	return nil
-}
-func (this *SWriteNReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*SWriteNReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if len(this.Next) != len(that1.Next) {
-		return false
-	}
-	for i := range this.Next {
-		if !this.Next[i].Equal(that1.Next[i]) {
-			return false
-		}
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	return true
-}
-func (this *Commit) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*Commit)
-	if !ok {
-		return fmt.Errorf("that is not of type *Commit")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *Commit but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *Commit but is not nil && this == nil")
-	}
-	if this.CurL != that1.CurL {
-		return fmt.Errorf("CurL this(%v) Not Equal that(%v)", this.CurL, that1.CurL)
-	}
-	if this.This != that1.This {
-		return fmt.Errorf("This this(%v) Not Equal that(%v)", this.This, that1.This)
-	}
-	if this.Rnd != that1.Rnd {
-		return fmt.Errorf("Rnd this(%v) Not Equal that(%v)", this.Rnd, that1.Rnd)
-	}
-	if this.Commit != that1.Commit {
-		return fmt.Errorf("Commit this(%v) Not Equal that(%v)", this.Commit, that1.Commit)
-	}
-	if !this.Collect.Equal(that1.Collect) {
-		return fmt.Errorf("Collect this(%v) Not Equal that(%v)", this.Collect, that1.Collect)
-	}
-	return nil
-}
-func (this *Commit) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*Commit)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.CurL != that1.CurL {
-		return false
-	}
-	if this.This != that1.This {
-		return false
-	}
-	if this.Rnd != that1.Rnd {
-		return false
-	}
-	if this.Commit != that1.Commit {
-		return false
-	}
-	if !this.Collect.Equal(that1.Collect) {
-		return false
-	}
-	return true
-}
-func (this *CommitReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*CommitReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *CommitReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *CommitReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *CommitReply but is not nil && this == nil")
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	if !this.Committed.Equal(that1.Committed) {
-		return fmt.Errorf("Committed this(%v) Not Equal that(%v)", this.Committed, that1.Committed)
-	}
-	if !this.Collected.Equal(that1.Collected) {
-		return fmt.Errorf("Collected this(%v) Not Equal that(%v)", this.Collected, that1.Collected)
-	}
-	return nil
-}
-func (this *CommitReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*CommitReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	if !this.Committed.Equal(that1.Committed) {
-		return false
-	}
-	if !this.Collected.Equal(that1.Collected) {
-		return false
-	}
-	return true
-}
-func (this *SState) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*SState)
-	if !ok {
-		return fmt.Errorf("that is not of type *SState")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *SState but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *SState but is not nil && this == nil")
-	}
-	if this.CurL != that1.CurL {
-		return fmt.Errorf("CurL this(%v) Not Equal that(%v)", this.CurL, that1.CurL)
-	}
-	if !this.State.Equal(that1.State) {
-		return fmt.Errorf("State this(%v) Not Equal that(%v)", this.State, that1.State)
-	}
-	return nil
-}
-func (this *SState) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*SState)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.CurL != that1.CurL {
-		return false
-	}
-	if !this.State.Equal(that1.State) {
-		return false
-	}
-	return true
-}
-func (this *SStateReply) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*SStateReply)
-	if !ok {
-		return fmt.Errorf("that is not of type *SStateReply")
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *SStateReply but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *SStateReply but is not nil && this == nil")
-	}
-	if this.HasNext != that1.HasNext {
-		return fmt.Errorf("HasNext this(%v) Not Equal that(%v)", this.HasNext, that1.HasNext)
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return fmt.Errorf("Cur this(%v) Not Equal that(%v)", this.Cur, that1.Cur)
-	}
-	return nil
-}
-func (this *SStateReply) Equal(that interface{}) bool {
-	if that == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	}
-
-	that1, ok := that.(*SStateReply)
-	if !ok {
-		return false
-	}
-	if that1 == nil {
-		if this == nil {
-			return true
-		}
-		return false
-	} else if this == nil {
-		return false
-	}
-	if this.HasNext != that1.HasNext {
-		return false
-	}
-	if !this.Cur.Equal(that1.Cur) {
-		return false
-	}
-	return true
-}
 
 /* Manager type struct */
 
@@ -3006,10 +846,11 @@ type Manager struct {
 	configs        []*Configuration
 	machineGidToID map[uint32]int
 	configGidToID  map[uint32]int
+	closed         bool
 
-	closeOnce sync.Once
-	logger    *log.Logger
-	opts      managerOptions
+	logger *log.Logger
+
+	opts managerOptions
 
 	aReadSqf     AReadSQuorumFn
 	aWriteSqf    AWriteSQuorumFn
@@ -3239,7 +1080,6 @@ type managerOptions struct {
 	grpcDialOpts []grpc.DialOption
 	logger       *log.Logger
 	noConnect    bool
-	selfAddr     string
 
 	aReadSqf     AReadSQuorumFn
 	aWriteSqf    AWriteSQuorumFn
@@ -5907,16 +3747,6 @@ func (c *Configuration) String() string {
 // configuration.
 func Equal(a, b *Configuration) bool { return a.gid == b.gid }
 
-// NewTestConfiguration returns a new configuration with quorum size q and
-// machine size n. No other fields are set. Configurations returned from this
-// constructor should only be used when testing quorum functions.
-func NewTestConfiguration(q, n int) *Configuration {
-	return &Configuration{
-		quorum:   q,
-		machines: make([]int, n),
-	}
-}
-
 /* errors.go */
 
 // A MachineNotFoundError reports that a specified machine could not be found.
@@ -5936,13 +3766,13 @@ func (e ConfigNotFoundError) Error() string {
 
 // An IncompleteRPCError reports that a quorum RPC call failed.
 type IncompleteRPCError struct {
-	ErrCount, ReplyCount int
+	ErrCount, RepliesCount int
 }
 
 func (e IncompleteRPCError) Error() string {
 	return fmt.Sprintf(
 		"incomplete rpc (errors: %d, replies: %d)",
-		e.ErrCount, e.ReplyCount,
+		e.ErrCount, e.RepliesCount,
 	)
 }
 
@@ -5975,37 +3805,12 @@ type Machine struct {
 	// Only assigned at creation.
 	id   int
 	gid  uint32
-	self bool
 	addr string
 	conn *grpc.ClientConn
 
 	sync.Mutex
 	lastErr error
 	latency time.Duration
-}
-
-func (m *Machine) connect(opts ...grpc.DialOption) error {
-	conn, err := grpc.Dial(m.addr, opts...)
-	if err != nil {
-		return fmt.Errorf("dialing node failed: %v", err)
-	}
-	m.conn = conn
-	return nil
-}
-
-// ID returns the local ID of m.
-func (m *Machine) ID() int {
-	return m.id
-}
-
-// GID returns the global ID of m.
-func (m *Machine) GID() uint32 {
-	return m.gid
-}
-
-// Address returns network address of m.
-func (m *Machine) Address() string {
-	return m.addr
 }
 
 // ConnState returns the state of the underlying gRPC client connection.
@@ -6054,127 +3859,42 @@ func (m *Machine) Latency() time.Duration {
 	return m.latency
 }
 
-type lessFunc func(m1, m2 *Machine) bool
+// ByID attaches the methods of sort.Interface to []Machine, sorting machines
+// by their local identifier in increasing order.
+type ByID []*Machine
 
-// MultiSorter implements the Sort interface, sorting the machines within.
-type MultiSorter struct {
-	machines []*Machine
-	less     []lessFunc
-}
+func (p ByID) Len() int           { return len(p) }
+func (p ByID) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p ByID) Less(i, j int) bool { return p[i].id < p[j].id }
 
-// Sort sorts the argument slice according to the less functions passed to
-// OrderedBy.
-func (ms *MultiSorter) Sort(machines []*Machine) {
-	ms.machines = machines
-	sort.Sort(ms)
-}
+// ByGID attaches the methods of sort.Interface to []Machine, sorting machines
+// by their global identifier in increasing order.
+type ByGID []*Machine
 
-// OrderedBy returns a Sorter that sorts using the less functions, in order.
-// Call its Sort method to sort the data.
-func OrderedBy(less ...lessFunc) *MultiSorter {
-	return &MultiSorter{
-		less: less,
-	}
-}
+func (p ByGID) Len() int           { return len(p) }
+func (p ByGID) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p ByGID) Less(i, j int) bool { return p[i].gid < p[j].gid }
 
-// Len is part of sort.Interface.
-func (ms *MultiSorter) Len() int {
-	return len(ms.machines)
-}
+// ByLatency attaches the methods of sort.Interface to []Machine, sorting
+// machines by latency in increasing order. Latencies less then zero (sentinel
+// value) are considered greater than any positive latency.
+type ByLatency []*Machine
 
-// Swap is part of sort.Interface.
-func (ms *MultiSorter) Swap(i, j int) {
-	ms.machines[i], ms.machines[j] = ms.machines[j], ms.machines[i]
-}
-
-// Less is part of sort.Interface. It is implemented by looping along the
-// less functions until it finds a comparison that is either Less or
-// !Less. Note that it can call the less functions twice per call. We
-// could change the functions to return -1, 0, 1 and reduce the
-// number of calls for greater efficiency: an exercise for the reader.
-func (ms *MultiSorter) Less(i, j int) bool {
-	p, q := ms.machines[i], ms.machines[j]
-	// Try all but the last comparison.
-	var k int
-	for k = 0; k < len(ms.less)-1; k++ {
-		less := ms.less[k]
-		switch {
-		case less(p, q):
-			// p < q, so we have a decision.
-			return true
-		case less(q, p):
-			// p > q, so we have a decision.
-			return false
-		}
-		// p == q; try the next comparison.
-	}
-	// All comparisons to here said "equal", so just return whatever
-	// the final comparison reports.
-	return ms.less[k](p, q)
-}
-
-// ID sorts machines by their local identifier in increasing order.
-var ID = func(m1, m2 *Machine) bool {
-	return m1.id < m2.id
-}
-
-// GID sorts machines by their local identifier in increasing order.
-var GID = func(m1, m2 *Machine) bool {
-	return m1.gid < m2.gid
-}
-
-// Latency sorts machines by latency in increasing order. Latencies less then
-// zero (sentinel value) are considered greater than any positive latency.
-var Latency = func(m1, m2 *Machine) bool {
-	if m1.latency < 0 {
+func (p ByLatency) Len() int      { return len(p) }
+func (p ByLatency) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p ByLatency) Less(i, j int) bool {
+	if p[i].latency < 0 {
 		return false
 	}
-	return m1.latency < m2.latency
-
+	return p[i].latency < p[j].latency
 }
-
-// Error sorts machines by their LastErr() status in increasing order. A
-// machine with LastErr() != nil is larger than a machine with LastErr() == nil.
-var Error = func(m1, m2 *Machine) bool {
-	if m1.lastErr != nil && m2.lastErr == nil {
-		return false
-	}
-	return true
-}
-
-// Connectivity sorts machines by "best"/highest connectivity in increasing
-// order. The (gRPC) connectivity status is ranked as follows:
-// * Ready
-// * Connecting
-// * Idle
-// * TransientFailure
-// * Shutdown
-var Connectivity = func(m1, m2 *Machine) bool {
-	switch {
-	case m1.conn.State() <= grpc.Ready && m2.conn.State() <= grpc.Ready:
-		// Both are idle/connecting/ready.
-		return m1.conn.State() < m2.conn.State()
-	case m1.conn.State() > grpc.Ready && m2.conn.State() > grpc.Ready:
-		// Both are transient/shutdown.
-		return m1.conn.State() > m2.conn.State()
-	case m1.conn.State() > grpc.Ready && m2.conn.State() < grpc.Ready:
-		// m1 is transient/shutdown and m2 is idle/connecting/ready.
-		return true
-	default:
-		// m2 is transient/shutdown and m1 is idle/connecting/ready.
-		return false
-	}
-}
-
-// To suppress varcheck warning for now.
-var _ = Connectivity
 
 /* mgr.go */
 
-// NewManager attempts to connect to the given set of machines addresses and if
-// successful returns a new Manager containing connections to those machines.
-func NewManager(machineAddrs []string, opts ...ManagerOption) (*Manager, error) {
-	if len(machineAddrs) == 0 {
+// NewManager attempts to connect to the given machines, and returns a new
+// Manager containing those machines if successful.
+func NewManager(machines []string, opts ...ManagerOption) (*Manager, error) {
+	if len(machines) == 0 {
 		return nil, fmt.Errorf("could not create manager: no machines provided")
 	}
 
@@ -6182,47 +3902,22 @@ func NewManager(machineAddrs []string, opts ...ManagerOption) (*Manager, error) 
 	m.machineGidToID = make(map[uint32]int)
 	m.configGidToID = make(map[uint32]int)
 
-	var (
-		selfIndex = -1
-		err       error
-	)
-
 	for _, opt := range opts {
 		opt(&m.opts)
-	}
-
-	if m.opts.selfAddr != "" {
-		selfIndex, err = m.parseSelfAddr(machineAddrs)
-		if err != nil {
-			return nil, fmt.Errorf("could not create manager: %v", err)
-		}
 	}
 
 	if m.opts.logger != nil {
 		m.logger = m.opts.logger
 	}
 
-	for i, maddr := range machineAddrs {
-		err = m.createMachine(maddr, i == selfIndex)
+	for _, mn := range machines {
+		err := m.createMachine(mn)
 		if err != nil {
 			return nil, fmt.Errorf("could not create manager: %v", err)
 		}
 	}
 
-	OrderedBy(GID).Sort(m.machines)
-	for i, machine := range m.machines {
-		machine.id = i
-		if !machine.self {
-			m.machineGidToID[machine.gid] = machine.id
-		}
-	}
-
-	err = m.connectAll()
-	if err != nil {
-		return nil, fmt.Errorf("could not create manager: %v", err)
-	}
-
-	err = m.createStreamClients()
+	err := m.createStreamClients()
 	if err != nil {
 		return nil, fmt.Errorf("could not create manager: %v", err)
 	}
@@ -6232,34 +3927,29 @@ func NewManager(machineAddrs []string, opts ...ManagerOption) (*Manager, error) 
 	return m, nil
 }
 
-func (m *Manager) parseSelfAddr(addrs []string) (int, error) {
-	seen, index := contains(m.opts.selfAddr, addrs)
-	if !seen {
-		return -1, fmt.Errorf(
-			"option WithSelf provided, but address %q was not present in address list",
-			m.opts.selfAddr)
-	}
-	return index, nil
-}
-
 // Close closes all machine connections and any client streams.
-func (m *Manager) Close() {
-	m.closeOnce.Do(func() {
-		m.closeStreamClients()
-		m.closeMachineConns()
-	})
+func (m *Manager) Close() error {
+	m.Lock()
+	defer m.Unlock()
+	if m.closed {
+		return errors.New("manager already closed")
+	}
+	m.closed = true
+	m.closeStreamClients()
+	err := m.closeMachineConns()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // MachineIDs returns the identifier of each available machine.
 func (m *Manager) MachineIDs() []int {
 	m.RLock()
 	defer m.RUnlock()
-	var ids []int
-	for i, machine := range m.machines {
-		if machine.self {
-			continue
-		}
-		ids = append(ids, i)
+	ids := make([]int, len(m.machines))
+	for i := range m.machines {
+		ids[i] = i
 	}
 	return ids
 }
@@ -6269,8 +3959,10 @@ func (m *Manager) MachineGlobalIDs() []uint32 {
 	m.RLock()
 	defer m.RUnlock()
 	gids := make([]uint32, len(m.machineGidToID))
-	for gid, id := range m.machineGidToID {
-		gids[id] = gid
+	i := 0
+	for gid := range m.machineGidToID {
+		gids[i] = gid
+		i++
 	}
 	return gids
 }
@@ -6283,7 +3975,7 @@ func (m *Manager) Machine(id int) (machine *Machine, found bool) {
 		return nil, false
 	}
 	machine = m.machines[id]
-	if machine == nil || machine.self {
+	if machine == nil {
 		return nil, false
 	}
 	return machine, true
@@ -6305,13 +3997,11 @@ func (m *Manager) MachineFromGlobalID(gid uint32) (machine *Machine, found bool)
 func (m *Manager) Machines() []*Machine {
 	m.RLock()
 	defer m.RUnlock()
-	var machines []*Machine
-	for _, machine := range m.machines {
-		if !machine.self {
-			machines = append(machines, machine)
-		}
+	mas := make([]*Machine, len(m.machines))
+	for i := range m.machines {
+		mas[i] = m.machines[i]
 	}
-	return machines
+	return mas
 }
 
 // ConfigurationIDs returns the identifier of each available configuration.
@@ -6331,8 +4021,10 @@ func (m *Manager) ConfigurationGlobalIDs() []uint32 {
 	m.RLock()
 	defer m.RUnlock()
 	gids := make([]uint32, len(m.configGidToID))
-	for gid, id := range m.configGidToID {
-		gids[id] = gid
+	i := 0
+	for gid := range m.configGidToID {
+		gids[i] = gid
+		i++
 	}
 	return gids
 }
@@ -6379,72 +4071,60 @@ func (m *Manager) Configurations() []*Configuration {
 func (m *Manager) Size() (machines, configs int) {
 	m.RLock()
 	defer m.RUnlock()
-	if m.opts.selfAddr != "" {
-		return len(m.machines) - 1, len(m.configs)
-	}
 	return len(m.machines), len(m.configs)
 }
 
 // AddMachine attempts to dial to the provide machine address. The machine is
 // added to the Manager's pool of machines if a connection was established.
 func (m *Manager) AddMachine(addr string) error {
-	panic("not implemented")
+	return m.createMachine(addr)
 }
 
-func (m *Manager) createMachine(addr string, self bool) error {
+func (m *Manager) createMachine(mn string) error {
 	m.Lock()
 	defer m.Unlock()
-
-	if !m.opts.noConnect {
-		tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
-		if err != nil {
-			return fmt.Errorf("create machine %s error: %v", addr, err)
-		}
-		addr = tcpAddr.String()
-	}
-
 	h := fnv.New32a()
-	_, _ = h.Write([]byte(addr))
+	_, _ = h.Write([]byte(mn))
 	gid := h.Sum32()
-
 	if _, machineExists := m.machineGidToID[gid]; machineExists {
-		return fmt.Errorf("create machine %s error: machine already exists", addr)
+		return fmt.Errorf("create machine %s error: machine already exists", mn)
 	}
+	id := len(m.machines)
 
 	ma := &Machine{
+		id:      id,
 		gid:     gid,
-		self:    self,
-		addr:    addr,
+		addr:    mn,
 		latency: -1 * time.Second,
 	}
 
+	err := m.connect(ma)
+	if err != nil {
+		return fmt.Errorf("create machine %s error: %v", mn, err)
+	}
+
 	m.machines = append(m.machines, ma)
-	m.machineGidToID[gid] = -1
+	m.machineGidToID[gid] = id
 
 	return nil
 }
 
-func (m *Manager) connectAll() error {
+func (m *Manager) connect(ma *Machine) error {
 	if m.opts.noConnect {
 		return nil
 	}
-	for _, machine := range m.machines {
-		if machine.self {
-			continue
-		}
-		err := machine.connect(m.opts.grpcDialOpts...)
-		if err != nil {
-			return fmt.Errorf("connect machine %s error: %v", machine.addr, err)
-		}
+
+	conn, err := grpc.Dial(ma.addr, m.opts.grpcDialOpts...)
+	if err != nil {
+		return fmt.Errorf("dialing node failed: %v", err)
 	}
+	ma.conn = conn
+
 	return nil
 }
 
-func (m *Manager) closeMachineConns() {
+func (m *Manager) closeMachineConns() error {
 	for _, machine := range m.machines {
-		if machine.self {
-			continue
-		}
 		err := machine.conn.Close()
 		if err == nil {
 			continue
@@ -6453,6 +4133,7 @@ func (m *Manager) closeMachineConns() {
 			m.logger.Printf("machine %d: error closing connection: %v", machine.id, err)
 		}
 	}
+	return nil
 }
 
 // NewConfiguration returns a new configuration given a set of machine ids and
@@ -6481,15 +4162,12 @@ func (m *Manager) NewConfiguration(ids []int, quorumSize int, timeout time.Durat
 		if machine == nil {
 			return nil, MachineNotFoundError(mid)
 		}
-		if machine.self {
-			return nil, MachineNotFoundError(mid)
-		}
 		cmachines = append(cmachines, machine)
 	}
 
 	// Machine ids are sorted by global id to
 	// ensure a globally consistent configuration id.
-	OrderedBy(GID).Sort(cmachines)
+	sort.Sort(ByGID(cmachines))
 
 	h := fnv.New32a()
 	binary.Write(h, binary.LittleEndian, quorumSize)
@@ -6545,32 +4223,12 @@ func WithLogger(logger *log.Logger) ManagerOption {
 }
 
 // WithNoConnect returns a ManagerOption which instructs the Manager not to
-// connect to any of its machines. Mainly used for testing purposes.
+// connect to any of its machines .  the Manager. Mainly used for
+// testing purposes.
 func WithNoConnect() ManagerOption {
 	return func(o *managerOptions) {
 		o.noConnect = true
 	}
-}
-
-// WithSelf returns a ManagerOption which instructs the Manager not to connect
-// to the machine with network address addr. The address must be present in the
-// list of machine addresses provided to the Manager. The Manager will not
-// include the machine in any method queries for ids or machines.
-func WithSelf(addr string) ManagerOption {
-	return func(o *managerOptions) {
-		o.selfAddr = addr
-	}
-}
-
-/* util.go */
-
-func contains(addr string, addrs []string) (found bool, index int) {
-	for i, a := range addrs {
-		if addr == a {
-			return true, i
-		}
-	}
-	return false, -1
 }
 
 // Reference imports to suppress errors if they are not otherwise used.

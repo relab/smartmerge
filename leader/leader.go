@@ -4,11 +4,11 @@ import (
 	"github.com/golang/glog"
 	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
-	sm "github.com/relab/smartMerge/smclient"
+	cs "github.com/relab/smartMerge/consclient"
 )
 
 type Leader struct {
-	*sm.SmClient
+	*cs.ConsClient
 	propC    chan *pb.Blueprint
 	getdoneC chan chan struct{}
 	stopC    chan bool
@@ -16,12 +16,12 @@ type Leader struct {
 }
 
 func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*Leader, error) {
-	smc, err := sm.New(initBlp, id, cp)
+	cc, err := cs.New(initBlp, id, cp)
 	if err != nil {
 		return nil, err
 	}
 	return &Leader{
-		SmClient: smc,
+		ConsClient: cc,
 		propC:    make(chan *pb.Blueprint, 0),
 		getdoneC: make(chan chan struct{}, 0),
 		stopC:    make(chan bool, 0),

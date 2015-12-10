@@ -68,7 +68,7 @@ sleep 1
 
 
 echo single write
-$SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=bench -writes=1 -size=1000 -nclients=1 -id=5 -initsize=8 
+$SM/client/client -conf $SM/scripts/newList -alg=$2 -mode=bench -writes=1 -size=4000 -nclients=1 -id=5 -initsize=8 
 
 echo starting Readers on
 x=0
@@ -92,7 +92,7 @@ echo " "
 
 sleep 1
 
-if [ "$4" = "-cont" ]; then
+if [ "$4" = "-cont" -o "$4" = "-cont -repl" ]; then
 
 	echo starting Reconfigurers
 	nohup $SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=8 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &

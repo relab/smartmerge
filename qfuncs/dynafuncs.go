@@ -72,7 +72,7 @@ var DWriteNSetQF = func(c *pr.Configuration, replies []*pr.DWriteNsReply) (*pr.D
 	}
 
 	// Return false, if not enough replies yet.
-	if len(replies) < c.WriteQuorum() {
+	if len(replies) < c.MaxQuorum() {
 		return nil, false
 	}
 

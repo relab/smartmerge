@@ -50,6 +50,11 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 		s = srs.RState
 	}
 
+	if l := wn.Cur.Len(); l > srs.CurC {
+		srs.CurC = l
+		srs.Cur = wn.Cur
+	}
+
 	proposed := srs.proposed(wn.This, wn.Rnd)
 
 	if wn.Prop != nil {

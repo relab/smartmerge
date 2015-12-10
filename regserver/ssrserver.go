@@ -90,7 +90,7 @@ func (srs *SSRServer) SCommit(ctx context.Context, cm *pb.Commit) (*pb.CommitRep
 			srs.Committed[cm.This][cm.Rnd] = cm.Collect
 		} else if srs.committed(cm.This, cm.Rnd).Len() != cm.Collect.Len() {
 			// The is a simple sanity check. It could be omitted.
-			glog.Fatalln("Committing two different values in the same round.")
+			glog.Fatalf("Committing two different values in the same round with length %d and %d.", srs.committed(cm.This, cm.Rnd).Len(), cm.Collect.Len())
 		}
 		return &pb.CommitReply{Collected: srs.collected(cm.This, cm.Rnd)}, nil
 	}

@@ -52,15 +52,17 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 
 	proposed := srs.proposed(wn.This, wn.Rnd)
 
-	found := false
-	for _, blp := range proposed {
-		if blp.Equals(wn.Prop) {
-			found = true
-			break
+	if wn.Prop != nil {
+		found := false
+		for _, blp := range proposed {
+			if blp.Equals(wn.Prop) {
+				found = true
+				break
+			}
 		}
-	}
-	if !found {
-		srs.Proposed[wn.This][wn.Rnd] = append(proposed, wn.Prop)
+		if !found {
+			srs.Proposed[wn.This][wn.Rnd] = append(proposed, wn.Prop)
+		}
 	}
 
 	return &pb.SWriteNReply{Next: proposed, State: s}, nil

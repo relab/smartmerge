@@ -37,27 +37,6 @@ func NewSSRServerWithCur(cur *pb.Blueprint, curc uint32) *SSRServer {
 }
 
 func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNReply, error) {
-	if wn.Prop == nil {
-		srs.mu.RLock()
-		defer srs.mu.RUnlock()
-		glog.V(6).Infoln("handling empty SpSnOne")
-		if wn.CurL < srs.CurC {
-			return &pb.SWriteNReply{Cur: srs.Cur}, nil
-		}
-
-		var s *pb.State
-		if wn.Rnd == 0 {
-			s = srs.RState
-		}
-
-		proposed := srs.proposed(wn.This, wn.Rnd)
-
-		if len(proposed) == 0 {
-			return &pb.SWriteNReply{State: s}, nil
-		}
-		return &pb.SWriteNReply{Next: proposed, State: s}, nil
-	}
-
 	srs.mu.Lock()
 	defer srs.mu.Unlock()
 	glog.V(5).Infoln("handling SpSnOne")
@@ -69,11 +48,6 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 	var s *pb.State
 	if wn.Rnd == 0 {
 		s = srs.RState
-	}
-
-	if wn.CurL > srs.CurC {
-		srs.CurC = wn.CurL
-		srs.Cur = wn.Cur
 	}
 
 	proposed := srs.proposed(wn.This, wn.Rnd)

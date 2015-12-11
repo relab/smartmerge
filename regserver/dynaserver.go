@@ -78,16 +78,24 @@ func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply
 	if rr.Conf.Cur < rs.CurC {
 		return &pb.DReadReply{Cur: rs.Cur}, nil
 	}
+	n := rs.Next[wr.Conf.This]
 
 	if rr.Prop != nil {
-		if len(rs.Next[rr.Conf.This]) > 0 {
-			rs.Next[rr.Conf.This] = append(rs.Next[rr.Conf.This], rr.Prop)
-		} else {
-			rs.Next[rr.Conf.This] = []*pb.Blueprint{rr.Prop}
+		found := false
+		for _, bp := range n {
+			if bp.Equals(newBp) {
+				found = true
+				break
+			}
 		}
+		if !found {
+			n = append(n, newBp)
+			rs.Next[wr.Conf.This] = n
+		}
+
 	}
 
-	return &pb.DReadReply{State: rs.RState, Next: rs.Next[rr.Conf.This]}, nil
+	return &pb.DReadReply{State: rs.RState, Next: n}, nil
 }
 
 func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewStateReply, error) {
@@ -127,16 +135,16 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 			if newBp == nil {
 				continue
 			}
-			for _, bp := range n {
+			for _, bp := range nx {
 				if bp.Equals(newBp) {
 					continue outerLoop
 				}
 			}
-			nx = append(nx, newBp)
+			n = append(n, newBp)
 		}
-		rs.Next[wr.Conf.This] = nx
+		rs.Next[wr.Conf.This] = n
 	}
-	return &pb.DWriteNsReply{Next: rs.Next[wr.Conf.This]}, nil
+	return &pb.DWriteNsReply{Next: n}, nil
 }
 
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {

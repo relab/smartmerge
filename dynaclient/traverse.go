@@ -177,6 +177,10 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		}
 
 		if len(next) > 0 { //Oups this is not just an else to the if above, but can also be used be true, after the WriteInView was executed.
+			if len(next) > 1 {
+				glog.Errorf("Did not expect ever to receive %d next values with length: %d and %d.\n", len(next), next[0].Len(), next[1].Len())
+			}
+
 			regular = false
 
 			cnf = cp.WriteC(dc.Blueps[i], nil)

@@ -137,23 +137,31 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 
 	n := rs.Next[wr.Conf.This]
 	if len(n) == 0 {
-		rs.Next[wr.Conf.This] = wr.Next
+		rs.Next[wr.Conf.This] = []*pb.Blueprint{wr.Next}
 	} else {
-		nx := n
-		for _, newBp := range wr.Next {
-			if newBp == nil {
-				continue
+		for _, bp := range n {
+			if bp.Equals(wr.Next) {
+				return &pb.DWriteNsReply{}, nil
 			}
-			for _, bp := range nx {
-				if bp.Equals(newBp) {
-					break
-				}
-			}
-			n = append(n, newBp)
 		}
-		rs.Next[wr.Conf.This] = n
+		rs.Next[wr.Conf.This] = append(n, wr.Next)
+		glog.Warning("There are different values written to one snapshot.")
+		// 	nx := n
+		//outerLoop:
+		// 	for _, newBp := range wr.Next {
+		// 		if newBp == nil {
+		// 			continue
+		// 		}
+		// 		for _, bp := range nx {
+		// 			if bp.Equals(newBp) {
+		// 				continue outerLoop
+		// 			}
+		// 		}
+		// 		n = append(n, newBp)
+		// 	}
+		// 	rs.Next[wr.Conf.This] = n
 	}
-	return &pb.DWriteNsReply{Next: n}, nil
+	return &pb.DWriteNsReply{}, nil
 }
 
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {

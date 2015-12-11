@@ -193,7 +193,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 						Cur:  uint32(dc.Blueps[0].Len()),
 						This: dc.Confs[i].GlobalID(),
 					},
-					Next: next,
+					Next: next[0],
 				})
 				cnt++
 
@@ -228,8 +228,8 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				i = -1
 				continue
 			}
-			next = writeNs.Reply.GetNext()
-			prop = dc.handleNext(i, next, prop, cp)
+			// next = writeNs.Reply.GetNext()
+			// prop = dc.handleNext(i, next, prop, cp)
 			continue
 		}
 	}

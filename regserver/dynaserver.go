@@ -117,19 +117,22 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 		return &pb.DWriteNsReply{Cur: rs.Cur}, nil
 	}
 
-	if rs.Next[wr.Conf.This] == nil {
+	n := rs.Next[wr.Conf.This]
+	if n == nil {
 		rs.Next[wr.Conf.This] = wr.Next
-	}
-outerLoop:
-	for _, newBp := range wr.Next {
-		for _, bp := range rs.Next[wr.Conf.This] {
-			if bp.Equals(newBp) {
-				continue outerLoop
+	} else {
+	outerLoop:
+		nx := n
+		for _, newBp := range wr.Next {
+			for _, bp := range n {
+				if bp.Equals(newBp) {
+					continue outerLoop
+				}
 			}
+			nx = append(nx, newBp)
 		}
-		rs.Next[wr.Conf.This] = append(rs.Next[wr.Conf.This], newBp)
+		rs.Next[wr.Conf.This] = nx
 	}
-
 	return &pb.DWriteNsReply{Next: rs.Next[wr.Conf.This]}, nil
 }
 
@@ -159,3 +162,5 @@ func (ds *DynaServer) CheckNext(curc uint32, op string) {
 		}
 	}
 }
+
+

@@ -55,6 +55,16 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 
 	rs.Cur = nc.Cur
 	rs.CurC = nc.CurC
+
+	for gid, nexts := range rs.Next {
+		for _, next := range nexts {
+			if next.Compare(nc.Cur) != 1 {
+				break
+			}
+		}
+		delete(rs.Next, gid)
+	}
+
 	return &pb.NewCurReply{true}, nil
 }
 

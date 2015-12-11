@@ -118,12 +118,15 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 	}
 
 	n := rs.Next[wr.Conf.This]
-	if n == nil {
+	if len(n) == 0 {
 		rs.Next[wr.Conf.This] = wr.Next
 	} else {
 	outerLoop:
 		nx := n
 		for _, newBp := range wr.Next {
+			if newBp == nil {
+				continue
+			}
 			for _, bp := range n {
 				if bp.Equals(newBp) {
 					continue outerLoop
@@ -162,5 +165,3 @@ func (ds *DynaServer) CheckNext(curc uint32, op string) {
 		}
 	}
 }
-
-

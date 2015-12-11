@@ -103,6 +103,9 @@ func DGetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {
 }
 
 func add(bls []*pr.Blueprint, bp *pr.Blueprint) []*pr.Blueprint {
+	if bp == nil {
+		return bls
+	}
 	place := 0
 
 findplacefor:
@@ -113,9 +116,6 @@ findplacefor:
 				//New blueprint already present
 				return bls
 			}
-			continue
-		case 0:
-			continue
 		case -1:
 			break findplacefor
 		}

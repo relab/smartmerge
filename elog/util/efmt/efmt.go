@@ -194,10 +194,10 @@ func main() {
 		fmt.Fprintf(of, "Average reconfiguration latency: %v\n", (total / number))
 		fmt.Fprintf(of, "In total: %d reconfigurations\n", number)
 
-		recds := make([]time.Duration,len(reconfe))
+		recds := make([]time.Duration, len(reconfe))
 		p := 0
 		//fmt.Println("Len reconfe is", len(reconfe))
-		for _,durs := range reconfl {
+		for _, durs := range reconfl {
 			//fmt.Printf("%d durations with %d accesses.\n", len(durs),k)
 			copy(recds[p:], durs)
 			p += len(durs)
@@ -393,9 +393,8 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 	rar := evtarr(reconfe)
 	sort.Sort(rar)
 
-	readTP := make([]uint64,0,100)
-	recTP := make([]uint64,0,100)
-
+	readTP := make([]uint64, 0, 100)
+	recTP := make([]uint64, 0, 100)
 
 	out, err := os.Create("TPutTable")
 	if err != nil {
@@ -421,23 +420,24 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 		if k < 1 || tput.Time.Sub(tpute[k-1].Time) < 800*time.Millisecond || tput.Time.Sub(tpute[k-1].Time) > 1200*time.Millisecond {
 			continue
 		}
-			if count == 0 {
-				if cnt == 0 && len(readTP)>0 {
-					readTP = readTP[:len(readTP)-1]
-					recTP = recTP[:len(readTP)-1]
+		if count == 0 {
+			if cnt == 0 && len(recTP) > 0 {
+				readTP = readTP[:len(readTP)-1]
+				recTP = recTP[:len(recTP)-1]
 				cnt = 3
 			}
-			if cnt > 0 {
-				cnt--
-			} else {
-				readTP = append(readTP, tput.Value)
-				recTP = append(recTP, uint64(count))
-			}
-
-			fmt.Fprintf(out, "%d,%d", count, tput.Value)
-			fmt.Fprintf(of, "Initialized %d reconfigurations before: ", count)
-			fmt.Fprintf(of, "%v\n", tput)
 		}
+		if cnt > 0 {
+			cnt--
+		} else {
+			readTP = append(readTP, tput.Value)
+			recTP = append(recTP, uint64(count))
+		}
+
+		fmt.Fprintf(out, "%d,%d\n", count, tput.Value)
+		fmt.Fprintf(of, "Initialized %d reconfigurations before: ", count)
+		fmt.Fprintf(of, "%v\n", tput)
+
 	}
 	fmt.Fprintf(of, "Mean Read TP: %d; Mean Reconf TP %d\n", mean64(readTP), mean64(recTP))
 }
@@ -467,8 +467,8 @@ func mean64(v []uint64) uint64 {
 		return 0
 	}
 	var sum uint64
-	for _,x := range v {
+	for _, x := range v {
 		sum += x
 	}
-	return sum/uint64(len(v))
+	return sum / uint64(len(v))
 }

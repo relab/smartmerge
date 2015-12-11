@@ -121,7 +121,6 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 	if len(n) == 0 {
 		rs.Next[wr.Conf.This] = wr.Next
 	} else {
-	outerLoop:
 		nx := n
 		for _, newBp := range wr.Next {
 			if newBp == nil {
@@ -129,7 +128,7 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 			}
 			for _, bp := range n {
 				if bp.Equals(newBp) {
-					continue outerLoop
+					break
 				}
 			}
 			nx = append(nx, newBp)

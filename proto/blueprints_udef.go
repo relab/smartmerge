@@ -144,6 +144,13 @@ func (a *Blueprint) Compare(b *Blueprint) int {
 		bleqa = false
 	}
 
+	if len(a.Nodes) < len(b.Nodes) {
+		bleqa = false
+	}
+	if len(b.Nodes) < len(a.Nodes) {
+		aleqb = false	
+	}
+
 	if aleqb {
 	for_a:
 		for _, na := range a.Nodes {
@@ -217,6 +224,10 @@ func (a *Blueprint) Equals(b *Blueprint) bool {
 		return false
 	}
 
+	if len(a.Nodes) != len(b.Nodes) {
+		return false
+	}
+
 for_a:
 	for _, na := range a.Nodes {
 		for _, nb := range b.Nodes {
@@ -225,18 +236,6 @@ for_a:
 					return false
 				}
 				continue for_a
-			}
-		}
-		return false
-	}
-for_B:
-	for _, nb := range b.Nodes {
-		for _, na := range a.Nodes {
-			if nb.Id == na.Id {
-				if nb.Version != na.Version {
-					return false
-				}
-				continue for_B
 			}
 		}
 		return false

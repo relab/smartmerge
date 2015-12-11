@@ -78,19 +78,19 @@ func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply
 	if rr.Conf.Cur < rs.CurC {
 		return &pb.DReadReply{Cur: rs.Cur}, nil
 	}
-	n := rs.Next[wr.Conf.This]
+	n := rs.Next[rr.Conf.This]
 
 	if rr.Prop != nil {
 		found := false
 		for _, bp := range n {
-			if bp.Equals(newBp) {
+			if bp.Equals(rr.Prop) {
 				found = true
 				break
 			}
 		}
 		if !found {
-			n = append(n, newBp)
-			rs.Next[wr.Conf.This] = n
+			n = append(n, rr.Prop)
+			rs.Next[rr.Conf.This] = n
 		}
 
 	}

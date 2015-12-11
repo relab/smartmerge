@@ -49,28 +49,38 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 	defer rs.mu.Unlock()
 	glog.V(5).Infoln("Handling DSetCur")
 
-	if nc.CurC <= rs.CurC {
+	if uint32(nc.Cur.Len()) <= rs.CurC {
 		return &pb.NewCurReply{false}, nil
 	}
 
 	rs.Cur = nc.Cur
-	rs.CurC = nc.CurC
+	rs.CurC = uint32(nc.Cur.Len())
+
+	for gid, nexts := range rs.Next {
+		for _, next := range nexts {
+			if next.Compare(nc.Cur) != 1 {
+				break
+			}
+		}
+		delete(rs.Next, gid)
+	}
+
 	return &pb.NewCurReply{true}, nil
 }
 
 func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply, error) {
-	if rr.Prop == nil {
-		rs.mu.RLock()
-		defer rs.mu.RUnlock()
-		glog.V(5).Infoln("Handling Empty WriteN")
-
-		if rr.Conf.Cur < rs.CurC {
-			return &pb.DReadReply{Cur: rs.Cur}, nil
-		}
-
-		return &pb.DReadReply{State: rs.RState, Next: rs.Next[rr.Conf.This]}, nil
-
-	}
+	// if rr.Prop == nil {
+	// 	rs.mu.RLock()
+	// 	defer rs.mu.RUnlock()
+	// 	glog.V(5).Infoln("Handling Empty WriteN")
+	//
+	// 	if rr.Conf.Cur < rs.CurC {
+	// 		return &pb.DReadReply{Cur: rs.Cur}, nil
+	// 	}
+	//
+	// 	return &pb.DReadReply{State: rs.RState, Next: rs.Next[rr.Conf.This]}, nil
+	//
+	// }
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
@@ -78,16 +88,24 @@ func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply
 	if rr.Conf.Cur < rs.CurC {
 		return &pb.DReadReply{Cur: rs.Cur}, nil
 	}
+	n := rs.Next[rr.Conf.This]
 
 	if rr.Prop != nil {
-		if len(rs.Next[rr.Conf.This]) > 0 {
-			rs.Next[rr.Conf.This] = append(rs.Next[rr.Conf.This], rr.Prop)
-		} else {
-			rs.Next[rr.Conf.This] = []*pb.Blueprint{rr.Prop}
+		found := false
+		for _, bp := range n {
+			if bp.Equals(rr.Prop) {
+				found = true
+				break
+			}
 		}
+		if !found {
+			n = append(n, rr.Prop)
+			rs.Next[rr.Conf.This] = n
+		}
+
 	}
 
-	return &pb.DReadReply{State: rs.RState, Next: rs.Next[rr.Conf.This]}, nil
+	return &pb.DReadReply{State: rs.RState, Next: n}, nil
 }
 
 func (rs *DynaServer) DSetState(ctx context.Context, ns *pb.DNewState) (*pb.NewStateReply, error) {
@@ -118,22 +136,32 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 	}
 
 	n := rs.Next[wr.Conf.This]
-	if n == nil {
-		rs.Next[wr.Conf.This] = wr.Next
+	if len(n) == 0 {
+		rs.Next[wr.Conf.This] = []*pb.Blueprint{wr.Next}
 	} else {
-	outerLoop:
-		nx := n
-		for _, newBp := range wr.Next {
-			for _, bp := range n {
-				if bp.Equals(newBp) {
-					continue outerLoop
-				}
+		for _, bp := range n {
+			if bp.Equals(wr.Next) {
+				return &pb.DWriteNsReply{}, nil
 			}
-			nx = append(nx, newBp)
 		}
-		rs.Next[wr.Conf.This] = nx
+		rs.Next[wr.Conf.This] = append(n, wr.Next)
+		glog.Warning("There are different values written to one snapshot.")
+		// outerLoop:
+		// 	nx := n
+		// 	for _, newBp := range wr.Next {
+		// 		if newBp == nil {
+		// 			continue
+		// 		}
+		// 		for _, bp := range nx {
+		// 			if bp.Equals(newBp) {
+		// 				continue outerLoop
+		// 			}
+		// 		}
+		// 		n = append(n, newBp)
+		// 	}
+		// 	rs.Next[wr.Conf.This] = n
 	}
-	return &pb.DWriteNsReply{Next: rs.Next[wr.Conf.This]}, nil
+	return &pb.DWriteNsReply{}, nil
 }
 
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {
@@ -162,5 +190,3 @@ func (ds *DynaServer) CheckNext(curc uint32, op string) {
 		}
 	}
 }
-
-

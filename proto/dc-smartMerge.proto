@@ -167,12 +167,11 @@ message DNewState {
 
 message DWriteNs {
 	Conf Conf = 1;
-	repeated Blueprint Next = 2;
+	Blueprint Next = 2;
 }
 
 message DWriteNsReply {
 	Blueprint Cur = 1;
-	repeated Blueprint Next = 2;
 }
 
 service SpSnRegister {

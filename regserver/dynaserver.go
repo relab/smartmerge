@@ -49,12 +49,12 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 	defer rs.mu.Unlock()
 	glog.V(5).Infoln("Handling DSetCur")
 
-	if nc.CurC <= rs.CurC {
+	if uint32(nc.Cur.Len()) <= rs.CurC {
 		return &pb.NewCurReply{false}, nil
 	}
 
 	rs.Cur = nc.Cur
-	rs.CurC = nc.CurC
+	rs.CurC = uint32(nc.Cur.Len())
 
 	for gid, nexts := range rs.Next {
 		for _, next := range nexts {
@@ -69,18 +69,18 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 }
 
 func (rs *DynaServer) DWriteN(ctx context.Context, rr *pb.DRead) (*pb.DReadReply, error) {
-	if rr.Prop == nil {
-		rs.mu.RLock()
-		defer rs.mu.RUnlock()
-		glog.V(5).Infoln("Handling Empty WriteN")
-
-		if rr.Conf.Cur < rs.CurC {
-			return &pb.DReadReply{Cur: rs.Cur}, nil
-		}
-
-		return &pb.DReadReply{State: rs.RState, Next: rs.Next[rr.Conf.This]}, nil
-
-	}
+	// if rr.Prop == nil {
+	// 	rs.mu.RLock()
+	// 	defer rs.mu.RUnlock()
+	// 	glog.V(5).Infoln("Handling Empty WriteN")
+	//
+	// 	if rr.Conf.Cur < rs.CurC {
+	// 		return &pb.DReadReply{Cur: rs.Cur}, nil
+	// 	}
+	//
+	// 	return &pb.DReadReply{State: rs.RState, Next: rs.Next[rr.Conf.This]}, nil
+	//
+	// }
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	glog.V(5).Infoln("Handling WriteN")

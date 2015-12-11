@@ -11,10 +11,10 @@ echo "$RMS replacement runs"
 for Opt in "no" #"doreconf" 
 do
 
-for CP in "thrifty" #"norecontact" 
+for CP in "thrifty" #"norecontact"  
 do
 
-for ALG in "sm" "cons" "ssr" "dyna"
+for ALG in "ssr" #"sm" "cons" #"ssr" "dyna"
 do
 
 if [ "$ALG" = "ssr" -a "$CP" = "norecontact" ]; then

@@ -67,6 +67,7 @@ import (
 import (
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
+	"github.com/golang/glog"
 )
 
 import io "io"
@@ -2235,6 +2236,7 @@ func (m *Manager) aReadS(cid int, args *Conf) (*AReadSReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2320,6 +2322,7 @@ func (m *Manager) aWriteS(cid int, args *WriteS) (*AWriteSReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2405,6 +2408,7 @@ func (m *Manager) aWriteN(cid int, args *WriteN) (*AWriteNReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2490,6 +2494,7 @@ func (m *Manager) setCur(cid int, args *NewCur) (*SetCurReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2575,6 +2580,7 @@ func (m *Manager) lAProp(cid int, args *LAProposal) (*LAPropReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2660,6 +2666,7 @@ func (m *Manager) setState(cid int, args *NewState) (*SetStateReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2745,6 +2752,7 @@ func (m *Manager) getPromise(cid int, args *Prepare) (*GetPromiseReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2830,6 +2838,7 @@ func (m *Manager) accept(cid int, args *Propose) (*AcceptReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -2915,6 +2924,7 @@ func (m *Manager) fwd(cid int, args *Proposal) (*FwdReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3000,6 +3010,7 @@ func (m *Manager) getOneN(cid int, args *GetOne) (*GetOneNReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3085,6 +3096,7 @@ func (m *Manager) dWriteN(cid int, args *DRead) (*DWriteNReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3170,6 +3182,7 @@ func (m *Manager) dSetState(cid int, args *DNewState) (*DSetStateReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3255,6 +3268,7 @@ func (m *Manager) dWriteNSet(cid int, args *DWriteNs) (*DWriteNSetReply, error) 
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3340,6 +3354,7 @@ func (m *Manager) dSetCur(cid int, args *NewCur) (*DSetCurReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3425,6 +3440,7 @@ func (m *Manager) spSnOne(cid int, args *SWriteN) (*SpSnOneReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3510,6 +3526,7 @@ func (m *Manager) sCommit(cid int, args *Commit) (*SCommitReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3595,6 +3612,7 @@ func (m *Manager) sSetState(cid int, args *SState) (*SSetStateReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 
@@ -3680,6 +3698,7 @@ func (m *Manager) sSetCur(cid int, args *NewCur) (*SSetCurReply, error) {
 		case r := <-replyChan:
 			if r.err != nil {
 				errCount++
+				glog.Errorln("RPC error", r.err)
 				goto terminationCheck
 			}
 

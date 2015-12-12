@@ -51,8 +51,7 @@ if [ "$3" = "norecontact" ]; then
 if [ $Pi == 21 ]; then
 
 	echo -n "leader-pitter$Pi "
-	#ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 13000 -no-abort -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=$((100+$Pi)) -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 12000 -no-abort -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=$((100+$Pi)) -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 12000 -no-abort -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=0 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
 else
 
@@ -66,8 +65,8 @@ else
 if [ $Pi == 21 ]; then
 
 	echo -n "leader-pitter$Pi "
-	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 13000 -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=$((100+$Pi)) -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 12000 -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=$((100+$Pi)) -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+	#ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 13000 -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=$((100+$Pi)) -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 12000 -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=0 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
 else
 
@@ -111,7 +110,7 @@ echo " "
 
 sleep 1
 
-if [ "$4" = "-cont" ]; then
+if [ "$4" = "-cont" -o "$4" = "-cont -repl" ]; then
 
 	echo starting Reconfigurers
 	nohup $SM/client/client -conf $SM/scripts/leaderList -useleader -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=8 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1 &

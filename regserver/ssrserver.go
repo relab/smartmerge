@@ -16,7 +16,7 @@ type SSRServer struct {
 	Proposed  map[uint32]map[uint32][]*pb.Blueprint //Conf, Rnd -> Proposals
 	Committed map[uint32]map[uint32]*pb.Blueprint   //Conf, Rnd -> Committed value
 	Collected map[uint32]map[uint32]*pb.Blueprint
-	mu        sync.RWMutex
+	mu        sync.Mutex
 }
 
 func NewSSRServer() *SSRServer {
@@ -25,7 +25,7 @@ func NewSSRServer() *SSRServer {
 		Proposed:  make(map[uint32]map[uint32][]*pb.Blueprint, 5),
 		Committed: make(map[uint32]map[uint32]*pb.Blueprint, 5),
 		Collected: make(map[uint32]map[uint32]*pb.Blueprint, 5),
-		mu:        sync.RWMutex{},
+		mu:        sync.Mutex{},
 	}
 }
 

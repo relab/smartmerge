@@ -102,7 +102,13 @@ func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
 
 func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	cids := cp.mgr.ToIds(blp.Ids())
-	cids = []int{cids[0]}
+	m := cids[0]
+	for _,id := range cids {
+		if m < id {
+			m = id
+		}
+	}
+	cids = []int{m}
 
 	cnf, err := cp.mgr.NewConfiguration(cids, 1, ConfTimeout)
 	if err != nil {

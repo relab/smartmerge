@@ -279,8 +279,7 @@ func sortLatencies(events []e.Event) (reade, writee, reconfe, tupute []e.Event) 
 
 	for _, evt := range events {
 		if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
-			fmt.Printf("Discarding event %v.\n", evt)
-			continue
+			fmt.Printf("Spike event %v.\n", evt)
 		}
 
 		switch evt.Type {

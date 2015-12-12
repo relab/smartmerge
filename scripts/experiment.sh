@@ -3,7 +3,7 @@
 
 cd "$SM/sm_opt*" && echo "File sm_opt exists already. Abort." && exit
 
-for RMS in 5
+for RMS in 2 4
 do
 
 echo "$RMS replacement runs"
@@ -14,7 +14,7 @@ do
 for CP in "thrifty" #"norecontact"  
 do
 
-for ALG in "ssr" "dyna" #"sm" "cons" #"ssr" "dyna"
+for ALG in "dyna" #"sm" "cons" "ssr" "dyna"
 do
 
 if [ "$ALG" = "ssr" -a "$CP" = "norecontact" ]; then
@@ -35,7 +35,7 @@ mkdir "$ALG-opt$Opt-cp$CP-repl$RMS$*"
 for i in {1..20} 
 do
 	echo make run $i
-	./scripts/sm-run.sh "$Opt" $ALG $CP "-repl" "$RMS" -logThroughput 0
+	./scripts/sm-run.sh "$Opt" $ALG $CP "-cont -repl" "$RMS" -logThroughput 0
 	mv $SM/exlogs $SM/"$ALG-opt$Opt-cp$CP-repl$RMS$*"/"run$i"
 	echo sleeping 3 seconds
 	sleep 3

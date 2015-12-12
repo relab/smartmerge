@@ -85,16 +85,16 @@ func (dc *DynaClient) Write(cp conf.Provider, val []byte) int {
 
 func (dc *DynaClient) Reconf(cp conf.Provider, bp *pb.Blueprint) (int, error) {
 	if glog.V(3) {
-		glog.Infoln("starting reconf")
+		glog.Infof("C%d: starting reconf. Prop has length %d:\n", dc.ID, bp.Len())
 	}
 
 	_, cnt, err := dc.Traverse(cp, bp, nil, false)
 	if glog.V(3) {
-		glog.Infof("reconf used %d accesses\n", cnt)
+		glog.Infof("C%d: reconf used %d accesses\n", dc.ID, cnt)
 	}
 	return cnt, err
 }
 
 func (dc *DynaClient) GetCur(cp conf.Provider) *pb.Blueprint {
-	return dc.Blueps[0].Copy()
+	return dc.Blueps[len(dc.Blueps)-1].Copy()
 }

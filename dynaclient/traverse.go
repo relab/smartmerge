@@ -12,7 +12,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Blueps); i++ {
 		var curprop *pb.Blueprint // The current proposal
-		if prop != nil && !prop.Equals(dc.Blueps[i]) {
+		if prop != nil && prop.Compare(dc.Blueps[i]) != 1 {
 			//Update Snapshot
 
 			cnf := cp.SingleC(dc.Blueps[i])
@@ -23,7 +23,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				getOne, err = cnf.GetOneN(&pb.GetOne{
 					Conf: &pb.Conf{
 						Cur:  uint32(dc.Blueps[0].Len()),
-						This: dc.Confs[i].GlobalID(),
+						This: uint32(dc.Blueps[i].Len()),
 					},
 					Next: prop,
 				})
@@ -53,21 +53,23 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			isnew := dc.handleNewCur(i, getOne.Reply.GetCur(), cp)
 			if isnew {
 				prop = prop.Merge(getOne.Reply.GetCur())
+				glog.V(4).Infof("C%d: Proposal has now length %d.\n", dc.ID, prop.Len())
 				i = -1
 				continue
 			}
 
 			curprop = getOne.Reply.GetNext()
+			if glog.V(4) {
+				if prop.Equals(curprop) {
+				glog.Infof("C%d: My proposal l%d was the one in c%d\n", dc.ID, prop.Len(), dc.Blueps[i].Len())
+				}
+			}
 
 		}
 
 		//Update Snapshot and ReadInView:
 		var cnf *pb.Configuration
-		if curprop == nil {
-			cnf = cp.ReadC(dc.Blueps[i], nil)
-		} else {
-			cnf = cp.WriteC(dc.Blueps[i], nil)
-		}
+		cnf = cp.WriteC(dc.Blueps[i], nil)
 		writeN := new(pb.DWriteNReply)
 
 		for j := 0; ; j++ {
@@ -75,7 +77,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				&pb.DRead{
 					Conf: &pb.Conf{
 						Cur:  uint32(dc.Blueps[0].Len()),
-						This: dc.Confs[i].GlobalID(),
+						This: uint32(dc.Blueps[i].Len()),
 					},
 					Prop: curprop,
 				})
@@ -97,7 +99,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			}
 		}
 
-		if i > 0 && glog.V(3) {
+		if curprop != nil && glog.V(3) {
 			glog.Infof("C%d: Read in View with length %d and id %d.\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
 		} else if glog.V(6) {
 			glog.Infof("C%d: Read returned.\n", dc.ID)
@@ -107,6 +109,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		if isnew {
 			if prop != nil {
 				prop = prop.Merge(writeN.Reply.GetCur())
+				glog.V(4).Infof("C%d: Proposal has now length %d.\n", dc.ID, prop.Len())
 			}
 			i = -1
 			continue
@@ -118,7 +121,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			rst = writeN.Reply.GetState()
 		}
 
-		if len(next) == 0 && (!regular || i > 0) {
+		if i == len(dc.Blueps)-1 && (!regular || i > 0) {
 
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
@@ -131,7 +134,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				setS, err = cnf.DSetState(&pb.DNewState{
 					Conf: &pb.Conf{
 						Cur:  uint32(dc.Blueps[i].Len()),
-						This: dc.Confs[i].GlobalID(),
+						This: uint32(dc.Blueps[i].Len()),
 					},
 					State: wst,
 				})
@@ -163,6 +166,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			if isnew {
 				if prop != nil {
 					prop = prop.Merge(setS.Reply.GetCur())
+					glog.V(4).Infof("C%d: Proposal has now length %d.\n", dc.ID, prop.Len())
 				}
 				i = -1
 				continue
@@ -179,6 +183,9 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		if len(next) > 0 { //Oups this is not just an else to the if above, but can also be used be true, after the WriteInView was executed.
 			if len(next) > 1 {
 				glog.Errorf("Did not expect ever to receive %d next values with length: %d and %d.\n", len(next), next[0].Len(), next[1].Len())
+				if next[0].Equals(next[1]) {
+					glog.Errorln("They are duplicates.")
+				}
 			}
 
 			regular = false
@@ -191,7 +198,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				writeNs, err = cnf.DWriteNSet(&pb.DWriteNs{
 					Conf: &pb.Conf{
 						Cur:  uint32(dc.Blueps[0].Len()),
-						This: dc.Confs[i].GlobalID(),
+						This: uint32(dc.Blueps[i].Len()),
 					},
 					Next: next[0],
 				})
@@ -214,7 +221,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			}
 
 			if glog.V(3) {
-				glog.Infof("C%d: WriteNSet returned.\n", dc.ID)
+				glog.Infof("C%d: WriteNSet returned in conf with length %d.\n", dc.ID, dc.Blueps[0].Len())
 				if writeNs.Reply.GetCur() != nil {
 					glog.Infof("C%d: WriteNSet did return new current.\n", dc.ID)
 				}
@@ -224,6 +231,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			if isnew {
 				if prop != nil {
 					prop = prop.Merge(writeNs.Reply.GetCur())
+					glog.V(4).Infof("C%d: Proposal has now length %d.\n", dc.ID, prop.Len())
 				}
 				i = -1
 				continue
@@ -252,10 +260,10 @@ func (dc *DynaClient) handleNewCur(i int, newCur *pb.Blueprint, cp conf.Provider
 		return false
 	}
 
-	glog.V(4).Infof("C%d: Found new current view with length\n", dc.ID, newCur.Len())
 
 	cnf := cp.FullC(newCur)
 
+	glog.V(4).Infof("C%d: Found new current view with length %d and id: %d\n", dc.ID, newCur.Len(),cnf.GlobalID())
 	dc.Blueps = make([]*pb.Blueprint, 1, 5)
 	dc.Confs = make([]*pb.Configuration, 1, 5)
 	dc.Blueps[0] = newCur
@@ -270,6 +278,7 @@ func (dc *DynaClient) handleNext(i int, next []*pb.Blueprint, prop *pb.Blueprint
 		if nxt != nil {
 			dc.findorinsert(i, nxt, cp)
 			prop = prop.Merge(nxt)
+			glog.V(4).Infof("C%d: Proposal has now length %d.\n", dc.ID, prop.Len())
 		}
 	}
 	return prop
@@ -298,7 +307,7 @@ func (dc *DynaClient) findorinsert(i int, blp *pb.Blueprint, cp conf.Provider) {
 }
 
 func (dc *DynaClient) insert(i int, blp *pb.Blueprint, cp conf.Provider) {
-	glog.V(4).Infof("C%d: Found next blueprint.\n", dc.ID)
+	glog.V(4).Infof("C%d: Found next blueprint with length %d.\n", dc.ID, blp.Len())
 
 	cnf := cp.FullC(blp)
 

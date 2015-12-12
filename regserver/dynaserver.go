@@ -56,13 +56,10 @@ func (rs *DynaServer) DSetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurRep
 	rs.Cur = nc.Cur
 	rs.CurC = uint32(nc.Cur.Len())
 
-	for gid, nexts := range rs.Next {
-		for _, next := range nexts {
-			if next.Compare(nc.Cur) != 1 {
-				break
-			}
+	for gid, _ := range rs.Next {
+		if gid < rs.CurC {
+			delete(rs.Next, gid)
 		}
-		delete(rs.Next, gid)
 	}
 
 	return &pb.NewCurReply{true}, nil
@@ -167,14 +164,14 @@ func (rs *DynaServer) DWriteNSet(ctx context.Context, wr *pb.DWriteNs) (*pb.DWri
 func (rs *DynaServer) GetOneN(ctx context.Context, gt *pb.GetOne) (gtr *pb.GetOneReply, err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	glog.V(5).Infoln("Handling GetOne")
 
-	if gt.Conf.Cur < rs.CurC {
+	if gt.Conf.Cur < rs.CurC || gt.Conf.This < rs.CurC {
 		return &pb.GetOneReply{Cur: rs.Cur}, nil
 	}
 
 	if len(rs.Next[gt.Conf.This]) == 0 {
 		rs.Next[gt.Conf.This] = []*pb.Blueprint{gt.Next}
+		glog.V(5).Infof("Handling GetOne: In C%d is Next %d\n", gt.Conf.This, gt.Next.Len())
 	}
 
 	return &pb.GetOneReply{Next: rs.Next[gt.Conf.This][0]}, nil

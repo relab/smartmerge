@@ -162,12 +162,15 @@ func main() {
 				totalaffected += time.Duration(len(durs)) * avgWrites[k]
 			}
 		}
-		if len(readl) == 1 {
+		if len(readl) == 2 {
 			for k, durs := range readl {
 				sort.Sort(durarr(durs))
 				fmt.Fprintf(of, "For %d accesses, 95perc is %v\n", k, durs[(len(durs)*19)/20])
 			}
 		}
+		allds := readl[1000]
+		sort.Sort(durarr(allds))
+		fmt.Fprintf(of, "All read 95perc is %v\n", allds[(len(allds)*19)/20])
 		if affected > 0 {
 			fmt.Fprintf(of, "Mean latency for reads with more than %d acceses is: %v\n", normal, (totalaffected / affected))
 		}
@@ -194,17 +197,17 @@ func main() {
 		fmt.Fprintf(of, "Average reconfiguration latency: %v\n", (total / number))
 		fmt.Fprintf(of, "In total: %d reconfigurations\n", number)
 
-		recds := make([]time.Duration, len(reconfe))
-		p := 0
+		recds := reconfl[1000]
+		/*p := 0
 		//fmt.Println("Len reconfe is", len(reconfe))
-		for _, durs := range reconfl {
+		for k, durs := range reconfl {
 			//fmt.Printf("%d durations with %d accesses.\n", len(durs),k)
 			copy(recds[p:], durs)
 			p += len(durs)
 		}
 		if p < len(recds) {
 			fmt.Fprintln(of, "Something wrong here.")
-		}
+		}*/
 		sort.Sort(durarr(recds))
 		fmt.Fprintf(of, "Median reconf-latency is %v\n.", recds[len(recds)/2])
 		fmt.Fprintf(of, "Reconf-latency 95perc is %v\n.", recds[(len(recds)*19)/20])
@@ -298,12 +301,14 @@ func sortLatencies(events []e.Event) (reade, writee, reconfe, tupute []e.Event) 
 
 func makeMap(events []e.Event) (dmap map[uint64][]time.Duration) {
 	dmap = make(map[uint64][]time.Duration, 0)
+	dmap[uint64(1000)] = make([]time.Duration,0,len(events))
 	for _, evt := range events {
 		if dmap[evt.Value] == nil {
 			dmap[evt.Value] = []time.Duration{evt.EndTime.Sub(evt.Time)}
 		} else {
 			dmap[evt.Value] = append(dmap[evt.Value], evt.EndTime.Sub(evt.Time))
 		}
+		dmap[1000] = append(dmap[1000], evt.EndTime.Sub(evt.Time))
 	}
 	return
 }
@@ -442,13 +447,16 @@ func PrintTputsAndReconfs(tpute, reconfe []e.Event, of io.Writer) {
 }
 
 func CumOverAndMax(evts []e.Event, normal int, normlat time.Duration) (cumOver, maxlat time.Duration) {
-	for i, ev := range evts {
-		if i > 0 {
-			if ev.Type != evts[i-1].Type {
+	for _, ev := range evts {
+		if ev.Type == e.ThroughputSample {
+			continue
+		}
+		//if i > 0 {
+			/*if ev.Type != evts[i-1].Type {
 				fmt.Println("Different types submitted to CumOverMax")
 				return
 			}
-		}
+		}*/
 		if int(ev.Value) == normal {
 			continue
 		}

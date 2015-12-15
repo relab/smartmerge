@@ -58,7 +58,7 @@ func expmain() {
 		}
 
 		if *useleader {
-			if *alg == "sm" || *alg == "" {
+			if *alg == "cons" || *alg == "" {
 				cl, err = createForwarder(cl, mgr, ids[len(ids)-1])
 				if err != nil {
 					glog.Errorln("Error creating forwarder:", err)
@@ -106,11 +106,12 @@ func expmain() {
 			}
 		}
 	} else {
-		time.Sleep(1 * time.Second)
+		ts := time.Now().Truncate(20* time.Second).Add(20*time.Second)
+		time.Sleep(ts.Sub(time.Now()))
 		close(syncchan)
+		glog.Infof("did reconf at %v", ts)
 	}
 
-	glog.Infoln("waiting for goroutines")
 	wg.Wait()
 	glog.Infoln("finished waiting")
 	return
@@ -183,9 +184,9 @@ func contreplace(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i in
 		return
 	}
 
+	target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
 	defer wg.Done()
 	for {
-		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
 		if target.Rem(ids[i+*initsize]) {
 			target.Add(ids[i])
 		} else if target.Rem(ids[i]) {

@@ -37,7 +37,7 @@ done <$SM/scripts/readersList
 #READS=(25 26 30 31 32)
 
 cd $SM
-mkdir exlogs || {
+mkdir locexlogs || {
 	echo "press enter to continue or Ctrl-C to abort"
 	read
 }
@@ -129,16 +129,16 @@ echo " "
 echo copy reader logs
 for Pi in ${READS[@]}
 do	
-#ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/exlogs"
-ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
+#ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/locexlogs"
+ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/locexlogs"
 done
-mv /local/scratch/ljehl/*log* $SM/exlogs
+mv /local/scratch/ljehl/*log* $SM/locexlogs
 
 echo stopping servers
 for Pi in ${SERVS[@]}
 do
 	ssh pitter"$Pi" "cd $SM/server && killall server" 
-	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
+	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/locexlogs"
 done
 
 echo safety stop reconfigurer:
@@ -158,6 +158,6 @@ do
 	ssh pitter"$Pi" "cd $SM/server && killall -9 server" > /dev/null && echo -n "did kill something"
 done
 
-echo "sm-run $1 $2 $3 $4 $5 $6" > exlogs/command
-git rev-parse --abbrev-ref HEAD >> exlogs/command
-git rev-parse --short HEAD >> exlogs/command
+echo "sm-run $1 $2 $3 $4 $5 $6" > locexlogs/command
+git rev-parse --abbrev-ref HEAD >> locexlogs/command
+git rev-parse --short HEAD >> locexlogs/command

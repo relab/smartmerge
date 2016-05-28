@@ -1,0 +1,224 @@
+syntax = "proto3";
+
+package proto;
+
+service AdvRegister {
+	rpc AReadS(Conf) returns (ReadReply) {} 
+	rpc AWriteS(WriteS) returns (ConfReply){}
+	rpc AWriteN(WriteN) returns (WriteNReply) {}
+	rpc SetCur(NewCur) returns (NewCurReply) {}
+	rpc LAProp(LAProposal) returns (LAReply) {} 
+	rpc SetState(NewState) returns (NewStateReply) {}
+	rpc GetPromise(Prepare) returns (Promise) {}
+	rpc Accept(Propose) returns (Learn) {}
+	rpc Fwd(Proposal) returns (Ack) {}
+}
+
+message State {
+	bytes Value = 1;
+	int32 Timestamp = 2;
+	uint32 Writer = 3;
+}
+
+message Conf {
+	uint32 This = 1;
+	uint32 Cur = 2;
+}
+
+message ConfReply {
+	Blueprint Cur = 1;
+	bool Abort = 2;
+	repeated Blueprint Next = 3;
+}
+
+message Node {
+	uint32 Id = 1;
+	uint32 Version = 2;
+}
+
+message Blueprint {
+	repeated Node Nodes = 1;
+	uint32 FaultTolerance = 3;
+	uint32 Epoch = 4;
+} 
+
+message NewCur {
+	Blueprint Cur = 1;
+	uint32 CurC = 2;
+}
+
+message NewCurReply {
+	bool New = 1;
+}
+
+message Read {
+	Conf Conf = 1;
+}
+
+message ReadReply {
+	State State = 1;
+	ConfReply Cur = 2;
+}
+
+message WriteS {
+	State State = 1;
+	Conf Conf = 2;
+}
+
+message WriteN {
+	uint32 CurC = 1;
+	Blueprint Next = 2;
+}
+
+message WriteNReply {
+	ConfReply Cur = 1;
+	State State = 2;
+	Blueprint LAState = 3;
+}
+
+message LAProposal {
+	Conf Conf = 1;
+	Blueprint Prop = 2;
+}
+
+message LAReply {
+	ConfReply Cur = 1;
+	Blueprint LAState = 2;
+}
+
+message NewState {
+	uint32 CurC = 1;
+	Blueprint Cur = 2;
+	State State = 3;
+	Blueprint LAState = 4;
+}
+
+message NewStateReply {
+	Blueprint Cur = 1;
+	repeated Blueprint Next = 2;
+}
+
+message CV {		//Consensus Value: (vrnd, vval)
+	uint32 Rnd = 1;
+	Blueprint Val = 2;
+}
+
+message Prepare {
+	uint32 CurC = 1;
+	uint32 Rnd = 2;
+}
+
+message Promise {
+	Blueprint Cur = 1;
+	uint32 Rnd = 2;
+	CV Val = 3;
+	Blueprint Dec = 4;
+}
+
+message Propose {
+	uint32 CurC = 1;
+	CV Val = 2;
+}
+
+message Learn {
+	Blueprint Cur = 1;
+	Blueprint Dec = 2;
+	bool Learned = 3;
+}
+
+message Proposal {
+	Blueprint Prop = 1;
+}
+
+message Ack {}
+
+service DynaDisk {
+	rpc GetOneN(GetOne) returns (GetOneReply) {}
+	rpc DWriteN(DRead) returns (DReadReply) {} 
+	rpc DSetState(DNewState) returns (NewStateReply) {}
+	rpc DWriteNSet(DWriteNs) returns (DWriteNsReply) {}
+	rpc DSetCur(NewCur) returns (NewCurReply) {}
+}
+
+message GetOne {
+	Conf Conf = 1;
+	Blueprint Next = 2;
+}
+
+message GetOneReply {
+	Blueprint Next = 1;
+	Blueprint Cur = 2;
+}
+
+message DRead {
+	Conf Conf = 1;
+	Blueprint Prop = 2;
+}
+
+message DReadReply {
+	State State = 1;
+	Blueprint Cur = 2;
+	repeated Blueprint Next = 3;
+}
+
+message DNewState {
+	Conf Conf = 1;
+	Blueprint Cur = 2;
+	State State = 3;
+}
+
+message DWriteNs {
+	Conf Conf = 1;
+	repeated Blueprint Next = 2;
+}
+
+message DWriteNsReply {
+	Blueprint Cur = 1;
+	repeated Blueprint Next = 2;
+}
+
+service SpSnRegister {
+	rpc SpSnOne(SWriteN) returns (SWriteNReply) {}
+	rpc SCommit(Commit) returns (CommitReply) {}
+	rpc SSetState(SState) returns (SStateReply) {}
+	rpc SSetCur(NewCur) returns (NewCurReply) {}
+}
+
+message SWriteN {
+	uint32 CurL = 1;
+	uint32 This = 2;
+	uint32 Rnd = 3;
+	Blueprint Prop = 4;
+}
+
+message SWriteNReply {
+	Blueprint Cur = 1;
+	repeated Blueprint Next = 2;
+	State State = 3;
+}
+
+message Commit {
+	uint32 CurL = 1;
+	uint32 This = 2;
+	uint32 Rnd = 3;
+	bool Commit = 4;
+	Blueprint Collect = 5;
+}
+
+message CommitReply {
+	Blueprint Cur = 1;
+	Blueprint Committed = 2;
+	Blueprint Collected = 3;
+}
+
+message SState {
+	uint32 CurL = 1;
+	Blueprint Cur = 2;
+	State State = 3;
+}
+
+message SStateReply {
+	bool HasNext = 1;
+	Blueprint Cur = 2;
+}
+

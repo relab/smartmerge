@@ -1,24 +1,16 @@
 # smartMerge
 
-This should be adapted later to use gorums or gorums-grpc
+This repository contains an implementation of different algorithms for reconfigurable atomic storage.
+We implemented our SmartMerge algorithm, Rambo, DynaStore and SpSnStore, which uses the Speculating Snapshot algorithm.
+
+The implementation utilizes our quorum-rpcs framework gorums.
+Se github.com/relab/gorums
 
 Howto Run: 
-use server/servers.sh to start a bunch of servers. This currently only handles localhost servers.
-server/servers.sh
+To start a server running the SmartMerge algorithm use:
+go run server/server.go -alg=sm
+
 
 To start a client use 
-client/client.go -conf ../server/addrList
-
-To start several clients specify an id (int) for each client.
-client/client.go -conf ../server/addrList -id 1
-
-
-Possible optimizations not yet implemented:
-
-- QuorumRPCs could return ids of the responding processes. This way we could avoid contacting processes twice as part of different configurations.
-
-- Instead of sending complete blueprints over the network, we could try to only send changes relative to the current blueprint. This is possible, since we already include the current blueprint in replies, if it differs from the clients current blueprint.
-
-TODO: Implement reliable broadcast, by calling SetCurAsync on finding a new cur.
-
+go run client/client.go -conf server/addrList -alg=sm
 

@@ -10,6 +10,7 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 	cur := 0
 	var rid []int
 	for i := 0; i < len(smc.Blueps); i++ {
+		cnt++
 		if i < cur {
 			continue
 		}
@@ -20,9 +21,9 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 		smc.checkrid(i, rid, cp)
 
 		cnf := cp.ReadC(smc.Blueps[i], rid)
-		if cnf == nil {
-			cnt++
-		}
+		//if cnf == nil {
+			//cnt++
+		//}
 
 		read := new(pb.AReadSReply)
 		var err error
@@ -32,7 +33,7 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 				This: uint32(smc.Blueps[i].Len()),
 				Cur:  uint32(smc.Blueps[cur].Len()),
 			})
-			cnt++
+			//cnt++
 
 			if err != nil && j == 0 {
 				glog.Errorln("error from OptimizedReadS: ", err)
@@ -74,6 +75,7 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 	cur := 0
 	var rid []int
 	for i := 0; i < len(smc.Blueps); i++ {
+		cnt++
 		if i < cur {
 			continue
 		}
@@ -84,9 +86,9 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 		smc.checkrid(i, rid, cp)
 
 		cnf := cp.WriteC(smc.Blueps[i], rid)
-		if cnf == nil {
-			cnt++
-		}
+		//if cnf == nil {
+			//cnt++
+		//}
 
 		write := new(pb.AWriteSReply)
 		var err error
@@ -99,7 +101,7 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 					Cur:  uint32(smc.Blueps[cur].Len()),
 				},
 			})
-			cnt++
+			//cnt++
 
 			if err != nil && j == 0 {
 				glog.Errorln("error from OptimizedWriteS: ", err)

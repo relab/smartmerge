@@ -3,7 +3,7 @@
 
 cd "$SM/sm_opt*" && echo "File sm_opt exists already. Abort." && exit
 
-for RMS in 1 2 3 4
+for RMS in 1
 do
 
 echo "$RMS replacement runs"
@@ -11,10 +11,10 @@ echo "$RMS replacement runs"
 for Opt in "no" #"doreconf" 
 do
 
-for CP in "thrifty" "norecontact"  
+for CP in "thrifty" #"norecontact"  #"thrifty" 
 do
 
-for ALG in "sm" "cons" "ssr" "dyna"
+for ALG in  "dyna" #"sm" "cons" "ssr" 
 do
 
 if [ "$ALG" = "ssr" -a "$CP" = "norecontact" ]; then
@@ -50,9 +50,9 @@ for R in run*; do
 	fi
 	cd $SM/"$ALG-opt$Opt-cp$CP-repl$RMS$*"
 done
-#for R in run*; do
-#	$SM/scripts/checkall $R || mv $R problem/
-#done
+for R in run*; do
+	$SM/scripts/checkall $R || mv $R problem/
+done
 rmdir problem || echo some runs had problems		
 echo analysing
 $SM/scripts/analyzeallsub analysis

@@ -26,7 +26,7 @@ fi
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
-SERVS=(9 10 11 12 14 17 15 19)
+SERVS=(9 11 12 14 15 16 17 19)
 
 i=0
 while read R; do
@@ -105,7 +105,7 @@ elif ! [ $5 == 0 ]; then
 	$SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=8 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
 else
 	echo no reconfiguration, waiting 10 seconds
-	sleep 10
+	sleep 15
 fi
 
 sleep 1

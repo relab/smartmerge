@@ -3,7 +3,7 @@
 
 cd "$SM/sm_opt*" && echo "File sm_opt exists already. Abort." && exit
 
-for RMS in 1 2 3
+for RMS in {2,3,4}
 do
 
 echo "$RMS replacement runs"
@@ -22,16 +22,16 @@ cd $SM
 echo Alg $ALG with optimization $Opt conf provider $CP
 
 
-mkdir "L$ALG-opt$Opt-cp$CP-repl$RMS$*"
+mkdir "L$ALG-reg-opt$Opt-cp$CP-repl$RMS$*"
 for i in {1..40} 
 do
 	echo make run $i
-	./scripts/leader-run.sh "$Opt" $ALG $CP "-repl" "$RMS" -logThroughput 0
-	mv $SM/exlogs $SM/"L$ALG-opt$Opt-cp$CP-repl$RMS$*"/"run$i"
+	./scripts/leader-run.sh "$Opt" $ALG $CP "-repl" "$RMS" "-regular" 0
+	mv $SM/exlogs $SM/"L$ALG-reg-opt$Opt-cp$CP-repl$RMS$*"/"run$i"
 	echo sleeping 3 seconds
 	sleep 3
 done
-cd "L$ALG-opt$Opt-cp$CP-repl$RMS$*"
+cd "L$ALG-reg-opt$Opt-cp$CP-repl$RMS$*"
 
 echo checking
 mkdir problem
@@ -41,14 +41,14 @@ for R in run*; do
 		cd ..
 		mv $R problem/
 	fi
-	cd $SM/"L$ALG-opt$Opt-cp$CP-repl$RMS$*"
+	cd $SM/"L$ALG-reg-opt$Opt-cp$CP-repl$RMS$*"
 done
-#for R in run*; do
-#	$SM/scripts/checkall $R || mv $R problem/
-#done
+for R in run*; do
+	$SM/scripts/checkall $R || mv $R problem/
+done
 rmdir problem || echo some runs had problems		
 echo analysing
-$SM/scripts/analyzeallsub analysis
+$SM/scripts/analyzeallsub analysis 1380 1
 
 : <<'END'
 cd $SM

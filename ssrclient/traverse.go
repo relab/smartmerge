@@ -15,7 +15,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 	}
 
 	for i := 0; i < len(ssc.Blueps); i++ {
-
+		cnt++
 		if i == 0 && prop != nil {
 			prop = prop.Merge(ssc.Blueps[0])
 		}
@@ -25,16 +25,16 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 			prop = nil
 		}
 
-		var c int
+		//var c int
 		var newcur bool
 		var st *pb.State
 
-		prop, c, newcur, st, err = ssc.spsn(cp, i, prop)
+		prop, _, newcur, st, err = ssc.spsn(cp, i, prop)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		cnt += c
+		//cnt += c
 
 		if newcur {
 			// Restart in the new current configuration.
@@ -60,7 +60,7 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 					CurL:  uint32(ssc.Blueps[i].Len()),
 					State: rst,
 				})
-				cnt++
+				//cnt++
 
 				if err == nil {
 					break

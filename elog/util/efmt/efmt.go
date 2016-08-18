@@ -21,7 +21,7 @@ func main() {
 	var list = flag.Bool("list", false, "print a list or latencies")
 	var debug = flag.Bool("debug", false, "print spike latencies")
 	var norm = flag.Int("normal", 2, "number of accesses in normal case.")
-	var normL = flag.Int("normlat", 2470, "normal case latency.")
+	var normL = flag.Int("normlat", 0, "normal case latency.")
 	//var recs = flag.Int("recs", 1, "number of reconfigurations per run.")
 	//var cl = flag.Int("clients", 5, "number of clients.")
 
@@ -160,14 +160,15 @@ func main() {
 			if k != normal {
 				affected += time.Duration(len(durs))
 				totalaffected += time.Duration(len(durs)) * avgWrites[k]
+			} else if normlat == 0 {
+				normlat = avgWrites[k]
 			}
 		}
-		if len(readl) == 2 {
-			for k, durs := range readl {
-				sort.Sort(durarr(durs))
-				fmt.Fprintf(of, "For %d accesses, 95perc is %v\n", k, durs[(len(durs)*19)/20])
-			}
-		}
+		durs := readl[1]
+		sort.Sort(durarr(durs))
+		fmt.Fprintf(of, "Len: %d Perc %d\n", len(durs), len(durs)*19/20)
+		fmt.Fprintf(of, "For %d accesses, 95perc is %v\n", 2, durs[(len(durs)*19)/20])
+
 		allds := readl[1000]
 		sort.Sort(durarr(allds))
 		fmt.Fprintf(of, "All read 95perc is %v\n", allds[(len(allds)*19)/20])
@@ -229,6 +230,9 @@ func main() {
 
 		for _, rc := range readc {
 			o, m := CumOverAndMax(rc, *norm, normlat)
+			if o > 100 * time.Millisecond {
+				continue
+			}
 			if m > time.Duration(0) {
 				maxlats = append(maxlats, m)
 				cumovers = append(cumovers, o)
@@ -283,6 +287,7 @@ func sortLatencies(events []e.Event) (reade, writee, reconfe, tupute []e.Event) 
 	for _, evt := range events {
 		if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
 			fmt.Printf("Spike event %v.\n", evt)
+			//continue
 		}
 
 		switch evt.Type {
@@ -461,10 +466,14 @@ func CumOverAndMax(evts []e.Event, normal int, normlat time.Duration) (cumOver, 
 			continue
 		}
 		dur := ev.EndTime.Sub(ev.Time)
-		if dur > maxlat {
-			maxlat = dur
+		if dur > 100 *time.Millisecond {
+			fmt.Printf("Spike latency %v at time %v with %d accesses\n", dur, ev.Time, ev.Value) 	
+		} else { 
+			if dur > maxlat {
+				maxlat = dur
+			}
+			cumOver += dur - normlat
 		}
-		cumOver += dur - normlat
 	}
 	return
 }

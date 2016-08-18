@@ -11,6 +11,7 @@ import (
 func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte, regular bool) (rval []byte, cnt int, err error) {
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Blueps); i++ {
+		cnt++
 		var curprop *pb.Blueprint // The current proposal
 		if prop != nil && prop.Compare(dc.Blueps[i]) != 1 {
 			//Update Snapshot
@@ -28,7 +29,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					Next: prop,
 				})
 
-				cnt++
+				//cnt++
 
 				if err != nil && j == 0 {
 					glog.Errorf("C%d: error from OptimizedGetOne: %v\n", dc.ID, err)
@@ -81,7 +82,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					},
 					Prop: curprop,
 				})
-			cnt++
+			//cnt++
 
 			if err != nil && j == 0 {
 				glog.Errorf("C%d: error from OptimizedWriteN: %v\n", dc.ID, err)
@@ -138,7 +139,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					},
 					State: wst,
 				})
-				cnt++
+				//cnt++
 
 				if err != nil && j == 0 {
 					glog.Errorf("C%d: error from OptimizedSetState: %v\n", dc.ID, err)
@@ -202,7 +203,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					},
 					Next: next[0],
 				})
-				cnt++
+				//cnt++
 
 				if err != nil && j == 0 {
 					glog.Errorf("C%d: error from OptimizedWriteNSet: %v\n", dc.ID, err)
@@ -242,7 +243,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		}
 	}
 
-	if cnt > 2 {
+	if cnt > 1 {
 		dc.SetCur(cp, dc.Blueps[0])
 	}
 

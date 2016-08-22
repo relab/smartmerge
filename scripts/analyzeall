@@ -1,16 +1,27 @@
 #!/bin/sh
 
 Files=""
+
+if ["$4" == ""];then
 for log in client.*.*.elog 
 do 
 	Files="$Files,$log"
 done
+else
+echo Processing only logs from pitter$4
+for log in client.pitter"$4".*.elog 
+do 
+	Files="$Files,$log"
+done
+fi
+
+
 #echo $Files
 if [ "$2" == "" ]; then  
 	echo Using default value for normal
 	efmt -file="$Files" -outfile="$1"
 	efmt -file="$Files" -outfile="$1" -debug
 else
-	echo Using normal=$2
-	efmt -file="$Files" -outfile="$1" -normal="$2"
+	echo Using normal=$3
+	efmt -file="$Files" -outfile="$1" -normlat="$2" -normal="$3"
 fi

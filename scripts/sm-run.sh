@@ -42,6 +42,13 @@ mkdir locexlogs || {
 	read
 }
 
+#for Pi in ${READS[@]}
+#do
+#
+#ssh pitter"$Pi" "cd /local/scratch && mkdir ljehl"
+#
+#done
+
 echo starting servers on
 for Pi in ${SERVS[@]}
 do

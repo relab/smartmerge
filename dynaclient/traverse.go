@@ -122,8 +122,12 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			rst = writeN.Reply.GetState()
 		}
 
+		
 		if i == len(dc.Blueps)-1 && (!regular || i > 0) {
 
+			if glog.V(6) {
+				glog.Infof("C%d: Starting write in view with length %d and id %d\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
+			}
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
 
@@ -189,6 +193,9 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				}
 			}
 
+			if glog.V(6) {
+				glog.Infoln("Starting WriteNSet")
+			}
 			regular = false
 
 			cnf = cp.WriteC(dc.Blueps[i], nil)
@@ -243,6 +250,9 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		}
 	}
 
+	if glog.V(7) {
+		glog.Infof("About to return")
+	}
 	if cnt > 1 {
 		dc.SetCur(cp, dc.Blueps[0])
 	}

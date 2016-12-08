@@ -106,10 +106,9 @@ func expmain() {
 			}
 		}
 	} else {
-		ts := time.Now().Truncate(20* time.Second).Add(20*time.Second)
-		time.Sleep(ts.Sub(time.Now()))
+		time.Sleep(2*time.Second)
 		close(syncchan)
-		glog.Infof("did reconf at %v", ts)
+		glog.Infoln("doing reconf")
 	}
 
 	wg.Wait()

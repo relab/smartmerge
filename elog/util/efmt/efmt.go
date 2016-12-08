@@ -82,7 +82,7 @@ func main() {
 		recs := make([]e.Event, 0, 10)
 		i := 0
 		for _, evt := range events {
-			if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
+			if evt.EndTime.Sub(evt.Time) > 5000*time.Millisecond {
 				fmt.Fprintf(of, "%v\n", evt)
 				cnt++
 				spikes = append(spikes, evt)
@@ -157,7 +157,7 @@ func main() {
 		avgWrites := computeAverageDurations(readl)
 		for k, durs := range readl {
 			fmt.Fprintf(of, "Accesses %2d, %5d times, AvgLatency: %v\n", k, len(durs), avgWrites[k])
-			if k != normal {
+			if k != normal && k != 1000 {
 				affected += time.Duration(len(durs))
 				totalaffected += time.Duration(len(durs)) * avgWrites[k]
 			} else if normlat == 0 {
@@ -167,8 +167,12 @@ func main() {
 		durs := readl[1]
 		sort.Sort(durarr(durs))
 		fmt.Fprintf(of, "Len: %d Perc %d\n", len(durs), len(durs)*19/20)
-		fmt.Fprintf(of, "For %d accesses, 95perc is %v\n", 2, durs[(len(durs)*19)/20])
-
+		if len(durs) > 5 {
+			fmt.Fprintf(of, "For %d accesses, 95perc is %v\n", 2, durs[(len(durs)*19)/20])
+		} else if len(durs) > 0 {
+			fmt.Fprintf(of, "For %d accesses, max duration is %v\n", 2, durs[len(durs)-1])
+		} 
+		
 		allds := readl[1000]
 		sort.Sort(durarr(allds))
 		fmt.Fprintf(of, "All read 95perc is %v\n", allds[(len(allds)*19)/20])
@@ -230,7 +234,7 @@ func main() {
 
 		for _, rc := range readc {
 			o, m := CumOverAndMax(rc, *norm, normlat)
-			if o > 100 * time.Millisecond {
+			if o > 5000 * time.Millisecond {
 				continue
 			}
 			if m > time.Duration(0) {
@@ -285,7 +289,7 @@ func sortLatencies(events []e.Event) (reade, writee, reconfe, tupute []e.Event) 
 	tupute = make([]e.Event, 0, 100)
 
 	for _, evt := range events {
-		if evt.EndTime.Sub(evt.Time) > 100*time.Millisecond {
+		if evt.EndTime.Sub(evt.Time) > 1000*time.Millisecond {
 			fmt.Printf("Spike event %v.\n", evt)
 			//continue
 		}
@@ -466,7 +470,7 @@ func CumOverAndMax(evts []e.Event, normal int, normlat time.Duration) (cumOver, 
 			continue
 		}
 		dur := ev.EndTime.Sub(ev.Time)
-		if dur > 100 *time.Millisecond {
+		if dur > 5000 *time.Millisecond {
 			fmt.Printf("Spike latency %v at time %v with %d accesses\n", dur, ev.Time, ev.Value) 	
 		} else { 
 			if dur > maxlat {

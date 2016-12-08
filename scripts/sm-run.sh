@@ -26,7 +26,7 @@ fi
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
-SERVS=(9 10 11 12 14 17 15 19)
+SERVS=(9 11 12 14 15 16 17 19)
 
 i=0
 while read R; do
@@ -37,10 +37,17 @@ done <$SM/scripts/readersList
 #READS=(25 26 30 31 32)
 
 cd $SM
-mkdir exlogs || {
+mkdir locexlogs || {
 	echo "press enter to continue or Ctrl-C to abort"
 	read
 }
+
+#for Pi in ${READS[@]}
+#do
+#
+#ssh pitter"$Pi" "cd /local/scratch && mkdir ljehl"
+#
+#done
 
 echo starting servers on
 for Pi in ${SERVS[@]}
@@ -105,7 +112,7 @@ elif ! [ $5 == 0 ]; then
 	$SM/client/client -conf $SM/scripts/newList -alg=$2 -cprov=$3 -mode=exp $4 -nclients="$5" -initsize=8 -elog -all-cores -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/reconflog 2>&1
 else
 	echo no reconfiguration, waiting 10 seconds
-	sleep 10
+	sleep 15
 fi
 
 sleep 1
@@ -129,16 +136,16 @@ echo " "
 echo copy reader logs
 for Pi in ${READS[@]}
 do	
-#ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/exlogs"
-ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
+#ssh pitter"$Pi" "mv /local/scratch/ljehl/*.elog $SM/locexlogs"
+ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/locexlogs"
 done
-mv /local/scratch/ljehl/*log* $SM/exlogs
+mv /local/scratch/ljehl/*log* $SM/locexlogs
 
 echo stopping servers
 for Pi in ${SERVS[@]}
 do
 	ssh pitter"$Pi" "cd $SM/server && killall server" 
-	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
+	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/locexlogs"
 done
 
 echo safety stop reconfigurer:
@@ -158,6 +165,6 @@ do
 	ssh pitter"$Pi" "cd $SM/server && killall -9 server" > /dev/null && echo -n "did kill something"
 done
 
-echo "sm-run $1 $2 $3 $4 $5 $6" > exlogs/command
-git rev-parse --abbrev-ref HEAD >> exlogs/command
-git rev-parse --short HEAD >> exlogs/command
+echo "sm-run $1 $2 $3 $4 $5 $6" > locexlogs/command
+git rev-parse --abbrev-ref HEAD >> locexlogs/command
+git rev-parse --short HEAD >> locexlogs/command

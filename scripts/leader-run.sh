@@ -6,7 +6,7 @@ if [ "$1" == "help" ]; then
 	echo This script performs leader runs.
 	echo Arguments:
 	echo "1 reader optimization: no | doreconf"
-	echo "2 alg: always using sm"
+	echo "2 alg: always using cons"
 	echo "3 cprov: normal | thrifty | norecontact"
 	echo "4 reconfiguration: -rm -add -repl -cont"
 	echo "5 number of reconfiguration clients"
@@ -27,7 +27,7 @@ fi
 
 export SM=$GOPATH/src/github.com/relab/smartMerge
 
-SERVS=(9 10 11 12 14 17 15 19 21)
+SERVS=(9 11 12 14 15 16 17 19 30)
 
 i=0
 while read R; do
@@ -35,7 +35,7 @@ while read R; do
 	i=$(($i+1))
 done <$SM/scripts/readersList
 
-#READS=(25 26 30 31 32)
+#READS=(32 33 34 35)
 
 cd $SM
 mkdir exlogs || {
@@ -48,32 +48,32 @@ for Pi in ${SERVS[@]}
 do
 
 if [ "$3" = "norecontact" ]; then
-if [ $Pi == 21 ]; then
+if [ $Pi == 30 ]; then
 
 	echo -n "leader-pitter$Pi "
-	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 12000 -no-abort -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=0 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/lserver/lserver -alg=cons -port 12000 -no-abort -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=0 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
 else
 
 	echo -n "no-pitter$Pi "
-	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -no-abort -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -no-abort -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -alg=cons -no-abort -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -alg=cons -no-abort -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
 fi
 
 else
-if [ $Pi == 21 ]; then
+if [ $Pi == 30 ]; then
 
 	echo -n "leader-pitter$Pi "
 	#ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 13000 -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=$((100+$Pi)) -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 12000 -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=0 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/lserver/lserver -port 12000 -alg=cons -v=$7 -conf $SM/scripts/leaderList -cprov=$3 -initsize=8 -id=0 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
 
 else
 
 	echo -n "sm-pitter$Pi "
 
-	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
-	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -port 13000 -alg=cons -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'servlog 2>&1 &"
+	ssh pitter"$Pi" "nohup $SM/server/server -port 12000 -alg=cons -v=$7 -log_dir='/local/scratch/ljehl' > /local/scratch/ljehl/pi'$Pi'2servlog 2>&1 &"
 
 fi
 
@@ -86,7 +86,7 @@ sleep 3
 
 
 echo single write
-$SM/client/client -conf $SM/scripts/leaderList -alg=$2 -mode=bench -writes=1 -size=1000 -nclients=1 -id=5 -initsize=8 
+$SM/client/client -conf $SM/scripts/leaderList -alg=$2 -mode=bench -writes=1 -size=4000 -nclients=1 -id=5 -initsize=8 
 
 echo starting Readers on
 x=0
@@ -152,10 +152,10 @@ ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
 done
 mv /local/scratch/ljehl/*log* $SM/exlogs
 
+	ssh pitter30 "cd $SM/lserver && killall lserver" 
 echo stopping servers
 for Pi in ${SERVS[@]}
 do
-	ssh pitter"$Pi" "cd $SM/lserver && killall lserver" 
 	ssh pitter"$Pi" "cd $SM/server && killall server" 
 	ssh pitter"$Pi" "mv /local/scratch/ljehl/*log* $SM/exlogs"
 done
@@ -174,7 +174,7 @@ done
 echo safety stop servers
 for Pi in ${SERVS[@]}
 do
-if [ $Pi == 21 ];then
+if [ $Pi == 30 ];then
 	ssh pitter"$Pi" "cd $SM/lserver && killall -9 lserver" > /dev/null && echo -n "did kill something"
 else 
 	ssh pitter"$Pi" "cd $SM/server && killall -9 server" > /dev/null && echo -n "did kill something"
@@ -182,3 +182,5 @@ fi
 done
 
 echo "leader-run $1 $2 $3 $4 $5 $6" > exlogs/command
+git rev-parse --abbrev-ref HEAD >> exlogs/command
+git rev-parse --short HEAD >> exlogs/command

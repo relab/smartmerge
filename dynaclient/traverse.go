@@ -11,6 +11,7 @@ import (
 func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte, regular bool) (rval []byte, cnt int, err error) {
 	rst := new(pb.State)
 	for i := 0; i < len(dc.Blueps); i++ {
+		cnt++
 		var curprop *pb.Blueprint // The current proposal
 		if prop != nil && prop.Compare(dc.Blueps[i]) != 1 {
 			//Update Snapshot
@@ -28,7 +29,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					Next: prop,
 				})
 
-				cnt++
+				//cnt++
 
 				if err != nil && j == 0 {
 					glog.Errorf("C%d: error from OptimizedGetOne: %v\n", dc.ID, err)
@@ -81,7 +82,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					},
 					Prop: curprop,
 				})
-			cnt++
+			//cnt++
 
 			if err != nil && j == 0 {
 				glog.Errorf("C%d: error from OptimizedWriteN: %v\n", dc.ID, err)
@@ -121,11 +122,16 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			rst = writeN.Reply.GetState()
 		}
 
+		
 		if i == len(dc.Blueps)-1 && (!regular || i > 0) {
 
+			if glog.V(6) {
+				glog.Infof("C%d: Starting write in view with length %d and id %d\n ", dc.ID, dc.Blueps[i].Len(), dc.Confs[i].GlobalID())
+			}
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
 
+			//cnf = dc.Confs[i] //Try using all here, to avoid overloaded leader.
 			cnf = cp.WriteC(dc.Blueps[i], nil)
 
 			var setS *pb.DSetStateReply
@@ -138,7 +144,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					},
 					State: wst,
 				})
-				cnt++
+				//cnt++
 
 				if err != nil && j == 0 {
 					glog.Errorf("C%d: error from OptimizedSetState: %v\n", dc.ID, err)
@@ -188,9 +194,13 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 				}
 			}
 
+			if glog.V(6) {
+				glog.Infoln("Starting WriteNSet")
+			}
 			regular = false
 
-			cnf = cp.WriteC(dc.Blueps[i], nil)
+			//cnf = dc.Confs[i] //Try using all here, to avoid overloaded leader.
+			cnf = cp.WriteCNoS(dc.Blueps[i], nil)
 
 			var writeNs *pb.DWriteNSetReply
 
@@ -202,7 +212,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 					},
 					Next: next[0],
 				})
-				cnt++
+				//cnt++
 
 				if err != nil && j == 0 {
 					glog.Errorf("C%d: error from OptimizedWriteNSet: %v\n", dc.ID, err)
@@ -242,7 +252,10 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 		}
 	}
 
-	if cnt > 2 {
+	if glog.V(7) {
+		glog.Infof("About to return")
+	}
+	if cnt > 1 {
 		dc.SetCur(cp, dc.Blueps[0])
 	}
 

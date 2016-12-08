@@ -3172,6 +3172,9 @@ func (m *Manager) dSetState(cid int, args *DNewState) (*DSetStateReply, error) {
 
 		select {
 		case r := <-replyChan:
+			if glog.V(7) {
+				glog.Infoln("Received SetStateReply")
+			}
 			if r.err != nil {
 				errCount++
 				glog.Errorln("RPC error", r.err)

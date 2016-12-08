@@ -19,3 +19,7 @@ func (cp *ThriftyConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configuration 
 func (cp *ThriftyConfP) GIDs(in []int) []uint32 {
 	return nil
 }
+
+func (cp *ThriftyConfP) WriteCNoS(blp *pb.Blueprint, rids []int) *pb.Configuration {
+	return cp.Provider.WriteCNoS(blp, nil)
+}

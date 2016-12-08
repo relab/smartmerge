@@ -53,7 +53,10 @@ func (smc *SmClient) Read(cp conf.Provider) (val []byte, cnt int) {
 			glog.Infof("set used %d accesses\n", mcnt)
 		}
 	}
-	return rs.Value, cnt + mcnt
+	if cnt > mcnt {
+		return rs.Value, cnt
+	}
+	return rs.Value, mcnt
 }
 
 //Regular read

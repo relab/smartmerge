@@ -17,6 +17,7 @@ type Provider interface {
 	WriteC(*pb.Blueprint, []int) *pb.Configuration
 	SingleC(*pb.Blueprint) *pb.Configuration
 	GIDs([]int) []uint32
+	WriteCNoS(*pb.Blueprint, []int) *pb.Configuration
 }
 
 type ThriftyNorecConfP struct {
@@ -113,6 +114,36 @@ func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	cnf, err := cp.mgr.NewConfiguration(cids, 1, ConfTimeout)
 	if err != nil {
 		glog.Fatalln("could not get config")
+	}
+
+	return cnf
+}
+
+func (cp *ThriftyNorecConfP) WriteCNoS(blp *pb.Blueprint, rids []int) *pb.Configuration {
+	cids := cp.mgr.ToIds(blp.Ids())
+	m := cids[0]
+	for _,id := range cids {
+		if m < id {
+			m = id
+		}
+	}
+
+	q := blp.Quorum()
+	newcids := pb.Difference(cids, rids)
+
+	if len(cids)-len(newcids) >= q {
+		//We already have enough replies.
+		return nil
+	}
+
+	// I already have y := len(cids) - len(newcids) many replies.
+	// I still need q - y many.
+	y := len(cids) - len(newcids)
+	newcids = pb.Difference(newcids,[]int{m})
+	newcids = cp.chooseQ(newcids, q-y)
+	cnf, err := cp.mgr.NewConfiguration(newcids, len(newcids), TryTimeout)
+	if err != nil {
+		glog.Fatalln("could not get read config")
 	}
 
 	return cnf

@@ -131,6 +131,7 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			//WriteInView
 			wst := dc.WriteValue(val, rst)
 
+			//cnf = dc.Confs[i] //Try using all here, to avoid overloaded leader.
 			cnf = cp.WriteC(dc.Blueps[i], nil)
 
 			var setS *pb.DSetStateReply
@@ -198,7 +199,8 @@ func (dc *DynaClient) Traverse(cp conf.Provider, prop *pb.Blueprint, val []byte,
 			}
 			regular = false
 
-			cnf = cp.WriteC(dc.Blueps[i], nil)
+			//cnf = dc.Confs[i] //Try using all here, to avoid overloaded leader.
+			cnf = cp.WriteCNoS(dc.Blueps[i], nil)
 
 			var writeNs *pb.DWriteNSetReply
 

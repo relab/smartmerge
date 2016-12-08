@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/relab/goxos/kvs/bgen"
+	"github.com/relab/smartMerge/util/bgen"
 	conf "github.com/relab/smartMerge/confProvider"
 	cc "github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/doreconf"

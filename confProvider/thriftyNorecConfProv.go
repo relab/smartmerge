@@ -16,6 +16,7 @@ type Provider interface {
 	ReadC(*pb.Blueprint, []int) *pb.Configuration
 	WriteC(*pb.Blueprint, []int) *pb.Configuration
 	SingleC(*pb.Blueprint) *pb.Configuration
+	GIDs([]int) []uint32
 }
 
 type ThriftyNorecConfP struct {
@@ -101,8 +102,13 @@ func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
 
 func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	cids := cp.mgr.ToIds(blp.Ids())
-
-	cids = []int{cids[0]}
+	m := cids[0]
+	for _,id := range cids {
+		if m < id {
+			m = id
+		}
+	}
+	cids = []int{m}
 
 	cnf, err := cp.mgr.NewConfiguration(cids, 1, ConfTimeout)
 	if err != nil {
@@ -110,4 +116,8 @@ func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	}
 
 	return cnf
+}
+
+func (cp *ThriftyNorecConfP) GIDs(in []int) []uint32 {
+	return cp.mgr.ToGids(in)
 }

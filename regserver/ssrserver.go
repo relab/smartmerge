@@ -16,7 +16,7 @@ type SSRServer struct {
 	Proposed  map[uint32]map[uint32][]*pb.Blueprint //Conf, Rnd -> Proposals
 	Committed map[uint32]map[uint32]*pb.Blueprint   //Conf, Rnd -> Committed value
 	Collected map[uint32]map[uint32]*pb.Blueprint
-	mu        sync.RWMutex
+	mu        sync.Mutex
 }
 
 func NewSSRServer() *SSRServer {
@@ -25,7 +25,7 @@ func NewSSRServer() *SSRServer {
 		Proposed:  make(map[uint32]map[uint32][]*pb.Blueprint, 5),
 		Committed: make(map[uint32]map[uint32]*pb.Blueprint, 5),
 		Collected: make(map[uint32]map[uint32]*pb.Blueprint, 5),
-		mu:        sync.RWMutex{},
+		mu:        sync.Mutex{},
 	}
 }
 
@@ -37,27 +37,6 @@ func NewSSRServerWithCur(cur *pb.Blueprint, curc uint32) *SSRServer {
 }
 
 func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNReply, error) {
-	if wn.Prop == nil {
-		srs.mu.RLock()
-		defer srs.mu.RUnlock()
-		glog.V(6).Infoln("handling empty SpSnOne")
-		if wn.CurL < srs.CurC {
-			return &pb.SWriteNReply{Cur: srs.Cur}, nil
-		}
-
-		var s *pb.State
-		if wn.Rnd == 0 {
-			s = srs.RState
-		}
-
-		proposed := srs.proposed(wn.This, wn.Rnd)
-
-		if len(proposed) == 0 {
-			return &pb.SWriteNReply{State: s}, nil
-		}
-		return &pb.SWriteNReply{Next: proposed, State: s}, nil
-	}
-
 	srs.mu.Lock()
 	defer srs.mu.Unlock()
 	glog.V(5).Infoln("handling SpSnOne")
@@ -71,17 +50,24 @@ func (srs *SSRServer) SpSnOne(ctx context.Context, wn *pb.SWriteN) (*pb.SWriteNR
 		s = srs.RState
 	}
 
+	if l := uint32(wn.Cur.Len()); l > srs.CurC {
+		srs.CurC = l
+		srs.Cur = wn.Cur
+	}
+
 	proposed := srs.proposed(wn.This, wn.Rnd)
 
-	found := false
-	for _, blp := range proposed {
-		if blp.Equals(wn.Prop) {
-			found = true
-			break
+	if wn.Prop != nil {
+		found := false
+		for _, blp := range proposed {
+			if blp.Equals(wn.Prop) {
+				found = true
+				break
+			}
 		}
-	}
-	if !found {
-		srs.Proposed[wn.This][wn.Rnd] = append(proposed, wn.Prop)
+		if !found {
+			srs.Proposed[wn.This][wn.Rnd] = append(proposed, wn.Prop)
+		}
 	}
 
 	return &pb.SWriteNReply{Next: proposed, State: s}, nil
@@ -111,7 +97,7 @@ func (srs *SSRServer) SCommit(ctx context.Context, cm *pb.Commit) (*pb.CommitRep
 			srs.Committed[cm.This][cm.Rnd] = cm.Collect
 		} else if srs.committed(cm.This, cm.Rnd).Len() != cm.Collect.Len() {
 			// The is a simple sanity check. It could be omitted.
-			glog.Fatalln("Committing two different values in the same round.")
+			glog.Fatalf("Committing two different values in the same round with length %d and %d.", srs.committed(cm.This, cm.Rnd).Len(), cm.Collect.Len())
 		}
 		return &pb.CommitReply{Collected: srs.collected(cm.This, cm.Rnd)}, nil
 	}
@@ -159,11 +145,6 @@ func (srs *SSRServer) SSetState(ctx context.Context, ss *pb.SState) (*pb.SStateR
 
 	if srs.RState.Compare(ss.State) == 1 {
 		srs.RState = ss.State
-	}
-
-	if srs.CurC < ss.CurL {
-		srs.CurC = ss.CurL
-		srs.Cur = ss.Cur
 	}
 
 	if len(srs.proposed(ss.CurL, 0)) != 0 {

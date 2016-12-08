@@ -15,3 +15,7 @@ func (cp *ThriftyConfP) ReadC(blp *pb.Blueprint, rids []int) *pb.Configuration {
 func (cp *ThriftyConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configuration {
 	return cp.Provider.WriteC(blp, nil)
 }
+
+func (cp *ThriftyConfP) GIDs(in []int) []uint32 {
+	return nil
+}

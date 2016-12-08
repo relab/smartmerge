@@ -72,18 +72,18 @@ var DWriteNSetQF = func(c *pr.Configuration, replies []*pr.DWriteNsReply) (*pr.D
 	}
 
 	// Return false, if not enough replies yet.
-	if len(replies) < c.WriteQuorum() {
+	if len(replies) < c.MaxQuorum() {
 		return nil, false
 	}
 
-	next := make([]*pr.Blueprint, 0, 1)
-	for _, rep := range replies {
-		next = DGetBlueprintSlice(next, rep)
-	}
-
-	if len(next) > 0 {
-		lastrep.Next = next
-	}
+	// next := make([]*pr.Blueprint, 0, 1)
+	// for _, rep := range replies {
+	// 	next = DGetBlueprintSlice(next, rep)
+	// }
+	//
+	// if len(next) > 0 {
+	// 	lastrep.Next = next
+	// }
 
 	return lastrep, true
 }
@@ -103,6 +103,9 @@ func DGetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {
 }
 
 func add(bls []*pr.Blueprint, bp *pr.Blueprint) []*pr.Blueprint {
+	if bp == nil {
+		return bls
+	}
 	place := 0
 
 findplacefor:
@@ -113,9 +116,6 @@ findplacefor:
 				//New blueprint already present
 				return bls
 			}
-			continue
-		case 0:
-			continue
 		case -1:
 			break findplacefor
 		}

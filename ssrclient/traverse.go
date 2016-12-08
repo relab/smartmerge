@@ -53,12 +53,11 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 
 			cnf := cp.WriteC(ssc.Blueps[i], nil)
 
-			var setS *pb.SSetStateReply
+			//var setS *pb.SSetStateReply
 
 			for j := 0; ; j++ {
-				setS, err = cnf.SSetState(&pb.SState{
+				_, err = cnf.SSetState(&pb.SState{
 					CurL:  uint32(ssc.Blueps[i].Len()),
-					Cur:   ssc.Blueps[i],
 					State: rst,
 				})
 				cnt++
@@ -85,18 +84,18 @@ func (ssc *SSRClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular boo
 				glog.Infof("Set state returned.")
 			}
 
-			if cr := setS.Reply.Cur; !regular && cr != nil {
-				ssc.Blueps = []*pb.Blueprint{cr}
-				glog.V(3).Infof("C%d: SetState returned new current conf of length %d.\n", ssc.Id, cr.Len())
-				i = -1
-				continue
-			}
-
-			if !regular && setS.Reply.HasNext {
-				glog.V(4).Infoln("There is a next configuration. Restart.")
-				i--
-				continue
-			}
+			// if cr := setS.Reply.Cur; !regular && cr != nil {
+			// 				ssc.Blueps = []*pb.Blueprint{cr}
+			// 				glog.V(3).Infof("C%d: SetState returned new current conf of length %d.\n", ssc.Id, cr.Len())
+			// 				i = -1
+			// 				continue
+			// 			}
+			//
+			// 			if !regular && setS.Reply.HasNext {
+			// 				glog.V(4).Infoln("There is a next configuration. Restart.")
+			// 				i--
+			// 				continue
+			// 			}
 
 			ssc.Blueps = []*pb.Blueprint{ssc.Blueps[i]}
 			return
@@ -113,10 +112,15 @@ func (ssc *SSRClient) spsn(cp conf.Provider, i int, prop *pb.Blueprint) (next *p
 		cnf := cp.WriteC(ssc.Blueps[i], nil)
 
 		var collect *pb.SpSnOneReply
+		var c *pb.Blueprint
+		if i == 0 && rnd == 0 {
+			c = ssc.Blueps[0]
+		}
 
 		for j := 0; ; j++ {
 			collect, err = cnf.SpSnOne(&pb.SWriteN{
 				CurL: uint32(ssc.Blueps[0].Len()),
+				Cur:  c,
 				This: uint32(ssc.Blueps[i].Len()),
 				Rnd:  uint32(rnd),
 				Prop: prop,

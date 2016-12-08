@@ -73,7 +73,10 @@ func expmain() {
 		wg.Add(1)
 		switch {
 		case *cont:
-			if i%2 == 0 {
+			if *repl {
+				go contreplace(cl, cp, ids, syncchan, (*clientid)+i, &wg)
+
+			} else if i%2 == 0 {
 				go contremove(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
 			} else {
 				go contadd(cl, cp, ids, syncchan, (*clientid)+(i/2), &wg)
@@ -163,6 +166,38 @@ func contadd(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, w
 			} else {
 				glog.Errorln("Reconf returned error:", err)
 			}
+		}
+
+		select {
+		case <-sc:
+			return
+		default:
+			continue
+		}
+	}
+}
+
+func contreplace(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
+	if len(ids) <= i {
+		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
+		return
+	}
+
+	defer wg.Done()
+	for {
+		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
+		if target.Rem(ids[i+*initsize]) {
+			target.Add(ids[i])
+		} else if target.Rem(ids[i]) {
+			target.Add(ids[i+*initsize])
+		}
+
+		reqsent := time.Now()
+		cnt, err := c.Reconf(cp, target)
+		if err == nil || cnt == 0 {
+			elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
+		} else {
+			glog.Errorln("Reconf returned error:", err)
 		}
 
 		select {

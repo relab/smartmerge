@@ -117,7 +117,6 @@ forconfiguration:
 			for j := 0; ; j++ {
 				setS, err = cnf.SetState(&pb.NewState{
 					CurC:  uint32(cc.Blueps[i].Len()),
-					Cur:   cc.Blueps[i],
 					State: rst,
 				})
 				cnt++
@@ -155,6 +154,11 @@ forconfiguration:
 	}
 
 	cc.SetNewCur(cur)
+	if cnt > 2 {
+		cc.SetCur(cp, cc.Blueps[0])
+		cnt++
+	}
+
 	return rst, cnt, nil
 }
 
@@ -165,79 +169,85 @@ func (cc *ConsClient) getconsensus(cp conf.Provider, i int, prop *pb.Blueprint) 
 
 prepare:
 	for {
-		//Send Prepare:
-		cnf := cp.ReadC(cc.Blueps[i], nil)
+		var cnf *pb.Configuration
+		//Default leader need not do prepare phase.
+		if rnd != 0 {
+			//Send Prepare:
+			cnf = cp.ReadC(cc.Blueps[i], nil)
 
-		var promise *pb.GetPromiseReply
+			var promise *pb.GetPromiseReply
 
-		for j := 0; ; j++ {
-			promise, err = cnf.GetPromise(&pb.Prepare{
-				CurC: uint32(cc.Blueps[i].Len()),
-				Rnd:  rnd})
-			if err != nil && j == 0 {
-				glog.Errorf("C%d: error from Optimized Prepare: %v\n", cc.Id, err)
-				//Try again with full configuration.
-				cnf = cp.FullC(cc.Blueps[i])
+			for j := 0; ; j++ {
+				promise, err = cnf.GetPromise(&pb.Prepare{
+					CurC: uint32(cc.Blueps[i].Len()),
+					Rnd:  rnd})
+				if err != nil && j == 0 {
+					glog.Errorf("C%d: error from Optimized Prepare: %v\n", cc.Id, err)
+					//Try again with full configuration.
+					cnf = cp.FullC(cc.Blueps[i])
+				}
+				cnt++
+
+				if err != nil && j == smc.Retry {
+					glog.Errorf("C%d: error %v from Prepare after %d retries.\n", cc.Id, err, smc.Retry)
+					return nil, 0, 0, err
+				}
+
+				if err == nil {
+					break
+				}
 			}
-			cnt++
 
-			if err != nil && j == smc.Retry {
-				glog.Errorf("C%d: error %v from Prepare after %d retries.\n", cc.Id, err, smc.Retry)
-				return nil, 0, 0, err
+			cur = cc.HandleOneCur(i, promise.Reply.GetCur())
+			if i < cur {
+				glog.V(3).Infof("C%d: Prepare returned new current conf.\n", cc.Id)
+				return nil, cnt, cur, nil
 			}
 
-			if err == nil {
-				break
-			}
-		}
-
-		cur = cc.HandleOneCur(i, promise.Reply.GetCur())
-		if i < cur {
-			glog.V(3).Infof("C%d: Prepare returned new current conf.\n", cc.Id)
-			return nil, cnt, cur, nil
-		}
-
-		rrnd := promise.Reply.Rnd
-		switch {
-		case promise.Reply.GetDec() != nil:
-			next = promise.Reply.GetDec()
-			if glog.V(3) {
-				glog.Infof("C%d: Promise reported decided value.\n", cc.Id)
-			}
-			return
-		case rrnd <= rnd:
-			// Find the right value to propose, then procede to Accept.
-			if promise.Reply.GetVal() != nil {
-				next = promise.Reply.Val.Val
+			rrnd := promise.Reply.Rnd
+			switch {
+			case promise.Reply.GetDec() != nil:
+				next = promise.Reply.GetDec()
 				if glog.V(3) {
-					glog.Infof("C%d: Re-propose a value.\n", cc.Id)
+					glog.Infof("C%d: Promise reported decided value.\n", cc.Id)
 				}
-			} else {
+				return
+			case rrnd <= rnd:
+				// Find the right value to propose, then procede to Accept.
+				if promise.Reply.GetVal() != nil {
+					next = promise.Reply.Val.Val
+					if glog.V(3) {
+						glog.Infof("C%d: Re-propose a value.\n", cc.Id)
+					}
+				} else {
+					if glog.V(3) {
+						glog.Infof("C%d: Proposing my value.\n", cc.Id)
+					}
+					next = prop.Merge(cc.Blueps[i]) // This could have side effects on prop. Is this a problem?
+					if len(prop.Ids()) == 0 {
+						glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
+						return nil, cnt, cur, errors.New("Abort before proposing unacceptable configuration.")
+					}
+				}
+			case rrnd > rnd:
+				// Increment round, sleep then return to prepare.
 				if glog.V(3) {
-					glog.Infof("C%d: Proposing my value.\n", cc.Id)
+					glog.Infof("C%d: Conflict, sleeping %v.\n", cc.Id, ms)
 				}
-				if len(prop.Ids()) == 0 {
-					glog.Errorf("Aborting Reconfiguration to avoid unacceptable configuration.")
-					return nil, cnt, cur, errors.New("Abort before proposing unacceptable configuration.")
+
+				//The below would be more clear, if we either implement it with a bitshift, or separate the counter, and the id.
+				if rrid := rrnd % 256; rrid < cc.Id {
+					rnd = rrnd - rrid + cc.Id
+				} else {
+					rnd = rrnd - rrid + 256 + cc.Id
 				}
-				next = prop.Merge(cc.Blueps[i]) // This could have side effects on prop. Is this a problem?
-			}
-		case rrnd > rnd:
-			// Increment round, sleep then return to prepare.
-			if glog.V(3) {
-				glog.Infof("C%d: Conflict, sleeping %v.\n", cc.Id, ms)
-			}
+				time.Sleep(ms)
+				ms = 2 * ms
+				continue prepare
 
-			//The below would be more clear, if we either implement it with a bitshift, or separate the counter, and the id.
-			if rrid := rrnd % 256; rrid < cc.Id {
-				rnd = rrnd - rrid + cc.Id
-			} else {
-				rnd = rrnd - rrid + 256 + cc.Id
 			}
-			time.Sleep(ms)
-			ms = 2 * ms
-			continue prepare
-
+		} else {
+			next = prop.Merge(cc.Blueps[i])
 		}
 
 		cnf = cp.WriteC(cc.Blueps[i], nil)

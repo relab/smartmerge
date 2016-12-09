@@ -96,6 +96,5 @@ func (dc *DynaClient) Reconf(cp conf.Provider, bp *pb.Blueprint) (int, error) {
 }
 
 func (dc *DynaClient) GetCur(cp conf.Provider) *pb.Blueprint {
-	dc.RRead(cp)
-	return dc.Blueps[0].Copy()
+	return dc.Blueps[len(dc.Blueps)-1].Copy()
 }

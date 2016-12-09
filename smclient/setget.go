@@ -10,14 +10,19 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 	cur := 0
 	var rid []int
 	for i := 0; i < len(smc.Blueps); i++ {
+		cnt++
 		if i < cur {
 			continue
 		}
+		if i > 0 && i == cur {
+			go smc.SetCur(cp, smc.Blueps[cur])
+		}
+		smc.checkrid(i, rid, cp)
 
 		cnf := cp.ReadC(smc.Blueps[i], rid)
-		if cnf == nil {
-			cnt++
-		}
+		//if cnf == nil {
+		//cnt++
+		//}
 
 		read := new(pb.AReadSReply)
 		var err error
@@ -27,7 +32,7 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 				This: uint32(smc.Blueps[i].Len()),
 				Cur:  uint32(smc.Blueps[cur].Len()),
 			})
-			cnt++
+			//cnt++
 
 			if err != nil && j == 0 {
 				glog.Errorln("error from OptimizedReadS: ", err)
@@ -69,14 +74,20 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 	cur := 0
 	var rid []int
 	for i := 0; i < len(smc.Blueps); i++ {
+		cnt++
 		if i < cur {
 			continue
 		}
 
-		cnf := cp.WriteC(smc.Blueps[i], rid)
-		if cnf == nil {
-			cnt++
+		if i > 0 && i == cur {
+			go smc.SetCur(cp, smc.Blueps[cur])
 		}
+		smc.checkrid(i, rid, cp)
+
+		cnf := cp.WriteC(smc.Blueps[i], rid)
+		//if cnf == nil {
+		//cnt++
+		//}
 
 		write := new(pb.AWriteSReply)
 		var err error
@@ -89,7 +100,7 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 					Cur:  uint32(smc.Blueps[cur].Len()),
 				},
 			})
-			cnt++
+			//cnt++
 
 			if err != nil && j == 0 {
 				glog.Errorln("error from OptimizedWriteS: ", err)
@@ -121,4 +132,40 @@ func (smc *SmClient) set(cp conf.Provider, rs *pb.State) (cnt int) {
 
 	smc.SetNewCur(cur)
 	return cnt
+}
+
+func (smc *SmClient) checkrid(new int, rid []int, cp conf.Provider) []int {
+	if new == 0 {
+		return nil
+	}
+
+	gids := cp.GIDs(rid)
+	if gids == nil {
+		return rid
+	}
+
+	remove := make([]bool, len(rid))
+	for k, gid := range gids {
+	for_old:
+		for _, n := range smc.Blueps[new-1].Nodes {
+			if n.Id == gid {
+				for _, nn := range smc.Blueps[new].Nodes {
+					if nn.Id == gid {
+						if n.Version < nn.Version {
+							remove[k] = true
+							//remove
+						}
+						break for_old
+					}
+				}
+			}
+		}
+	}
+	nrid := make([]int, 0, len(rid))
+	for k, id := range rid {
+		if !remove[k] {
+			nrid = append(nrid, id)
+		}
+	}
+	return nrid
 }

@@ -81,7 +81,7 @@ func (bp *Blueprint) Merge(blpr *Blueprint) (mbp *Blueprint) {
 	}
 	mbp = new(Blueprint)
 	mbp.Nodes = make([]*Node, len(bp.Nodes))
-	for i,n := range bp.Nodes {
+	for i, n := range bp.Nodes {
 		mbp.Nodes[i] = &Node{Id: n.Id, Version: n.Version}
 	}
 
@@ -144,6 +144,13 @@ func (a *Blueprint) Compare(b *Blueprint) int {
 		bleqa = false
 	}
 
+	if len(a.Nodes) < len(b.Nodes) {
+		bleqa = false
+	}
+	if len(b.Nodes) < len(a.Nodes) {
+		aleqb = false
+	}
+
 	if aleqb {
 	for_a:
 		for _, na := range a.Nodes {
@@ -200,8 +207,41 @@ func (a *Blueprint) Compare(b *Blueprint) int {
 	return -1
 }
 
-func (bp *Blueprint) Equals(blpr *Blueprint) bool {
-	return bp.Compare(blpr) == 1 && blpr.Compare(bp) == 1
+func (a *Blueprint) Equals(b *Blueprint) bool {
+	if a == nil {
+		if b == nil {
+			return true
+		}
+		return false
+	}
+	if b == nil {
+		return false
+	}
+	if a.Epoch != b.Epoch {
+		return false
+	}
+	if a.FaultTolerance != b.FaultTolerance {
+		return false
+	}
+
+	if len(a.Nodes) != len(b.Nodes) {
+		return false
+	}
+
+for_a:
+	for _, na := range a.Nodes {
+		for _, nb := range b.Nodes {
+			if na.Id == nb.Id {
+				if na.Version != nb.Version {
+					return false
+				}
+				continue for_a
+			}
+		}
+		return false
+	}
+
+	return true
 }
 
 // See Ids.
@@ -216,7 +256,7 @@ func (bp *Blueprint) Len() int {
 
 	sum := uint32(0)
 	for _, n := range bp.Nodes {
-		sum = sum + n.Version + 1  
+		sum = sum + n.Version + 1
 		// +1 necessary to acchieve, that adding one id with version 0 results in increased length.
 	}
 

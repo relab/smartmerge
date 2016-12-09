@@ -53,7 +53,10 @@ func (smc *SmClient) Read(cp conf.Provider) (val []byte, cnt int) {
 			glog.Infof("set used %d accesses\n", mcnt)
 		}
 	}
-	return rs.Value, cnt + mcnt
+	if cnt > mcnt {
+		return rs.Value, cnt
+	}
+	return rs.Value, mcnt
 }
 
 //Regular read
@@ -111,6 +114,5 @@ func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {
 }
 
 func (smc *SmClient) GetCur(cp conf.Provider) *pb.Blueprint {
-	smc.set(cp, nil)
-	return smc.Blueps[len(smc.Blueps)-1].Copy()
+	return smc.Blueps[0].Copy()
 }

@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/relab/goxos/kvs/bgen"
 	conf "github.com/relab/smartMerge/confProvider"
 	cc "github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/doreconf"
@@ -28,6 +27,7 @@ import (
 	smc "github.com/relab/smartMerge/smclient"
 	ssr "github.com/relab/smartMerge/ssrclient"
 	"github.com/relab/smartMerge/util"
+	"github.com/relab/smartMerge/util/bgen"
 	grpc "google.golang.org/grpc"
 )
 
@@ -210,7 +210,7 @@ func benchmain() {
 func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.Manager, err error) {
 	mgr, err = pb.NewManager(addrs, pb.WithGrpcDialOptions(
 		grpc.WithBlock(),
-		grpc.WithTimeout(1000*time.Millisecond),
+		grpc.WithTimeout(3000*time.Millisecond),
 		grpc.WithInsecure()),
 		pb.WithAReadSQuorumFunc(qf.AReadSQF),
 		pb.WithAWriteSQuorumFunc(qf.AWriteSQF),

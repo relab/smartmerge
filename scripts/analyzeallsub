@@ -1,0 +1,30 @@
+#!/bin/sh
+
+if [ "$1" == "help" ]; then
+	echo "arg1: outfile, [arg2: normallatency arg3: normal steps arg4: combine subdirectories ]"
+	exit
+fi
+
+Files=""
+
+if [ "$4" == "" ]; then
+for log in */client.*.*.elog 
+do 
+	Files="$Files,$log"
+done
+
+else
+for log in $4*/*/client.*.*.elog 
+do 
+	Files="$Files,$log"
+done
+fi
+
+#echo $Files
+if [ "$2" == "" ]; then  
+	echo Using default value for normal
+	efmt -file="$Files" -outfile="$1"
+else
+	echo Using normal=$3
+	efmt -file="$Files" -outfile="$1" -normlat="$2" -normal="$3"
+fi

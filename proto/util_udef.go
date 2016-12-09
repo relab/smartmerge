@@ -26,9 +26,18 @@ func (m *Manager) GetErrors() map[uint32]error {
 }
 
 func (m *Manager) ToIds(gids []uint32) (ids []int) {
-	ids = make([]int,len(gids))
+	ids = make([]int, len(gids))
 	for i, gid := range gids {
 		ids[i] = m.machineGidToID[gid]
 	}
 	return ids
+}
+
+func (m *Manager) ToGids(ids []int) (gids []uint32) {
+	gids = make([]uint32, len(ids))
+	allgids := m.MachineGlobalIDs()
+	for k, id := range ids {
+		gids[k] = allgids[id]
+	}
+	return gids
 }

@@ -58,17 +58,17 @@ func main() {
 	}
 
 	var err error
-	var rs *regserver.RegServer
+	var rs *regserver.ConsServer
 	glog.Infoln("Starting Server with port: ", *port)
 	switch *alg {
 	case "", "sm":
-		rs, err = regserver.StartAdv(*port, *noabort)
+		_, err = regserver.StartAdv(*port, *noabort)
 	case "dyna":
 		_, err = regserver.StartDyna(*port)
 	case "ssr":
 		_, err = regserver.StartSSR(*port)
 	case "cons":
-		_, err = regserver.StartCons(*port, *noabort)
+		rs, err = regserver.StartCons(*port, *noabort)
 	}
 
 	if err != nil {

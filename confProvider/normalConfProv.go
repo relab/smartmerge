@@ -15,6 +15,11 @@ func (cp *NormalConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configuration {
 	return cp.Provider.FullC(blp)
 }
 
+func (cp *NormalConfP) WriteCNoS(blp *pb.Blueprint, rids []int) *pb.Configuration {
+	return cp.Provider.FullC(blp)
+}
+
+/*
 func (cp *NormalConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	return cp.Provider.ReadC(blp, nil)
-}
+}*/

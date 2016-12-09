@@ -1,6 +1,0 @@
-Ideas:
-Probably Dynastore currently performs better, because the servers order Next to the configurations in which it was written.
-
-Now we send the id of the currently used blueprint in AReadS and AWriteS, instead of the ID of the current blueprint. This might cause additional accesses. DONE
-
-DynaStore: The original Dynastore algorithm aborts traverse, whenever it finds a new current configuration. Should we implement this.

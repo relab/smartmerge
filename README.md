@@ -29,5 +29,7 @@ go run server/server.go -alg=sm -port 10013
 
 To start an interactive client use 
 ```
-go run client/client.go -conf client/addrList -alg=sm
+cd $GOPATH/src/github.com/relab/smartMerge/client
+go build
+./client -conf addrList -alg=sm
 ```

@@ -25,11 +25,17 @@ To start a server running the SmartMerge algorithm use:
 go run server/server.go -alg=sm -port 10011
 go run server/server.go -alg=sm -port 10012
 go run server/server.go -alg=sm -port 10013
+go run server/server.go -alg=sm -port 10014
 ```
+Use `go run server/server.go -help` to display possible options, e.g. different algorithms.
 
 To start an interactive client use 
 ```
 cd $GOPATH/src/github.com/relab/smartMerge/client
 go build
-./client -conf addrList -alg=sm
+./client -conf addrList -alg=sm -initsize=3  //Starts a client with initial configuration containing 3 servers.
 ```
+
+Use `./client -help`to deplay all possible arguments/options.
+
+

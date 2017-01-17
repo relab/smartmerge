@@ -1,17 +1,54 @@
 syntax = "proto3";
 
+import "github.com/relab/gorums/gorums.proto";
+
 package proto;
 
 service AdvRegister {
-	rpc AReadS(Conf) returns (ReadReply) {} 
-	rpc AWriteS(WriteS) returns (ConfReply){}
-	rpc AWriteN(WriteN) returns (WriteNReply) {}
-	rpc SetCur(NewCur) returns (NewCurReply) {}
-	rpc LAProp(LAProposal) returns (LAReply) {} 
-	rpc SetState(NewState) returns (NewStateReply) {}
-	rpc GetPromise(Prepare) returns (Promise) {}
-	rpc Accept(Propose) returns (Learn) {}
-	rpc Fwd(Proposal) returns (Ack) {}
+	//Read a register value
+	rpc Read(Conf) returns (ReadReply) {
+		option (gorums.qc) = true;
+	}
+
+	// Write a value to the register
+	rpc Write(WriteS) returns (ConfReply){
+		option (gorums.qc) = true;
+	}
+
+	// Inform the servers about a new proposed configuration/blueprint
+	rpc WriteNext(WriteN) returns (WriteNReply) {
+		option (gorums.qc) = true;
+	}
+
+	// Inform the servers that a new configuration has been installed
+	rpc SetCur(NewCur) returns (NewCurReply) {
+		option (gorums.qc) = true;
+	}
+
+	// Propose a value to lattice agreement
+	rpc LAProp(LAProposal) returns (LAReply) {
+		option (gorums.qc) = true;
+	}
+
+	// Set register and lattice agreement state in new configuration
+	rpc SetState(NewState) returns (NewStateReply) {
+		option (gorums.qc) = true;
+	}
+
+	// Consensus: Paxos first phase
+	rpc GetPromise(Prepare) returns (Promise) {
+		option (gorums.qc) = true;
+	}
+
+	// Consensus: Paxos second phase
+	rpc Accept(Propose) returns (Learn) {
+		option (gorums.qc) = true;
+	}
+
+	// Consensus propagate learned value
+	rpc Fwd(Proposal) returns (Ack) {
+		option (gorums.qc) = true;
+	}
 }
 
 message State {
@@ -40,7 +77,7 @@ message Blueprint {
 	repeated Node Nodes = 1;
 	uint32 FaultTolerance = 3;
 	uint32 Epoch = 4;
-} 
+}
 
 message NewCur {
 	Blueprint Cur = 1;
@@ -130,92 +167,3 @@ message Proposal {
 }
 
 message Ack {}
-
-service DynaDisk {
-	rpc GetOneN(GetOne) returns (GetOneReply) {}
-	rpc DWriteN(DRead) returns (DReadReply) {} 
-	rpc DSetState(DNewState) returns (NewStateReply) {}
-	rpc DWriteNSet(DWriteNs) returns (DWriteNsReply) {}
-	rpc DSetCur(NewCur) returns (NewCurReply) {}
-}
-
-message GetOne {
-	Conf Conf = 1;
-	Blueprint Next = 2;
-}
-
-message GetOneReply {
-	Blueprint Next = 1;
-	Blueprint Cur = 2;
-}
-
-message DRead {
-	Conf Conf = 1;
-	Blueprint Prop = 2;
-}
-
-message DReadReply {
-	State State = 1;
-	Blueprint Cur = 2;
-	repeated Blueprint Next = 3;
-}
-
-message DNewState {
-	Conf Conf = 1;
-	State State = 2;
-}
-
-message DWriteNs {
-	Conf Conf = 1;
-	Blueprint Next = 2;
-}
-
-message DWriteNsReply {
-	Blueprint Cur = 1;
-}
-
-service SpSnRegister {
-	rpc SpSnOne(SWriteN) returns (SWriteNReply) {}
-	rpc SCommit(Commit) returns (CommitReply) {}
-	rpc SSetState(SState) returns (SStateReply) {}
-	rpc SSetCur(NewCur) returns (NewCurReply) {}
-}
-
-message SWriteN {
-	uint32 CurL = 1;
-	Blueprint Cur = 2;
-	uint32 This = 3;
-	uint32 Rnd = 4;
-	Blueprint Prop = 5;
-}
-
-message SWriteNReply {
-	Blueprint Cur = 1;
-	repeated Blueprint Next = 2;
-	State State = 3;
-}
-
-message Commit {
-	uint32 CurL = 1;
-	uint32 This = 2;
-	uint32 Rnd = 3;
-	bool Commit = 4;
-	Blueprint Collect = 5;
-}
-
-message CommitReply {
-	Blueprint Cur = 1;
-	Blueprint Committed = 2;
-	Blueprint Collected = 3;
-}
-
-message SState {
-	uint32 CurL = 1;
-	State State = 2;
-}
-
-message SStateReply {
-	bool HasNext = 1;
-	Blueprint Cur = 2;
-}
-

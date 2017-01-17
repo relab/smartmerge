@@ -109,7 +109,7 @@ func usermain() {
 
 func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 	cur := c.GetCur(cp)
-	fmt.Println("Current Blueprint is: ", cur)
+	fmt.Println("Current Blueprint is: ", cur.Nodes)
 	fmt.Println("Type 1 or 2 for add or remove?")
 	fmt.Println("  1: Add")
 	fmt.Println("  2: Remove")
@@ -137,7 +137,7 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 			return
 		}
 
-		fmt.Println("Starting reconfiguration with target ", target)
+		fmt.Println("Starting reconfiguration with target ", target.Nodes)
 		reqsent := time.Now()
 		cnt, err := c.Reconf(cp, target)
 		elog.Log(e.NewTimedEventWithMetric(e.ClientReconfLatency, reqsent, uint64(cnt)))
@@ -145,7 +145,7 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 			fmt.Println("Reconf returned error: ", err)
 		}
 		fmt.Printf("did %d accesses.\n", cnt)
-		fmt.Println("new blueprint is ", c.GetCur(cp))
+		fmt.Println("new blueprint is ", c.GetCur(cp).Nodes)
 		return
 	case 2:
 		fmt.Println("Ids in the current configuration:")
@@ -175,7 +175,7 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 		}
 
 		fmt.Printf("did %d accesses.\n", cnt)
-		fmt.Println("new blueprint is ", c.GetCur(cp))
+		fmt.Println("new blueprint is ", c.GetCur(cp).Nodes)
 		return
 	default:
 		return

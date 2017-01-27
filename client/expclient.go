@@ -425,8 +425,19 @@ type RWRer interface {
 	GetCur(conf.Provider) *pb.Blueprint
 }
 
+func GetErrors(mgr *pb.Manager) map[uint32]error {
+	nds := mgr.Nodes()
+	errs := make(map[uint32]error, len(nds))
+	for _, n := range nds {
+		if err := n.LastErr(); err != nil {
+			errs[n.ID()] = err
+		}
+	}
+	return errs
+}
+
 func LogErrors(mgr *pb.Manager) {
-	errs := mgr.GetErrors()
+	errs := GetErrors(mgr)
 	founderrs := false
 	for id, e := range errs {
 		if !founderrs {

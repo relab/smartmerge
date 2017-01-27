@@ -3,9 +3,11 @@ syntax = "proto3";
 package blueprints;
 
 //import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//compile using: protoc --gofast_out=. blueprints.proto
+//compile using: protoc --gogo_out=. blueprints.proto
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
+option (gogoproto.verbose_equal_all) = true;
 
 //Node represents a node that was added to a configuration.
 //			a node can be added several times, this will result in an increased version.

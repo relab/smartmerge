@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "github.com/relab/gorums/gorums.proto";
+import "github.com/relab/smartMerge/blueprints/blueprints.proto";
 
 package proto;
 
@@ -57,30 +58,21 @@ message State {
 	uint32 Writer = 3;
 }
 
+//This message hold the hash value of the current configuration,
+// and the configuration used for this quorum call
 message Conf {
 	uint32 This = 1;
 	uint32 Cur = 2;
 }
 
 message ConfReply {
-	Blueprint Cur = 1;
+	blueprints.Blueprint Cur = 1;
 	bool Abort = 2;
-	repeated Blueprint Next = 3;
-}
-
-message Node {
-	uint32 Id = 1;
-	uint32 Version = 2;
-}
-
-message Blueprint {
-	repeated Node Nodes = 1;
-	uint32 FaultTolerance = 3;
-	uint32 Epoch = 4;
+	repeated blueprints.Blueprint Next = 3;
 }
 
 message NewCur {
-	Blueprint Cur = 1;
+	blueprints.Blueprint Cur = 1;
 	uint32 CurC = 2;
 }
 
@@ -104,39 +96,39 @@ message WriteS {
 
 message WriteN {
 	uint32 CurC = 1;
-	Blueprint Next = 2;
+	blueprints.Blueprint Next = 2;
 }
 
 message WriteNReply {
 	ConfReply Cur = 1;
 	State State = 2;
-	Blueprint LAState = 3;
+	blueprints.Blueprint LAState = 3;
 }
 
 message LAProposal {
 	Conf Conf = 1;
-	Blueprint Prop = 2;
+	blueprints.Blueprint Prop = 2;
 }
 
 message LAReply {
 	ConfReply Cur = 1;
-	Blueprint LAState = 2;
+	blueprints.Blueprint LAState = 2;
 }
 
 message NewState {
 	uint32 CurC = 1;
 	State State = 2;
-	Blueprint LAState = 3;
+	blueprints.Blueprint LAState = 3;
 }
 
 message NewStateReply {
-	Blueprint Cur = 1;
-	repeated Blueprint Next = 2;
+	blueprints.Blueprint Cur = 1;
+	repeated blueprints.Blueprint Next = 2;
 }
 
 message CV {		//Consensus Value: (vrnd, vval)
 	uint32 Rnd = 1;
-	Blueprint Val = 2;
+	blueprints.Blueprint Val = 2;
 }
 
 message Prepare {
@@ -145,10 +137,10 @@ message Prepare {
 }
 
 message Promise {
-	Blueprint Cur = 1;
+	blueprints.Blueprint Cur = 1;
 	uint32 Rnd = 2;
 	CV Val = 3;
-	Blueprint Dec = 4;
+	blueprints.Blueprint Dec = 4;
 }
 
 message Propose {
@@ -157,13 +149,13 @@ message Propose {
 }
 
 message Learn {
-	Blueprint Cur = 1;
-	Blueprint Dec = 2;
+	blueprints.Blueprint Cur = 1;
+	blueprints.Blueprint Dec = 2;
 	bool Learned = 3;
 }
 
 message Proposal {
-	Blueprint Prop = 1;
+	blueprints.Blueprint Prop = 1;
 }
 
 message Ack {}

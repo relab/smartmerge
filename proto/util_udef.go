@@ -1,5 +1,6 @@
 package proto
 
+//TODO: These should be methods on the quorumSpec
 func (c *Configuration) ReadQuorum() int {
 	return c.Size() - c.Quorum() + 1
 }
@@ -15,17 +16,8 @@ func (c *Configuration) MaxQuorum() int {
 	return c.ReadQuorum()
 }
 
-func (m *Manager) GetErrors() map[uint32]error {
-	err := make(map[uint32]error, len(m.machines))
-	for _, ma := range m.machines {
-		if ma.lastErr != nil {
-			err[ma.gid] = ma.lastErr
-		}
-	}
-	return err
-}
-
-func (m *Manager) ToIds(gids []uint32) (ids []int) {
+// Functions below are outdated since gorums now uses only global ids.
+/*func (m *Manager) ToIds(gids []uint32) (ids []int) {
 	ids = make([]int, len(gids))
 	for i, gid := range gids {
 		ids[i] = m.machineGidToID[gid]
@@ -41,3 +33,4 @@ func (m *Manager) ToGids(ids []int) (gids []uint32) {
 	}
 	return gids
 }
+*/

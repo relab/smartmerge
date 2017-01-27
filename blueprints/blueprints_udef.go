@@ -4,7 +4,8 @@ package blueprints
 // from protobuf.
 
 // To gernerate the code from protobuf run go generate in this folder
-//go:generate protoc --gofast_out=. blueprints.proto
+//go:generate protoc -I=../../../../:. --gorums_out=plugins=grpc+gorums:. blueprints.proto
+//old protoc -I=../../../../:. --gogo_out=. blueprints.proto
 
 // Difference computes the difference between two arrays,
 // i.e. all elements from A, that are not part of B.

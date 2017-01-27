@@ -3,9 +3,12 @@ package blueprints
 // This file contains manually coded methods on the blueprint structs created
 // from protobuf.
 
-// To gernerate the code from protobuf run go generate in this folder
-//go:generate protoc -I=../../../../:. --gorums_out=plugins=grpc+gorums:. blueprints.proto
-//old protoc -I=../../../../:. --gogo_out=. blueprints.proto
+// To gernerate the code from protobuf comment out line
+// 7 _ "github.com/relab/gorums/plugins/gorums"
+// from gorums/cmd/protoc-gen-gorums/main.go,
+// then run go generate in this folder
+// go:generate protoc -I=../../../../:. --gorums_out=plugins=grpc+gorums:. blueprints.proto
+// Last generated with Gorums at commit:0d7e2cef
 
 // Difference computes the difference between two arrays,
 // i.e. all elements from A, that are not part of B.

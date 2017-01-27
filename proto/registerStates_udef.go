@@ -2,6 +2,7 @@ package proto
 
 // To gernerate the code from gorums run go generate in this folder
 //go:generate protoc -I=../../../../:. --gorums_out=plugins=grpc+gorums:. dc-smartMerge.proto
+// Last generated with Gorums at commit:0d7e2cef
 
 func (s *State) Compare(st *State) int {
 	if s == nil && st == nil {

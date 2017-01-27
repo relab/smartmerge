@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package blueptints;
+
+//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+//compile using: protoc --gofast_out=. *.proto
+
+// To gernerate the go code run go generate in this folder
+//go:generate protoc --gofast_out=. *.proto
+
+
+//Node represents a node that was added to a configuration.
+//			a node can be added several times, this will result in an increased version.
+// 			also on removal, the version is increased.
+//			nodes with even version are part of the configuration, nodes with odd
+//			version have been removed.
+message Node {
+	uint32 Id = 1;
+	uint32 Version = 2;
+}
+
+//Blueprint holds the information necessary to create a configuration,
+//	i.e. a list of nodes that have been added to the configuration
+// 				Nodes will also include nodes that have been added and removed
+// 			 and a FaultTolerance parameter that is used to determine quorum size.
+//			 epoch is used to determine, which FaultTolerance should be chosen, when two
+//				 blueprints are combined/merged.
+message Blueprint {
+	repeated Node Nodes = 1;
+	uint32 FaultTolerance = 3;
+	uint32 Epoch = 4;
+}

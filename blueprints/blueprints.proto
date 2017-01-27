@@ -1,12 +1,10 @@
 syntax = "proto3";
 
-package blueptints;
+package blueprints;
 
 //import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-//compile using: protoc --gofast_out=. *.proto
+//compile using: protoc --gofast_out=. blueprints.proto
 
-// To gernerate the go code run go generate in this folder
-//go:generate protoc --gofast_out=. *.proto
 
 
 //Node represents a node that was added to a configuration.

@@ -49,9 +49,9 @@ func StartTest(port int) (*grpc.Server, error) {
 
 }
 
-////////////////// Advanced Server //////////////////////
+////////////////// SM Server //////////////////////
 
-func StartAdv(port int, noabort bool) (*RegServer, error) {
+func StartSM(port int, noabort bool) (*RegServer, error) {
 	return StartAdvInConf(port, nil, uint32(0), noabort)
 }
 
@@ -95,66 +95,6 @@ func StartAdvTest(port int) (*grpc.Server, error) {
 
 	return grpcServ, nil
 
-}
-
-////////////////// Dyna Server //////////////////////
-
-func StartDyna(port int) (*DynaServer, error) {
-	return StartDynaInConf(port, nil, uint32(0))
-}
-
-func StartDynaInConf(port int, init *pb.Blueprint, initC uint32) (*DynaServer, error) {
-	mu.Lock()
-	defer mu.Unlock()
-	if haveServer == true {
-		log.Println("Abort start of grpc server, since old server exists.")
-		return nil, errors.New("There already exists an old server.")
-	}
-
-	ds := NewDynaServerWithCur(init, initC)
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	var opts []grpc.ServerOption
-	grpcServer = grpc.NewServer(opts...)
-	pb.RegisterDynaDiskServer(grpcServer, ds)
-	go grpcServer.Serve(lis)
-	haveServer = true
-
-	return ds, nil
-}
-
-////////////////// SSRegister Server //////////////////////
-
-func StartSSR(port int) (*SSRServer, error) {
-	return StartSSRInConf(port, nil, uint32(0))
-}
-
-func StartSSRInConf(port int, init *pb.Blueprint, initC uint32) (*SSRServer, error) {
-	mu.Lock()
-	defer mu.Unlock()
-	if haveServer == true {
-		log.Println("Abort start of grpc server, since old server exists.")
-		return nil, errors.New("There already exists an old server.")
-	}
-
-	ds := NewSSRServerWithCur(init, initC)
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	var opts []grpc.ServerOption
-	grpcServer = grpc.NewServer(opts...)
-	pb.RegisterSpSnRegisterServer(grpcServer, ds)
-	go grpcServer.Serve(lis)
-	haveServer = true
-
-	return ds, nil
 }
 
 ///////////////// Consensus Server ////////////////////

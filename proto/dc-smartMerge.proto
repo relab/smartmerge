@@ -5,7 +5,7 @@ import "github.com/relab/smartMerge/blueprints/blueprints.proto";
 
 package proto;
 
-service AdvRegister {
+service SMandConsRegister {
 	//Read a register value
 	rpc Read(Conf) returns (ReadReply) {
 		option (gorums.qc) = true;
@@ -27,6 +27,7 @@ service AdvRegister {
 	}
 
 	// Propose a value to lattice agreement
+	// Only used in smartMerge algorithm
 	rpc LAProp(LAProposal) returns (LAReply) {
 		option (gorums.qc) = true;
 	}
@@ -37,16 +38,19 @@ service AdvRegister {
 	}
 
 	// Consensus: Paxos first phase
+	// Only used in the consensus based algorithm (RAMBO)
 	rpc GetPromise(Prepare) returns (Promise) {
 		option (gorums.qc) = true;
 	}
 
 	// Consensus: Paxos second phase
+	// Only used in the consensus based algorithm (RAMBO)
 	rpc Accept(Propose) returns (Learn) {
 		option (gorums.qc) = true;
 	}
 
 	// Consensus propagate learned value
+	// Only used in the consensus based algorithm (RAMBO)
 	rpc Fwd(Proposal) returns (Ack) {
 		option (gorums.qc) = true;
 	}
@@ -72,8 +76,8 @@ message ConfReply {
 }
 
 message NewCur {
-	blueprints.Blueprint Cur = 1;
-	uint32 CurC = 2;
+	blueprints.Blueprint Cur = 1; //The blueprint of the current configuration.
+	uint32 CurC = 2; 							// Cur.Len(), a hash of the current configuration.
 }
 
 message NewCurReply {

@@ -2,9 +2,58 @@ package qfuncs
 
 import (
 	"github.com/golang/glog"
+	bp "github.com/relab/smartMerge/blueprints"
 	pr "github.com/relab/smartMerge/proto"
 )
 
+type SMQuorumSpec struct {
+	q int //quorum size
+	n int //configuration size
+
+	rq  int //read-quorum size
+	wq  int //write-quorum size
+	rwq int //size including both read and write quorum
+}
+
+func NewSMQSpec(q, n int) *SMQuorumSpec {
+	return &SMQuorumSpec{
+		q:   q,
+		n:   n,
+		rq:  ReadQuorum(q, n),
+		wq:  WriteQuorum(q, n),
+		rwq: MaxQuorum(q, n),
+	}
+}
+
+// ReadQuorum returns the size of a read quorum.
+// If q is larger than half of the nodes in the configuration (rounded up),
+// The ReadQuorum size will be smaller.
+// Otherwise, a ReadQuorum includes half of the nodes (rounded up).
+func ReadQuorum(q, n int) int {
+	return n - q + 1
+}
+
+// WriteQuorum returns the size of a WriteQuorum.
+// WriteQuorum may be larger than ReadQuorums.
+func WriteQuorum(q, n int) int {
+	return q
+}
+
+// MaxQuorum returns the size of a Quorum
+// that is both a read and write quorum.
+func MaxQuorum(q, n int) int {
+	if WriteQuorum(q, n) > ReadQuorum(q, n) {
+		return WriteQuorum(q, n)
+	}
+	return ReadQuorum(q, n)
+}
+
+func SMQSpecFromBP(b *bp.Blueprint) *SMQuorumSpec {
+	return NewSMQSpec(b.Quorum(), b.Size())
+}
+
+// ConfResponder is an interface that wraps all messages that return a ConfReply.
+// These are ReadReply, WriteNReply, and LAReply
 type ConfResponder interface {
 	GetCur() *pr.ConfReply
 }
@@ -40,7 +89,14 @@ func handleConfReply(old *pr.ConfReply, cr *pr.ConfReply) *pr.ConfReply {
 	return old
 }
 
-var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply, bool) {
+func (qs *SMQuorumSpec) FwdQF(replies []*pr.Ack) (*pr.Ack, bool) {
+	if len(replies) < qs.rq {
+		return nil, false
+	}
+	return replies[0], true
+}
+
+func (qs *SMQuorumSpec) ReadQF(replies []*pr.ReadReply) (*pr.ReadReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -52,7 +108,7 @@ var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply
 	}
 
 	// Return false, if not enough replies yet.
-	if len(replies) < c.ReadQuorum() {
+	if len(replies) < qs.rq {
 		if glog.V(7) {
 			glog.Infoln("Not enough ReadSReplies yet.")
 		}
@@ -70,7 +126,7 @@ var AReadSQF = func(c *pr.Configuration, replies []*pr.ReadReply) (*pr.ReadReply
 	return lastrep, true
 }
 
-var AWriteSQF = func(c *pr.Configuration, replies []*pr.ConfReply) (*pr.ConfReply, bool) {
+func (qs *SMQuorumSpec) WriteQF(replies []*pr.ConfReply) (*pr.ConfReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -83,7 +139,7 @@ var AWriteSQF = func(c *pr.Configuration, replies []*pr.ConfReply) (*pr.ConfRepl
 
 	// Return false, if not enough replies yet.
 	// This rpc is both reading and writing.
-	if len(replies) < c.MaxQuorum() {
+	if len(replies) < qs.rwq {
 		if glog.V(7) {
 			glog.Infoln("Not enough WriteSReplies yet.")
 		}
@@ -98,8 +154,7 @@ var AWriteSQF = func(c *pr.Configuration, replies []*pr.ConfReply) (*pr.ConfRepl
 	return lastrep, true
 }
 
-var AWriteNQF = func(c *pr.Configuration, replies []*pr.WriteNReply) (*pr.WriteNReply, bool) {
-
+func (qs *SMQuorumSpec) WriteNextQF(replies []*pr.WriteNReply) (*pr.WriteNReply, bool) {
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
 	if checkConfResponder(lastrep) {
@@ -111,7 +166,7 @@ var AWriteNQF = func(c *pr.Configuration, replies []*pr.WriteNReply) (*pr.WriteN
 
 	// Return false, if not enough replies yet.
 	// This rpc is both reading and writing.
-	if len(replies) < c.MaxQuorum() {
+	if len(replies) < qs.rwq {
 		return nil, false
 	}
 
@@ -127,9 +182,9 @@ var AWriteNQF = func(c *pr.Configuration, replies []*pr.WriteNReply) (*pr.WriteN
 	return lastrep, true
 }
 
-var SetCurQF = func(c *pr.Configuration, replies []*pr.NewCurReply) (*pr.NewCurReply, bool) {
+func (qs *SMQuorumSpec) SetCurQF(replies []*pr.NewCurReply) (*pr.NewCurReply, bool) {
 	// Return false, if not enough replies yet.
-	if len(replies) < c.WriteQuorum() {
+	if len(replies) < qs.wq {
 		return nil, false
 	}
 
@@ -141,7 +196,7 @@ var SetCurQF = func(c *pr.Configuration, replies []*pr.NewCurReply) (*pr.NewCurR
 	return replies[0], true
 }
 
-var LAPropQF = func(c *pr.Configuration, replies []*pr.LAReply) (*pr.LAReply, bool) {
+func (qs *SMQuorumSpec) LAPropQF(replies []*pr.LAReply) (*pr.LAReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -154,7 +209,7 @@ var LAPropQF = func(c *pr.Configuration, replies []*pr.LAReply) (*pr.LAReply, bo
 
 	// Return false, if not enough replies yet.
 	// This rpc is both reading and writing.
-	if len(replies) < c.MaxQuorum() {
+	if len(replies) < qs.rwq {
 		return nil, false
 	}
 
@@ -167,7 +222,7 @@ var LAPropQF = func(c *pr.Configuration, replies []*pr.LAReply) (*pr.LAReply, bo
 	return lastrep, true
 }
 
-var SetStateQF = func(c *pr.Configuration, replies []*pr.NewStateReply) (*pr.NewStateReply, bool) {
+func (qs *SMQuorumSpec) SetStateQF(replies []*pr.NewStateReply) (*pr.NewStateReply, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -176,11 +231,11 @@ var SetStateQF = func(c *pr.Configuration, replies []*pr.NewStateReply) (*pr.New
 	}
 
 	// Return false, if not enough replies yet.
-	if len(replies) < c.MaxQuorum() {
+	if len(replies) < qs.rwq {
 		return nil, false
 	}
 
-	next := make([]*pr.Blueprint, 0, 1)
+	next := make([]*bp.Blueprint, 0, 1)
 	for _, rep := range replies {
 		next = GetBlueprintSlice(next, rep)
 	}
@@ -190,11 +245,14 @@ var SetStateQF = func(c *pr.Configuration, replies []*pr.NewStateReply) (*pr.New
 	return lastrep, true
 }
 
+// NextReport is an interface that wraps all message that include an array of
+// next bluerprints. These are: NewStateReply, ConfReply and all messages that
+// include a ConfReply, see ConfResponder above.
 type NextReport interface {
-	GetNext() []*pr.Blueprint
+	GetNext() []*bp.Blueprint
 }
 
-var GetPromiseQF = func(c *pr.Configuration, replies []*pr.Promise) (*pr.Promise, bool) {
+func (qs *SMQuorumSpec) GetPromiseQF(replies []*pr.Promise) (*pr.Promise, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -204,7 +262,7 @@ var GetPromiseQF = func(c *pr.Configuration, replies []*pr.Promise) (*pr.Promise
 
 	// Return false, if not enough replies yet.
 	// This rpc is both reading and writing.
-	if len(replies) < c.ReadQuorum() {
+	if len(replies) < qs.rq {
 		return nil, false
 	}
 
@@ -232,7 +290,7 @@ var GetPromiseQF = func(c *pr.Configuration, replies []*pr.Promise) (*pr.Promise
 	return lastrep, true
 }
 
-var AcceptQF = func(c *pr.Configuration, replies []*pr.Learn) (*pr.Learn, bool) {
+func (qs *SMQuorumSpec) AcceptQF(replies []*pr.Learn) (*pr.Learn, bool) {
 
 	// Stop RPC if new current configuration reported.
 	lastrep := replies[len(replies)-1]
@@ -242,7 +300,7 @@ var AcceptQF = func(c *pr.Configuration, replies []*pr.Learn) (*pr.Learn, bool) 
 
 	// Return false, if not enough replies yet.
 	// This rpc is both reading and writing.
-	if len(replies) < c.MaxQuorum() {
+	if len(replies) < qs.rwq {
 		return nil, false
 	}
 
@@ -262,14 +320,14 @@ var AcceptQF = func(c *pr.Configuration, replies []*pr.Learn) (*pr.Learn, bool) 
 
 }
 
-func GetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {
+func GetBlueprintSlice(next []*bp.Blueprint, rep NextReport) []*bp.Blueprint {
 	repNext := rep.GetNext()
 	if repNext == nil {
 		return next
 	}
 
 	if next == nil {
-		next = make([]*pr.Blueprint, 0, len(repNext))
+		next = make([]*bp.Blueprint, 0, len(repNext))
 	}
 	for _, blp := range repNext {
 		next = addLearned(next, blp)
@@ -278,7 +336,7 @@ func GetBlueprintSlice(next []*pr.Blueprint, rep NextReport) []*pr.Blueprint {
 	return next
 }
 
-func addLearned(bls []*pr.Blueprint, bp *pr.Blueprint) []*pr.Blueprint {
+func addLearned(bls []*bp.Blueprint, bp *bp.Blueprint) []*bp.Blueprint {
 	place := 0
 
 findplacefor:
@@ -290,7 +348,7 @@ findplacefor:
 		case -1:
 			break findplacefor
 		default:
-			place += 1
+			place++
 			continue
 		}
 	}
@@ -306,10 +364,10 @@ findplacefor:
 }
 
 type LAStateReport interface {
-	GetLAState() *pr.Blueprint
+	GetLAState() *bp.Blueprint
 }
 
-func MergeLAState(las *pr.Blueprint, rep LAStateReport) *pr.Blueprint {
+func MergeLAState(las *bp.Blueprint, rep LAStateReport) *bp.Blueprint {
 	lap := rep.GetLAState()
 	if lap == nil {
 		return las
@@ -321,5 +379,5 @@ func MergeLAState(las *pr.Blueprint, rep LAStateReport) *pr.Blueprint {
 }
 
 type CurReport interface {
-	GetCur() *pr.Blueprint
+	GetCur() *bp.Blueprint
 }

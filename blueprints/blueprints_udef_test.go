@@ -56,45 +56,46 @@ var a3i = []uint32{two, tre}
 // 	}
 // }
 //
-// func TestDifference(t *testing.T) {
-// 	df := difference(a2i, r2i)
-// 	for _, id := range df {
-// 		if id != one {
-// 			t.Error("Unwanted element in sdifference.")
-// 		}
-// 	}
-// 	if len(df) != 1 {
-// 		t.Error("Difference does not have the right number of elements.")
-// 	}
-//
-// 	df = difference(a1i, a2i)
-//
-// 	if len(df) != 1 {
-// 		t.Error("Difference does not have the right number of elements.")
-// 	}
-// 	for _, id := range df {
-// 		if id != two {
-// 			t.Errorf("Difference(%v,%v) was %v, not ID(2).", a1i, a2i, df)
-// 		}
-// 	}
-//
-// 	df = difference(a0i, a1i)
-//
-// 	if len(df) != 0 {
-// 		t.Error("Difference from nil got nonempty result.")
-// 	}
-//
-// 	df = difference(a1i, a0i)
-//
-// 	if len(df) != len(a1i) {
-// 		t.Error("Difference with nil was not identity.")
-// 	}
-// 	for i, x := range df {
-// 		if x != a1i[i] {
-// 			t.Error("Difference with nil was not identity")
-// 		}
-// 	}
-// }
+func TestDifference(t *testing.T) {
+	df := difference(a2i, r2i)
+	for _, id := range df {
+		if id != one {
+			t.Error("Unwanted element in sdifference.")
+		}
+	}
+	if len(df) != 1 {
+		t.Error("Difference does not have the right number of elements.")
+	}
+
+	df = difference(a1i, a2i)
+
+	if len(df) != 1 {
+		t.Error("Difference does not have the right number of elements.")
+	}
+	for _, id := range df {
+		if id != two {
+			t.Errorf("Difference(%v,%v) was %v, not ID(2).", a1i, a2i, df)
+		}
+	}
+
+	df = difference(a0i, a1i)
+
+	if len(df) != 0 {
+		t.Error("Difference from nil got nonempty result.")
+	}
+
+	df = difference(a1i, a0i)
+
+	if len(df) != len(a1i) {
+		t.Error("Difference with nil was not identity.")
+	}
+	for i, x := range df {
+		if x != a1i[i] {
+			t.Error("Difference with nil was not identity")
+		}
+	}
+}
+
 //
 // func TestSubset(t *testing.T) {
 // 	if !subset(r1i, a1i) {

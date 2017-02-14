@@ -1,3 +1,10 @@
+/*Package smclient implements the client side of both
+the SmartMerge and Rambo algorithm.
+
+The two algorithms use identical read and write methods.
+But implement reconfiguration differently.
+
+*/
 package smclient
 
 import (
@@ -22,7 +29,7 @@ func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*SmClient, error) 
 
 	glog.Infof("New Client with Id: %d\n", id)
 
-	_, err := cnf.SetCur(&pb.NewCur{initBlp, uint32(initBlp.Len())})
+	_, err := cnf.SetCur(&pb.NewCur{Cur: initBlp, CurC: uint32(initBlp.Hash())})
 	if err != nil {
 		glog.Errorln("initial SetCur returned error: ", err)
 		return nil, errors.New("Initial SetCur failed.")
@@ -98,7 +105,7 @@ func (smc *SmClient) Write(cp conf.Provider, val []byte) int {
 	return cnt + mcnt
 }
 
-// Given a state returned from a regular read, and a value to be written,
+// Given a state returned from a regular read or Get, and a value to be written,
 // getWriteValue finds the correct state to write.
 // The value is passed by pointer, and set to nil, to avoid reseting the write value.
 func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {

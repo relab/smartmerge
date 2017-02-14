@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/debug"
-	"syscall"
 	"runtime/pprof"
+	"syscall"
 
 	"github.com/golang/glog"
 
@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	port     = flag.Int("port", 10000, "this servers address ip:port.")
+	port       = flag.Int("port", 10000, "this servers address ip:port.")
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-	gcoff    = flag.Bool("gcoff", false, "turn garbage collection off.")
-	alg      = flag.String("alg", "", "algorithm to use (sm | dyna | ssr | cons )")
-	allCores = flag.Bool("all-cores", false, "use all available logical CPUs")
+	gcoff      = flag.Bool("gcoff", false, "turn garbage collection off.")
+	alg        = flag.String("alg", "", "algorithm to use (sm | dyna | ssr | cons )")
+	allCores   = flag.Bool("all-cores", false, "use all available logical CPUs")
 
 	noabort = flag.Bool("no-abort", false, "do not send aborting new-cur information.")
 )

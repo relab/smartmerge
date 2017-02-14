@@ -2144,7 +2144,7 @@ func callGRPCAccept(ctx context.Context, node *Node, args *Propose, replyChan ch
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/Accept",
+		"/proto.SMandConsRegister/Accept",
 		args,
 		reply,
 		node.conn,
@@ -2235,7 +2235,7 @@ func callGRPCFwd(ctx context.Context, node *Node, args *Proposal, replyChan chan
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/Fwd",
+		"/proto.SMandConsRegister/Fwd",
 		args,
 		reply,
 		node.conn,
@@ -2326,7 +2326,7 @@ func callGRPCGetPromise(ctx context.Context, node *Node, args *Prepare, replyCha
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/GetPromise",
+		"/proto.SMandConsRegister/GetPromise",
 		args,
 		reply,
 		node.conn,
@@ -2417,7 +2417,7 @@ func callGRPCLAProp(ctx context.Context, node *Node, args *LAProposal, replyChan
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/LAProp",
+		"/proto.SMandConsRegister/LAProp",
 		args,
 		reply,
 		node.conn,
@@ -2508,7 +2508,7 @@ func callGRPCRead(ctx context.Context, node *Node, args *Conf, replyChan chan<- 
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/Read",
+		"/proto.SMandConsRegister/Read",
 		args,
 		reply,
 		node.conn,
@@ -2599,7 +2599,7 @@ func callGRPCSetCur(ctx context.Context, node *Node, args *NewCur, replyChan cha
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/SetCur",
+		"/proto.SMandConsRegister/SetCur",
 		args,
 		reply,
 		node.conn,
@@ -2690,7 +2690,7 @@ func callGRPCSetState(ctx context.Context, node *Node, args *NewState, replyChan
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/SetState",
+		"/proto.SMandConsRegister/SetState",
 		args,
 		reply,
 		node.conn,
@@ -2781,7 +2781,7 @@ func callGRPCWrite(ctx context.Context, node *Node, args *WriteS, replyChan chan
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/Write",
+		"/proto.SMandConsRegister/Write",
 		args,
 		reply,
 		node.conn,
@@ -2872,7 +2872,7 @@ func callGRPCWriteNext(ctx context.Context, node *Node, args *WriteN, replyChan 
 	start := time.Now()
 	err := grpc.Invoke(
 		ctx,
-		"/proto.AdvRegister/WriteNext",
+		"/proto.SMandConsRegister/WriteNext",
 		args,
 		reply,
 		node.conn,
@@ -2897,7 +2897,7 @@ type Node struct {
 	addr string
 	conn *grpc.ClientConn
 
-	AdvRegisterClient AdvRegisterClient
+	SMandConsRegisterClient SMandConsRegisterClient
 
 	sync.Mutex
 	lastErr error
@@ -2911,7 +2911,7 @@ func (n *Node) connect(opts ...grpc.DialOption) error {
 		return fmt.Errorf("dialing node failed: %v", err)
 	}
 
-	n.AdvRegisterClient = NewAdvRegisterClient(n.conn)
+	n.SMandConsRegisterClient = NewSMandConsRegisterClient(n.conn)
 
 	return nil
 }
@@ -3586,9 +3586,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for AdvRegister service
+// Client API for SMandConsRegister service
 
-type AdvRegisterClient interface {
+type SMandConsRegisterClient interface {
 	// Read a register value
 	Read(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error)
 	// Write a value to the register
@@ -3598,109 +3598,113 @@ type AdvRegisterClient interface {
 	// Inform the servers that a new configuration has been installed
 	SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error)
 	// Propose a value to lattice agreement
+	// Only used in smartMerge algorithm
 	LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error)
 	// Set register and lattice agreement state in new configuration
 	SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error)
 	// Consensus: Paxos first phase
+	// Only used in the consensus based algorithm (RAMBO)
 	GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error)
 	// Consensus: Paxos second phase
+	// Only used in the consensus based algorithm (RAMBO)
 	Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error)
 	// Consensus propagate learned value
+	// Only used in the consensus based algorithm (RAMBO)
 	Fwd(ctx context.Context, in *Proposal, opts ...grpc.CallOption) (*Ack, error)
 }
 
-type advRegisterClient struct {
+type sMandConsRegisterClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewAdvRegisterClient(cc *grpc.ClientConn) AdvRegisterClient {
-	return &advRegisterClient{cc}
+func NewSMandConsRegisterClient(cc *grpc.ClientConn) SMandConsRegisterClient {
+	return &sMandConsRegisterClient{cc}
 }
 
-func (c *advRegisterClient) Read(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error) {
+func (c *sMandConsRegisterClient) Read(ctx context.Context, in *Conf, opts ...grpc.CallOption) (*ReadReply, error) {
 	out := new(ReadReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/Read", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/Read", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) Write(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*ConfReply, error) {
+func (c *sMandConsRegisterClient) Write(ctx context.Context, in *WriteS, opts ...grpc.CallOption) (*ConfReply, error) {
 	out := new(ConfReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/Write", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/Write", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) WriteNext(ctx context.Context, in *WriteN, opts ...grpc.CallOption) (*WriteNReply, error) {
+func (c *sMandConsRegisterClient) WriteNext(ctx context.Context, in *WriteN, opts ...grpc.CallOption) (*WriteNReply, error) {
 	out := new(WriteNReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/WriteNext", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/WriteNext", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
+func (c *sMandConsRegisterClient) SetCur(ctx context.Context, in *NewCur, opts ...grpc.CallOption) (*NewCurReply, error) {
 	out := new(NewCurReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/SetCur", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/SetCur", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error) {
+func (c *sMandConsRegisterClient) LAProp(ctx context.Context, in *LAProposal, opts ...grpc.CallOption) (*LAReply, error) {
 	out := new(LAReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/LAProp", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/LAProp", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error) {
+func (c *sMandConsRegisterClient) SetState(ctx context.Context, in *NewState, opts ...grpc.CallOption) (*NewStateReply, error) {
 	out := new(NewStateReply)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/SetState", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/SetState", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error) {
+func (c *sMandConsRegisterClient) GetPromise(ctx context.Context, in *Prepare, opts ...grpc.CallOption) (*Promise, error) {
 	out := new(Promise)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/GetPromise", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/GetPromise", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error) {
+func (c *sMandConsRegisterClient) Accept(ctx context.Context, in *Propose, opts ...grpc.CallOption) (*Learn, error) {
 	out := new(Learn)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/Accept", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/Accept", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *advRegisterClient) Fwd(ctx context.Context, in *Proposal, opts ...grpc.CallOption) (*Ack, error) {
+func (c *sMandConsRegisterClient) Fwd(ctx context.Context, in *Proposal, opts ...grpc.CallOption) (*Ack, error) {
 	out := new(Ack)
-	err := grpc.Invoke(ctx, "/proto.AdvRegister/Fwd", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/proto.SMandConsRegister/Fwd", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for AdvRegister service
+// Server API for SMandConsRegister service
 
-type AdvRegisterServer interface {
+type SMandConsRegisterServer interface {
 	// Read a register value
 	Read(context.Context, *Conf) (*ReadReply, error)
 	// Write a value to the register
@@ -3710,222 +3714,226 @@ type AdvRegisterServer interface {
 	// Inform the servers that a new configuration has been installed
 	SetCur(context.Context, *NewCur) (*NewCurReply, error)
 	// Propose a value to lattice agreement
+	// Only used in smartMerge algorithm
 	LAProp(context.Context, *LAProposal) (*LAReply, error)
 	// Set register and lattice agreement state in new configuration
 	SetState(context.Context, *NewState) (*NewStateReply, error)
 	// Consensus: Paxos first phase
+	// Only used in the consensus based algorithm (RAMBO)
 	GetPromise(context.Context, *Prepare) (*Promise, error)
 	// Consensus: Paxos second phase
+	// Only used in the consensus based algorithm (RAMBO)
 	Accept(context.Context, *Propose) (*Learn, error)
 	// Consensus propagate learned value
+	// Only used in the consensus based algorithm (RAMBO)
 	Fwd(context.Context, *Proposal) (*Ack, error)
 }
 
-func RegisterAdvRegisterServer(s *grpc.Server, srv AdvRegisterServer) {
-	s.RegisterService(&_AdvRegister_serviceDesc, srv)
+func RegisterSMandConsRegisterServer(s *grpc.Server, srv SMandConsRegisterServer) {
+	s.RegisterService(&_SMandConsRegister_serviceDesc, srv)
 }
 
-func _AdvRegister_Read_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_Read_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Conf)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).Read(ctx, in)
+		return srv.(SMandConsRegisterServer).Read(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/Read",
+		FullMethod: "/proto.SMandConsRegister/Read",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).Read(ctx, req.(*Conf))
+		return srv.(SMandConsRegisterServer).Read(ctx, req.(*Conf))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_Write_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_Write_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(WriteS)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).Write(ctx, in)
+		return srv.(SMandConsRegisterServer).Write(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/Write",
+		FullMethod: "/proto.SMandConsRegister/Write",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).Write(ctx, req.(*WriteS))
+		return srv.(SMandConsRegisterServer).Write(ctx, req.(*WriteS))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_WriteNext_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_WriteNext_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(WriteN)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).WriteNext(ctx, in)
+		return srv.(SMandConsRegisterServer).WriteNext(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/WriteNext",
+		FullMethod: "/proto.SMandConsRegister/WriteNext",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).WriteNext(ctx, req.(*WriteN))
+		return srv.(SMandConsRegisterServer).WriteNext(ctx, req.(*WriteN))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_SetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_SetCur_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NewCur)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).SetCur(ctx, in)
+		return srv.(SMandConsRegisterServer).SetCur(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/SetCur",
+		FullMethod: "/proto.SMandConsRegister/SetCur",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).SetCur(ctx, req.(*NewCur))
+		return srv.(SMandConsRegisterServer).SetCur(ctx, req.(*NewCur))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_LAProp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_LAProp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LAProposal)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).LAProp(ctx, in)
+		return srv.(SMandConsRegisterServer).LAProp(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/LAProp",
+		FullMethod: "/proto.SMandConsRegister/LAProp",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).LAProp(ctx, req.(*LAProposal))
+		return srv.(SMandConsRegisterServer).LAProp(ctx, req.(*LAProposal))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_SetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_SetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NewState)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).SetState(ctx, in)
+		return srv.(SMandConsRegisterServer).SetState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/SetState",
+		FullMethod: "/proto.SMandConsRegister/SetState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).SetState(ctx, req.(*NewState))
+		return srv.(SMandConsRegisterServer).SetState(ctx, req.(*NewState))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_GetPromise_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_GetPromise_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Prepare)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).GetPromise(ctx, in)
+		return srv.(SMandConsRegisterServer).GetPromise(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/GetPromise",
+		FullMethod: "/proto.SMandConsRegister/GetPromise",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).GetPromise(ctx, req.(*Prepare))
+		return srv.(SMandConsRegisterServer).GetPromise(ctx, req.(*Prepare))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_Accept_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_Accept_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Propose)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).Accept(ctx, in)
+		return srv.(SMandConsRegisterServer).Accept(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/Accept",
+		FullMethod: "/proto.SMandConsRegister/Accept",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).Accept(ctx, req.(*Propose))
+		return srv.(SMandConsRegisterServer).Accept(ctx, req.(*Propose))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdvRegister_Fwd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SMandConsRegister_Fwd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Proposal)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdvRegisterServer).Fwd(ctx, in)
+		return srv.(SMandConsRegisterServer).Fwd(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AdvRegister/Fwd",
+		FullMethod: "/proto.SMandConsRegister/Fwd",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdvRegisterServer).Fwd(ctx, req.(*Proposal))
+		return srv.(SMandConsRegisterServer).Fwd(ctx, req.(*Proposal))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _AdvRegister_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.AdvRegister",
-	HandlerType: (*AdvRegisterServer)(nil),
+var _SMandConsRegister_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.SMandConsRegister",
+	HandlerType: (*SMandConsRegisterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Read",
-			Handler:    _AdvRegister_Read_Handler,
+			Handler:    _SMandConsRegister_Read_Handler,
 		},
 		{
 			MethodName: "Write",
-			Handler:    _AdvRegister_Write_Handler,
+			Handler:    _SMandConsRegister_Write_Handler,
 		},
 		{
 			MethodName: "WriteNext",
-			Handler:    _AdvRegister_WriteNext_Handler,
+			Handler:    _SMandConsRegister_WriteNext_Handler,
 		},
 		{
 			MethodName: "SetCur",
-			Handler:    _AdvRegister_SetCur_Handler,
+			Handler:    _SMandConsRegister_SetCur_Handler,
 		},
 		{
 			MethodName: "LAProp",
-			Handler:    _AdvRegister_LAProp_Handler,
+			Handler:    _SMandConsRegister_LAProp_Handler,
 		},
 		{
 			MethodName: "SetState",
-			Handler:    _AdvRegister_SetState_Handler,
+			Handler:    _SMandConsRegister_SetState_Handler,
 		},
 		{
 			MethodName: "GetPromise",
-			Handler:    _AdvRegister_GetPromise_Handler,
+			Handler:    _SMandConsRegister_GetPromise_Handler,
 		},
 		{
 			MethodName: "Accept",
-			Handler:    _AdvRegister_Accept_Handler,
+			Handler:    _SMandConsRegister_Accept_Handler,
 		},
 		{
 			MethodName: "Fwd",
-			Handler:    _AdvRegister_Fwd_Handler,
+			Handler:    _SMandConsRegister_Fwd_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -7659,53 +7667,53 @@ var (
 func init() { proto1.RegisterFile("dc-smartMerge.proto", fileDescriptorDcSmartMerge) }
 
 var fileDescriptorDcSmartMerge = []byte{
-	// 756 bytes of a gzipped FileDescriptorProto
+	// 761 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x54, 0x4d, 0x6e, 0xd3, 0x40,
-	0x18, 0x8d, 0xe3, 0x24, 0x4d, 0x3e, 0x27, 0x2d, 0x1d, 0xa0, 0x0a, 0x46, 0xb5, 0x82, 0xa9, 0x50,
-	0x24, 0x4a, 0x22, 0x02, 0xa8, 0x02, 0x36, 0xa4, 0x41, 0x74, 0x13, 0xa2, 0x2a, 0xa9, 0x02, 0x1b,
-	0x24, 0x1c, 0x67, 0x48, 0xa3, 0x26, 0xb1, 0x19, 0x8f, 0x9b, 0xb2, 0xeb, 0x11, 0x38, 0x06, 0x17,
-	0xe0, 0x0e, 0x48, 0x6c, 0xba, 0x64, 0xd9, 0x9a, 0x0d, 0x4b, 0x8e, 0x80, 0x3c, 0x33, 0xfe, 0x69,
-	0x03, 0x56, 0x16, 0xac, 0x6c, 0x8f, 0xdf, 0x7b, 0xf3, 0xde, 0x37, 0xdf, 0x37, 0x70, 0x7d, 0x68,
-	0x3e, 0x70, 0xa6, 0x06, 0xa1, 0xaf, 0x31, 0x19, 0xe1, 0x9a, 0x4d, 0x2c, 0x6a, 0xa1, 0x2c, 0x7b,
-	0xa8, 0x5b, 0xa3, 0x31, 0x3d, 0x74, 0x07, 0x35, 0xd3, 0x9a, 0xd6, 0x09, 0x9e, 0x18, 0x83, 0xfa,
-	0xc8, 0x22, 0xee, 0xd4, 0x11, 0x0f, 0x0e, 0x56, 0x77, 0x16, 0x50, 0x91, 0x5e, 0x7d, 0x30, 0x71,
-	0xb1, 0x4d, 0xc6, 0x33, 0xea, 0xc4, 0x5e, 0x39, 0x51, 0x7f, 0x0a, 0xd9, 0x1e, 0x35, 0x28, 0x46,
-	0x25, 0xc8, 0xf6, 0x8d, 0x89, 0x8b, 0xcb, 0x52, 0x45, 0xaa, 0x16, 0xd1, 0x3a, 0x14, 0x0e, 0xc6,
-	0x53, 0xec, 0x50, 0x63, 0x6a, 0x97, 0xd3, 0x15, 0xa9, 0x9a, 0x45, 0xab, 0x90, 0x7b, 0x43, 0xc6,
-	0x14, 0x93, 0xb2, 0x5c, 0x91, 0xaa, 0x25, 0xfd, 0x0e, 0x64, 0x5a, 0xd6, 0xec, 0x03, 0x2a, 0x42,
-	0xe6, 0xe0, 0x70, 0xec, 0x30, 0x62, 0x09, 0x29, 0x20, 0xb7, 0x5c, 0xc2, 0x28, 0x25, 0xdd, 0x84,
-	0x82, 0x0f, 0xe9, 0x62, 0x7b, 0xf2, 0x09, 0xe9, 0xfc, 0x8f, 0x0f, 0x53, 0x1a, 0x37, 0x6b, 0x31,
-	0x2b, 0xbb, 0xc1, 0xab, 0xef, 0xa2, 0x39, 0xb0, 0x08, 0x65, 0xfc, 0x3c, 0xba, 0x0b, 0x99, 0x0e,
-	0x3e, 0xa1, 0x65, 0xb9, 0x22, 0xff, 0x93, 0xa3, 0x3f, 0x83, 0x5c, 0x07, 0xcf, 0x5b, 0x2e, 0x59,
-	0x6a, 0x87, 0x22, 0x64, 0x5a, 0x2e, 0x69, 0x09, 0x83, 0x2a, 0x28, 0x9c, 0xcb, 0x2d, 0x2a, 0x20,
-	0x77, 0xf0, 0x9c, 0x09, 0xe4, 0xfd, 0x7c, 0x5d, 0x6c, 0x0c, 0xd1, 0x2d, 0x9e, 0x53, 0xc8, 0x2a,
-	0xbc, 0x70, 0x35, 0x7f, 0x49, 0xdf, 0x83, 0x82, 0x0f, 0xe1, 0xe4, 0xdb, 0xa2, 0x94, 0x02, 0x58,
-	0x14, 0x40, 0x5e, 0xde, 0xcd, 0xa8, 0x2c, 0x4a, 0xe3, 0x5a, 0x4c, 0x83, 0x71, 0xf5, 0x17, 0xa2,
-	0xb6, 0xbd, 0x64, 0x95, 0xc0, 0x4a, 0x7a, 0xd1, 0xca, 0x73, 0xa1, 0xd0, 0x09, 0x13, 0xf2, 0xf3,
-	0x08, 0x4a, 0x98, 0x4e, 0x28, 0x8a, 0xfe, 0x11, 0x14, 0x4e, 0xe6, 0x49, 0x36, 0xe3, 0x75, 0x5c,
-	0x30, 0x1b, 0x59, 0x4c, 0xff, 0xc5, 0xe2, 0x3d, 0x58, 0x69, 0x37, 0xf9, 0x6f, 0x39, 0x69, 0xcb,
-	0x36, 0x40, 0xbb, 0xb9, 0x4f, 0x2c, 0xdb, 0x72, 0x8c, 0x49, 0x42, 0x8d, 0xfd, 0x00, 0x3e, 0x2c,
-	0x39, 0xc0, 0xbe, 0xbf, 0xeb, 0x52, 0xe6, 0x63, 0xfe, 0x12, 0x15, 0xdf, 0x41, 0xbe, 0x83, 0xe7,
-	0x3c, 0xd3, 0xe5, 0x8a, 0xfe, 0x97, 0xf8, 0x6f, 0xa1, 0x14, 0xc8, 0x2f, 0x3f, 0x1d, 0xd1, 0x59,
-	0x26, 0x8c, 0xc3, 0x13, 0x48, 0xb7, 0xfa, 0x7e, 0x27, 0x77, 0x67, 0x43, 0xe1, 0x58, 0x07, 0xb9,
-	0x6f, 0x4c, 0x92, 0xf3, 0x6e, 0xc1, 0xca, 0x3e, 0xc1, 0xb6, 0x41, 0xae, 0xc6, 0x15, 0x4a, 0x7c,
-	0x5e, 0x8e, 0x7d, 0x94, 0x35, 0x1d, 0x3b, 0x78, 0x29, 0xc3, 0x71, 0x2e, 0xda, 0xe0, 0x2e, 0x78,
-	0x59, 0x0a, 0xc1, 0xc1, 0xf4, 0x7d, 0xa1, 0x97, 0xd8, 0x2c, 0x67, 0x92, 0xdc, 0xd5, 0xd9, 0xbe,
-	0xb6, 0xe5, 0x5c, 0x75, 0xb7, 0x11, 0x8f, 0x16, 0x89, 0xea, 0xef, 0x21, 0xdb, 0xc6, 0x06, 0x99,
-	0x2d, 0x65, 0x53, 0x38, 0x48, 0xaa, 0x0f, 0x5a, 0x83, 0x15, 0x26, 0x88, 0x87, 0x2c, 0x41, 0x5e,
-	0xaf, 0x43, 0x3e, 0x6c, 0xdf, 0xa0, 0x47, 0x93, 0x76, 0xd1, 0xb3, 0x20, 0x37, 0xcd, 0xa3, 0xc6,
-	0x77, 0x19, 0x94, 0xe6, 0xf0, 0xb8, 0x8b, 0x47, 0x63, 0x87, 0x62, 0x82, 0xee, 0x8b, 0x6b, 0x26,
-	0xde, 0xf4, 0x6a, 0xd0, 0xb7, 0xe1, 0xed, 0xa2, 0x67, 0x4e, 0xbf, 0x96, 0x25, 0x54, 0x83, 0x2c,
-	0x1b, 0x54, 0x54, 0x12, 0x00, 0x7e, 0x6b, 0xa8, 0x8b, 0x37, 0x0a, 0xc7, 0x3f, 0x86, 0x02, 0x1f,
-	0x6c, 0x7c, 0x42, 0x2f, 0x73, 0x3a, 0x2a, 0xba, 0xf4, 0x19, 0x67, 0x3d, 0x84, 0x5c, 0x0f, 0x53,
-	0xff, 0x46, 0x0d, 0x28, 0xfc, 0x92, 0x0c, 0x29, 0xb1, 0x3b, 0x33, 0xa2, 0xf0, 0x71, 0x46, 0xeb,
-	0x02, 0x13, 0x4d, 0xb7, 0xba, 0x1a, 0x2e, 0xc5, 0x29, 0x3b, 0x90, 0xef, 0x61, 0xca, 0xc7, 0x66,
-	0x2d, 0x12, 0x66, 0x0b, 0xea, 0x8d, 0x2b, 0x0b, 0x71, 0x62, 0x03, 0x60, 0x0f, 0xd3, 0xa0, 0x0f,
-	0x03, 0x71, 0xd1, 0xbd, 0x6a, 0xf4, 0xcd, 0xfe, 0x0b, 0xce, 0x36, 0xe4, 0x9a, 0xa6, 0x89, 0x6d,
-	0x1a, 0xc3, 0xb3, 0x7e, 0x52, 0x83, 0xf9, 0x65, 0xa7, 0x2b, 0xd0, 0x55, 0x90, 0x5f, 0xcd, 0x87,
-	0xa1, 0xab, 0x30, 0x08, 0x88, 0x85, 0xa6, 0x79, 0xc4, 0x91, 0xbb, 0xdb, 0x67, 0x17, 0x5a, 0xea,
-	0xc7, 0x85, 0x96, 0x3a, 0xbf, 0xd0, 0xa4, 0x53, 0x4f, 0x93, 0xbe, 0x78, 0x9a, 0xf4, 0xcd, 0xd3,
-	0xa4, 0x33, 0x4f, 0x93, 0xce, 0x3d, 0x4d, 0xfa, 0xe5, 0x69, 0xa9, 0xdf, 0x9e, 0x26, 0x7d, 0xfe,
-	0xa9, 0xa5, 0x06, 0x39, 0x46, 0x7f, 0xf4, 0x27, 0x00, 0x00, 0xff, 0xff, 0x3a, 0xe0, 0xb8, 0xa6,
-	0xf1, 0x07, 0x00, 0x00,
+	0x18, 0x8d, 0xe3, 0x24, 0x4d, 0xbe, 0x24, 0x2d, 0x1d, 0xa0, 0x0a, 0x46, 0xb5, 0x82, 0xa9, 0x50,
+	0x24, 0x4a, 0x22, 0x02, 0xa8, 0x02, 0x36, 0xa4, 0x41, 0x74, 0x93, 0x46, 0x55, 0x52, 0x05, 0x36,
+	0x48, 0x38, 0xce, 0x90, 0x5a, 0x4d, 0x62, 0x33, 0x1e, 0x93, 0xb2, 0xeb, 0x11, 0x38, 0x06, 0x17,
+	0xe0, 0x0e, 0x2c, 0xcb, 0x8e, 0x65, 0x6b, 0x36, 0x2c, 0x39, 0x02, 0xf2, 0xcc, 0xf8, 0xa7, 0x0d,
+	0x58, 0x59, 0xb0, 0xb2, 0x3d, 0x7e, 0xef, 0xcd, 0x7b, 0xdf, 0x7c, 0xdf, 0xc0, 0xf5, 0x91, 0xf1,
+	0xc0, 0x99, 0xea, 0x84, 0xee, 0x63, 0x32, 0xc6, 0x75, 0x9b, 0x58, 0xd4, 0x42, 0x59, 0xf6, 0x50,
+	0xb6, 0xc6, 0x26, 0x3d, 0x72, 0x87, 0x75, 0xc3, 0x9a, 0x36, 0x08, 0x9e, 0xe8, 0xc3, 0xc6, 0xd8,
+	0x22, 0xee, 0xd4, 0x11, 0x0f, 0x0e, 0x56, 0x76, 0x16, 0x50, 0x91, 0x5e, 0x63, 0x38, 0x71, 0xb1,
+	0x4d, 0xcc, 0x19, 0x75, 0x62, 0xaf, 0x9c, 0xa8, 0x3d, 0x85, 0x6c, 0x9f, 0xea, 0x14, 0xa3, 0x32,
+	0x64, 0x07, 0xfa, 0xc4, 0xc5, 0x15, 0xa9, 0x2a, 0xd5, 0x4a, 0x68, 0x1d, 0x0a, 0x87, 0xe6, 0x14,
+	0x3b, 0x54, 0x9f, 0xda, 0x95, 0x74, 0x55, 0xaa, 0x65, 0xd1, 0x2a, 0xe4, 0x5e, 0x13, 0x93, 0x62,
+	0x52, 0x91, 0xab, 0x52, 0xad, 0xac, 0xdd, 0x81, 0x4c, 0xdb, 0x9a, 0xbd, 0x47, 0x25, 0xc8, 0x1c,
+	0x1e, 0x99, 0x0e, 0x23, 0x96, 0x51, 0x11, 0xe4, 0xb6, 0x4b, 0x18, 0xa5, 0xac, 0x19, 0x50, 0xf0,
+	0x21, 0x3d, 0x6c, 0x4f, 0x3e, 0x21, 0x8d, 0xff, 0xf1, 0x61, 0xc5, 0xe6, 0xcd, 0x7a, 0xcc, 0xca,
+	0x6e, 0xf0, 0xea, 0xbb, 0x68, 0x0d, 0x2d, 0x42, 0x19, 0x3f, 0x8f, 0xee, 0x42, 0xa6, 0x8b, 0x4f,
+	0x68, 0x45, 0xae, 0xca, 0xff, 0xe4, 0x68, 0xcf, 0x20, 0xd7, 0xc5, 0xf3, 0xb6, 0x4b, 0x96, 0xda,
+	0xa1, 0x04, 0x99, 0xb6, 0x4b, 0xda, 0xc2, 0xa0, 0x02, 0x45, 0xce, 0xe5, 0x16, 0x8b, 0x20, 0x77,
+	0xf1, 0x9c, 0x09, 0xe4, 0xfd, 0x7c, 0x3d, 0xac, 0x8f, 0xd0, 0x2d, 0x9e, 0x53, 0xc8, 0x16, 0x79,
+	0xe1, 0xea, 0xfe, 0x92, 0xb6, 0x07, 0x05, 0x1f, 0xc2, 0xc9, 0xb7, 0x45, 0x29, 0x05, 0xb0, 0x24,
+	0x80, 0xbc, 0xbc, 0x9b, 0x51, 0x59, 0x8a, 0xcd, 0x6b, 0x31, 0x0d, 0xc6, 0xd5, 0x5e, 0x88, 0xda,
+	0xf6, 0x93, 0x55, 0x02, 0x2b, 0xe9, 0x45, 0x2b, 0xcf, 0x85, 0x42, 0x37, 0x4c, 0xc8, 0xcf, 0x23,
+	0x28, 0x61, 0x3a, 0xa1, 0x28, 0xda, 0x07, 0x28, 0x72, 0x32, 0x4f, 0xb2, 0x19, 0xaf, 0xe3, 0x82,
+	0xd9, 0xc8, 0x62, 0xfa, 0x2f, 0x16, 0xef, 0xc1, 0x4a, 0xa7, 0xc5, 0x7f, 0xcb, 0x49, 0x5b, 0x76,
+	0x00, 0x3a, 0xad, 0x03, 0x62, 0xd9, 0x96, 0xa3, 0x4f, 0x12, 0x6a, 0xec, 0x07, 0xf0, 0x61, 0xc9,
+	0x01, 0x0e, 0xfc, 0x5d, 0x97, 0x32, 0x1f, 0xf3, 0x97, 0xa8, 0xf8, 0x16, 0xf2, 0x5d, 0x3c, 0xe7,
+	0x99, 0x2e, 0x57, 0xf4, 0xbf, 0xc4, 0x7f, 0x03, 0xe5, 0x40, 0x7e, 0xf9, 0xe9, 0x88, 0xce, 0x32,
+	0x61, 0x1c, 0x9e, 0x40, 0xba, 0x3d, 0xf0, 0x3b, 0xb9, 0x37, 0x1b, 0x09, 0xc7, 0x1a, 0xc8, 0x03,
+	0x7d, 0x92, 0x9c, 0x77, 0x0b, 0x56, 0x0e, 0x08, 0xb6, 0x75, 0x72, 0x35, 0xae, 0x50, 0xe2, 0xf3,
+	0xf2, 0xd1, 0x47, 0x59, 0x53, 0xd3, 0xc1, 0x4b, 0x19, 0x8e, 0x73, 0xd1, 0x06, 0x77, 0xc1, 0xcb,
+	0x52, 0x08, 0x0e, 0x66, 0xe0, 0x0b, 0xbd, 0xc4, 0x46, 0x25, 0x93, 0xe4, 0xae, 0xc1, 0xf6, 0xb5,
+	0x2d, 0xe7, 0xaa, 0xbb, 0x8d, 0x78, 0xb4, 0x48, 0x54, 0x7b, 0x07, 0xd9, 0x0e, 0xd6, 0xc9, 0x6c,
+	0x29, 0x9b, 0xc2, 0x41, 0x52, 0x7d, 0xd0, 0x1a, 0xac, 0x30, 0x41, 0x3c, 0x62, 0x09, 0xf2, 0x5a,
+	0x03, 0xf2, 0x61, 0xfb, 0x06, 0x3d, 0x9a, 0xb4, 0x8b, 0x96, 0x05, 0xb9, 0x65, 0x1c, 0x37, 0xbf,
+	0xcb, 0xb0, 0xde, 0xdf, 0xd7, 0x67, 0xa3, 0xb6, 0x35, 0x73, 0x7a, 0x78, 0x6c, 0x3a, 0x14, 0x13,
+	0x74, 0x5f, 0x5c, 0x36, 0xf1, 0xd6, 0x57, 0x82, 0xee, 0x0d, 0xef, 0x18, 0x2d, 0x73, 0xfa, 0xb5,
+	0x22, 0xa1, 0x3a, 0x64, 0xd9, 0xb8, 0xa2, 0xb2, 0x00, 0xf0, 0xbb, 0x43, 0x59, 0xbc, 0x57, 0x38,
+	0xfe, 0x31, 0x14, 0xf8, 0x78, 0xe3, 0x13, 0x7a, 0x99, 0xd3, 0x55, 0xd0, 0xa5, 0xcf, 0x38, 0xeb,
+	0x21, 0xe4, 0xfa, 0x98, 0xfa, 0xf7, 0x6a, 0x40, 0xe1, 0x57, 0x65, 0x48, 0x89, 0xdd, 0x9c, 0x11,
+	0x85, 0x0f, 0x35, 0x5a, 0x17, 0x98, 0x68, 0xc6, 0x95, 0xd5, 0x70, 0x29, 0x4e, 0xd9, 0x81, 0x7c,
+	0x1f, 0x53, 0x3e, 0x3c, 0x6b, 0x91, 0x30, 0x5b, 0x50, 0x6e, 0x5c, 0x59, 0x88, 0x13, 0x9b, 0x00,
+	0x7b, 0x98, 0x06, 0xdd, 0x18, 0x88, 0x8b, 0x1e, 0x56, 0xa2, 0x6f, 0xf6, 0x5f, 0x70, 0xb6, 0x21,
+	0xd7, 0x32, 0x0c, 0x6c, 0xd3, 0x18, 0x9e, 0x75, 0x95, 0x12, 0x4c, 0x31, 0x3b, 0x63, 0x81, 0xae,
+	0x81, 0xfc, 0x6a, 0x3e, 0x0a, 0x5d, 0x85, 0x41, 0x40, 0x2c, 0xb4, 0x8c, 0x63, 0x8e, 0xdc, 0xdd,
+	0x3e, 0xbb, 0x50, 0x53, 0x3f, 0x2e, 0xd4, 0xd4, 0xf9, 0x85, 0x2a, 0x9d, 0x7a, 0xaa, 0xf4, 0xc5,
+	0x53, 0xa5, 0x6f, 0x9e, 0x2a, 0x9d, 0x79, 0xaa, 0x74, 0xee, 0xa9, 0xd2, 0x2f, 0x4f, 0x4d, 0xfd,
+	0xf6, 0x54, 0xe9, 0xf3, 0x4f, 0x35, 0x35, 0xcc, 0x31, 0xfa, 0xa3, 0x3f, 0x01, 0x00, 0x00, 0xff,
+	0xff, 0xd8, 0xe8, 0x8e, 0x81, 0xf7, 0x07, 0x00, 0x00,
 }

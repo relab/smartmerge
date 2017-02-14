@@ -40,7 +40,7 @@ var InitState = pb.State{Value: nil, Timestamp: int32(0), Writer: uint32(0)}
 func NewRegServer(noabort bool) *RegServer {
 	rs := &RegServer{}
 	rs.RWMutex = sync.RWMutex{}
-	rs.RState = &pb.State{make([]byte, 0), int32(0), uint32(0)}
+	rs.RState = &pb.State{Value: make([]byte, 0), Timestamp: int32(0), Writer: uint32(0)}
 	rs.Next = make([]*pb.Blueprint, 0, 5)
 	rs.NextMap = make(map[uint32]*pb.Blueprint, 5)
 	rs.Rnd = make(map[uint32]uint32, 5)
@@ -57,6 +57,9 @@ func NewRegServerWithCur(cur *pb.Blueprint, curc uint32, noabort bool) *RegServe
 	return rs
 }
 
+// handleConf updates the information about
+// blueprints/ configuraitons stored at the server and returns
+// all configurations larger than the current one.
 func (rs *RegServer) handleConf(conf *pb.Conf, n *pb.Blueprint) (cr *pb.ConfReply) {
 	if conf == nil || (conf.This < rs.CurC && !rs.noabort) {
 		//The client is using an outdated configuration, abort.
@@ -95,7 +98,7 @@ func (rs *RegServer) handleConf(conf *pb.Conf, n *pb.Blueprint) (cr *pb.ConfRepl
 	return nil
 }
 
-func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
+func (rs *RegServer) Read(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
 	rs.RLock()
 	defer rs.RUnlock()
 	glog.V(5).Infoln("Handling ReadS")
@@ -108,7 +111,7 @@ func (rs *RegServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, er
 	return &pb.ReadReply{State: rs.RState, Cur: cr}, nil
 }
 
-func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply, error) {
+func (rs *RegServer) Write(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply, error) {
 	rs.Lock()
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteS")
@@ -122,12 +125,12 @@ func (rs *RegServer) AWriteS(ctx context.Context, wr *pb.WriteS) (*pb.ConfReply,
 	return &pb.ConfReply{}, nil
 }
 
-func (rs *RegServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNReply, error) {
+func (rs *RegServer) WriteNext(ctx context.Context, wr *pb.WriteN) (*pb.WriteNReply, error) {
 	rs.Lock()
 	defer rs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	cr := rs.handleConf(&pb.Conf{wr.CurC, wr.CurC}, wr.Next)
+	cr := rs.handleConf(&pb.Conf{This: wr.CurC, Cur: wr.CurC}, wr.Next)
 	if cr != nil && cr.Abort {
 		return &pb.WriteNReply{Cur: cr}, nil
 	}
@@ -246,11 +249,11 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 	//defer rs.PrintState("SetCur")
 
 	if nc.CurC == rs.CurC {
-		return &pb.NewCurReply{false}, nil
+		return &pb.NewCurReply{New: false}, nil
 	}
 
 	if nc.Cur.LearnedCompare(rs.Cur) >= 0 {
-		return &pb.NewCurReply{false}, nil
+		return &pb.NewCurReply{New: false}, nil
 	}
 
 	glog.V(3).Infoln("New Current Conf: ", nc.GetCur())
@@ -265,7 +268,7 @@ func (rs *RegServer) SetCur(ctx context.Context, nc *pb.NewCur) (*pb.NewCurReply
 	}
 	rs.Next = newNext
 
-	return &pb.NewCurReply{true}, nil
+	return &pb.NewCurReply{New: true}, nil
 }
 
 func (rs *RegServer) Fwd(ctx context.Context, p *pb.Proposal) (*pb.Ack, error) {

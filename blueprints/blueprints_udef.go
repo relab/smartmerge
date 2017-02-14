@@ -1,3 +1,11 @@
+// Package blueprints contains blueprints for configurations.
+// a blueprint holds information about the set of processes and quorum size
+// of a configuration.
+// Additionally a blueprint contains an epoch number and information on nodes,
+// that have been removed from the blueprint.
+// This information is used to combine to blueprints.
+// Two blueprints can be combined by the Merge function.
+// Blueprints together with the merge function form a lattice.
 package blueprints
 
 // This file contains manually coded methods on the blueprint structs created
@@ -13,11 +21,11 @@ package blueprints
 // Difference computes the difference between two arrays,
 // i.e. all elements from A, that are not part of B.
 // It is used in the norecontact-configuration provider.
-func Difference(A, B []int) (C []int) {
+func Difference(A, B []uint32) (C []uint32) {
 	return difference(A, B)
 }
-func difference(A, B []int) (C []int) {
-	C = make([]int, 0, len(A))
+func difference(A, B []uint32) (C []uint32) {
+	C = make([]uint32, 0, len(A))
 	for _, id := range A {
 		copy := true
 		for _, id2 := range B {
@@ -227,8 +235,20 @@ for_a:
 	return true
 }
 
-// This should probably be privat.
+// Hash returns an integer that uniquely describs the configuration.
+// Additionally, if blueprints are comparable
+// (ordered as elements of the lattice), their hashes reflect this order.
+func (bp *Blueprint) Hash() int {
+	return bp.len()
+}
+
+// Len function name depricated. Should be replaced by Hash
+// returns an integer that uniquely describs the configuration.
 func (bp *Blueprint) Len() int {
+	return bp.len()
+}
+
+func (bp *Blueprint) len() int {
 	if bp == nil {
 		return 0
 	}
@@ -252,10 +272,10 @@ func (bp *Blueprint) Len() int {
 // LearnedCompare can be used to compare, if it is known that the blueprints are
 // comparable.
 func (bp *Blueprint) LearnedCompare(blpr *Blueprint) int {
-	if bp.Len() < blpr.Len() {
+	if bp.len() < blpr.len() {
 		return 1
 	}
-	if bp.Len() > blpr.Len() {
+	if bp.len() > blpr.len() {
 		return -1
 	}
 
@@ -264,7 +284,7 @@ func (bp *Blueprint) LearnedCompare(blpr *Blueprint) int {
 
 // LearnedEquals checks whether two comparable blueprints are equal.
 func (bp *Blueprint) LearnedEquals(blpr *Blueprint) bool {
-	return bp.Len() == blpr.Len()
+	return bp.len() == blpr.len()
 }
 
 // Ids returns the set of nodes (node ids) that are actually in the configuration.
@@ -320,6 +340,8 @@ func (bp *Blueprint) Rem(id uint32) bool {
 }
 
 // Quorum returns the number of nodes necessary to form a quorum.
+// If bp.FaultTolerance is smaller than half of the nodes in the configuration,
+// Quorum will be larger than necessary.
 func (bp *Blueprint) Quorum() int {
 	n := len(bp.Ids())
 	if q := n/2 + 1; q >= n-int(bp.FaultTolerance) {
@@ -327,6 +349,31 @@ func (bp *Blueprint) Quorum() int {
 	}
 	return n - int(bp.FaultTolerance)
 }
+
+/* The following was moved into the package qfunc
+
+// ReadQuorum returns the size of a read quorum.
+// If bp.FaultTolerance is smaller than half of the nodes in the configuration,
+// The ReadQuorum size will equal FaultTolerance + 1.
+// Otherwise, a ReadQuorum includes half of the nodes (rounded up).
+func (bp *Blueprint) ReadQuorum() int {
+	return len(bp.Ids()) - bp.Quorum() + 1
+}
+
+// WriteQuorum returns the size of a WriteQuorum.
+// WriteQuorum may be larger than ReadQuorums.
+func (bp *Blueprint) WriteQuorum() int {
+	return bp.Quorum()
+}
+
+// MaxQuorum returns the size of a Quorum
+// that is both a read and write quorum.
+func (bp *Blueprint) MaxQuorum() int {
+	if bp.Quorum() > bp.ReadQuorum() {
+		return bp.Quorum()
+	}
+	return bp.ReadQuorum()
+}*/
 
 // Copy copies a blueprint.
 func (bp *Blueprint) Copy() *Blueprint {

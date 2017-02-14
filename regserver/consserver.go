@@ -1,5 +1,7 @@
 package regserver
 
+// I believe the consserver is actually outdated, since the regserver also implements consensus
+
 import (
 	"errors"
 
@@ -49,7 +51,7 @@ func (cs *ConsServer) handleConf(conf *pb.Conf, next *pb.Blueprint) (cr *pb.Conf
 	return nil
 }
 
-func (cs *ConsServer) AReadS(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
+func (cs *ConsServer) Read(ctx context.Context, rr *pb.Conf) (*pb.ReadReply, error) {
 	cs.RLock()
 	defer cs.RUnlock()
 	glog.V(5).Infoln("Handling ReadS")
@@ -82,7 +84,7 @@ func (cs *ConsServer) AWriteN(ctx context.Context, wr *pb.WriteN) (*pb.WriteNRep
 	defer cs.Unlock()
 	glog.V(5).Infoln("Handling WriteN")
 
-	cr := cs.handleConf(&pb.Conf{wr.CurC, wr.CurC}, wr.Next)
+	cr := cs.handleConf(&pb.Conf{This: wr.CurC, Cur: wr.CurC}, wr.Next)
 	if cr != nil && cr.Abort {
 		return &pb.WriteNReply{Cur: cr}, nil
 	}

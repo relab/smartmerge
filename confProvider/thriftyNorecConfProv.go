@@ -4,20 +4,21 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-
+	bp "github.com/relab/smartMerge/blueprints"
 	pb "github.com/relab/smartMerge/proto"
+	qspec "github.com/relab/smartMerge/qfuncs"
 )
 
 var ConfTimeout = 1 * time.Second
 var TryTimeout = 500 * time.Millisecond
 
 type Provider interface {
-	FullC(*pb.Blueprint) *pb.Configuration
-	ReadC(*pb.Blueprint, []int) *pb.Configuration
-	WriteC(*pb.Blueprint, []int) *pb.Configuration
-	SingleC(*pb.Blueprint) *pb.Configuration
-	GIDs([]int) []uint32
-	WriteCNoS(*pb.Blueprint, []int) *pb.Configuration
+	FullC(*bp.Blueprint) *pb.Configuration
+	ReadC(*bp.Blueprint, []uint32) *pb.Configuration
+	WriteC(*bp.Blueprint, []uint32) *pb.Configuration
+	SingleC(*bp.Blueprint) *pb.Configuration
+	GIDs([]uint32) []uint32
+	WriteCNoS(*bp.Blueprint, []uint32) *pb.Configuration
 }
 
 type ThriftyNorecConfP struct {
@@ -29,12 +30,12 @@ func NewProvider(mgr *pb.Manager, id int) *ThriftyNorecConfP {
 	return &ThriftyNorecConfP{mgr, id}
 }
 
-func (cp *ThriftyNorecConfP) chooseQ(ids []int, q int) (quorum []int) {
+func (cp *ThriftyNorecConfP) chooseQ(ids []uint32, q int) (quorum []uint32) {
 	if q > len(ids) {
 		glog.Fatalf("Trying to choose %d nodes, out of %d\n", q, len(ids))
 	}
 
-	quorum = make([]int, q)
+	quorum = make([]uint32, q)
 	start := cp.id % len(ids)
 	if start+q <= len(ids) {
 		copy(quorum, ids[start:])
@@ -45,10 +46,10 @@ func (cp *ThriftyNorecConfP) chooseQ(ids []int, q int) (quorum []int) {
 	return quorum
 }
 
-func (cp *ThriftyNorecConfP) ReadC(blp *pb.Blueprint, rids []int) *pb.Configuration {
-	cids := cp.mgr.ToIds(blp.Ids())
-	rq := len(cids) - blp.Quorum() + 1 //read quorum
-	newcids := pb.Difference(cids, rids)
+func (cp *ThriftyNorecConfP) ReadC(blp *bp.Blueprint, rids []uint32) *pb.Configuration {
+	cids := blp.Ids()
+	rq := qspec.ReadQuorum(blp.Quorum(), len(cids))
+	newcids := bp.Difference(cids, rids) //Nodes in the configuration (cids), that have not yet replies (not in rids)
 
 	if len(cids)-len(newcids) >= rq {
 		//We already have enough replies.
@@ -57,10 +58,12 @@ func (cp *ThriftyNorecConfP) ReadC(blp *pb.Blueprint, rids []int) *pb.Configurat
 
 	// I already have y := len(cids) - len(newcids) many replies.
 	// I still need rq - y many.
-	newcids = cp.chooseQ(newcids, rq-len(cids)+len(newcids))
+	newcids = cp.chooseQ(newcids, rq-(len(cids)-len(newcids)))
 
 	// With quorum size 1, a read quorum contains all processes.
-	cnf, err := cp.mgr.NewConfiguration(newcids, 1, TryTimeout)
+	qs := qspec.NewSMQSpec(1, len(newcids))
+
+	cnf, err := cp.mgr.NewConfiguration(newcids, qs)
 	if err != nil {
 		glog.Fatalln("could not get read config")
 	}
@@ -68,10 +71,10 @@ func (cp *ThriftyNorecConfP) ReadC(blp *pb.Blueprint, rids []int) *pb.Configurat
 	return cnf
 }
 
-func (cp *ThriftyNorecConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configuration {
-	cids := cp.mgr.ToIds(blp.Ids())
-	q := blp.Quorum()
-	newcids := pb.Difference(cids, rids)
+func (cp *ThriftyNorecConfP) WriteC(blp *bp.Blueprint, rids []uint32) *pb.Configuration {
+	cids := blp.Ids()
+	q := qspec.WriteQuorum(blp.Quorum(), len(cids))
+	newcids := bp.Difference(cids, rids)
 
 	if len(cids)-len(newcids) >= q {
 		//We already have enough replies.
@@ -81,7 +84,9 @@ func (cp *ThriftyNorecConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configura
 	// I already have y := len(cids) - len(newcids) many replies.
 	// I still need q - y many.
 	newcids = cp.chooseQ(newcids, q-len(cids)+len(newcids))
-	cnf, err := cp.mgr.NewConfiguration(newcids, len(newcids), TryTimeout)
+	qs := qspec.NewSMQSpec(len(newcids), len(newcids))
+
+	cnf, err := cp.mgr.NewConfiguration(newcids, qs)
 	if err != nil {
 		glog.Fatalln("could not get read config")
 	}
@@ -89,11 +94,11 @@ func (cp *ThriftyNorecConfP) WriteC(blp *pb.Blueprint, rids []int) *pb.Configura
 	return cnf
 }
 
-func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
-	cids := cp.mgr.ToIds(blp.Ids())
-	q := blp.Quorum()
+func (cp *ThriftyNorecConfP) FullC(blp *bp.Blueprint) *pb.Configuration {
+	cids := blp.Ids()
 
-	cnf, err := cp.mgr.NewConfiguration(cids, q, ConfTimeout)
+	qs := qspec.SMQSpecFromBP(blp)
+	cnf, err := cp.mgr.NewConfiguration(cids, qs)
 	if err != nil {
 		glog.Fatalln("could not get config")
 	}
@@ -101,17 +106,18 @@ func (cp *ThriftyNorecConfP) FullC(blp *pb.Blueprint) *pb.Configuration {
 	return cnf
 }
 
-func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
-	cids := cp.mgr.ToIds(blp.Ids())
+func (cp *ThriftyNorecConfP) SingleC(blp *bp.Blueprint) *pb.Configuration {
+	cids := blp.Ids()
 	m := cids[0]
 	for _, id := range cids {
 		if m < id {
 			m = id
 		}
 	}
-	cids = []int{m}
+	cids = []uint32{m}
 
-	cnf, err := cp.mgr.NewConfiguration(cids, 1, ConfTimeout)
+	qs := qspec.NewSMQSpec(1, 1)
+	cnf, err := cp.mgr.NewConfiguration(cids, qs)
 	if err != nil {
 		glog.Fatalln("could not get config")
 	}
@@ -119,8 +125,8 @@ func (cp *ThriftyNorecConfP) SingleC(blp *pb.Blueprint) *pb.Configuration {
 	return cnf
 }
 
-func (cp *ThriftyNorecConfP) WriteCNoS(blp *pb.Blueprint, rids []int) *pb.Configuration {
-	cids := cp.mgr.ToIds(blp.Ids())
+func (cp *ThriftyNorecConfP) WriteCNoS(blp *bp.Blueprint, rids []uint32) *pb.Configuration {
+	cids := blp.Ids()
 	m := cids[0]
 	for _, id := range cids {
 		if m < id {
@@ -129,7 +135,7 @@ func (cp *ThriftyNorecConfP) WriteCNoS(blp *pb.Blueprint, rids []int) *pb.Config
 	}
 
 	q := blp.Quorum()
-	newcids := pb.Difference(cids, rids)
+	newcids := bp.Difference(cids, rids)
 
 	if len(cids)-len(newcids) >= q {
 		//We already have enough replies.
@@ -139,16 +145,13 @@ func (cp *ThriftyNorecConfP) WriteCNoS(blp *pb.Blueprint, rids []int) *pb.Config
 	// I already have y := len(cids) - len(newcids) many replies.
 	// I still need q - y many.
 	y := len(cids) - len(newcids)
-	newcids = pb.Difference(newcids, []int{m})
+	newcids = bp.Difference(newcids, []uint32{m})
 	newcids = cp.chooseQ(newcids, q-y)
-	cnf, err := cp.mgr.NewConfiguration(newcids, len(newcids), TryTimeout)
+	qs := qspec.NewSMQSpec(len(newcids), len(newcids))
+	cnf, err := cp.mgr.NewConfiguration(newcids, qs)
 	if err != nil {
 		glog.Fatalln("could not get read config")
 	}
 
 	return cnf
-}
-
-func (cp *ThriftyNorecConfP) GIDs(in []int) []uint32 {
-	return cp.mgr.ToGids(in)
 }

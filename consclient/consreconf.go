@@ -4,13 +4,17 @@ import (
 	"errors"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/golang/glog"
+
+	bp "github.com/relab/smartMerge/blueprints"
 	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
 	smc "github.com/relab/smartMerge/smclient"
 )
 
-func (cc *ConsClient) Doreconf(cp conf.Provider, prop *pb.Blueprint, regular int, val []byte) (rst *pb.State, cnt int, err error) {
+func (cc *ConsClient) Doreconf(cp conf.Provider, prop *bp.Blueprint, regular int, val []byte) (rst *pb.State, cnt int, err error) {
 	if glog.V(6) {
 		glog.Infof("C%d: Starting reconfiguration\n", cc.Id)
 	}
@@ -24,7 +28,7 @@ forconfiguration:
 			continue
 		}
 
-		var next *pb.Blueprint
+		var next *bp.Blueprint
 
 		switch prop.Compare(cc.Blueps[i]) {
 		case 0, -1:
@@ -70,10 +74,10 @@ forconfiguration:
 
 			cnf := cp.WriteC(cc.Blueps[i], nil)
 
-			writeN := new(pb.AWriteNReply)
+			writeN := new(pb.WriteNextReply)
 
 			for j := 0; cnf != nil; j++ {
-				writeN, err = cnf.AWriteN(&pb.WriteN{
+				writeN, err = cnf.WriteNext(context.Background(), &pb.WriteN{
 					CurC: uint32(cc.Blueps[i].Len()),
 					Next: next,
 				})
@@ -99,10 +103,10 @@ forconfiguration:
 				glog.Infof("C%d: CWriteN returned.\n", cc.Id)
 			}
 
-			cur = cc.HandleNewCur(cur, writeN.Reply.GetCur())
+			cur = cc.HandleNewCur(cur, writeN.GetCur())
 
-			if rst.Compare(writeN.Reply.GetState()) == 1 {
-				rst = writeN.Reply.GetState()
+			if rst.Compare(writeN.GetState()) == 1 {
+				rst = writeN.GetState()
 			}
 
 		} else if i > cur || regular > 1 {
@@ -115,7 +119,7 @@ forconfiguration:
 			var setS *pb.SetStateReply
 
 			for j := 0; ; j++ {
-				setS, err = cnf.SetState(&pb.NewState{
+				setS, err = cnf.SetState(context.Background(), &pb.NewState{
 					CurC:  uint32(cc.Blueps[i].Len()),
 					State: rst,
 				})
@@ -143,8 +147,8 @@ forconfiguration:
 				glog.Infof("Set state returned.")
 			}
 
-			cur = cc.HandleOneCur(i, setS.Reply.GetCur())
-			cc.HandleNext(i, setS.Reply.GetNext())
+			cur = cc.HandleOneCur(i, setS.GetCur())
+			cc.HandleNext(i, setS.GetNext())
 
 			if i < len(cc.Blueps)-1 {
 				prop = cc.Blueps[len(cc.Blueps)-1]
@@ -162,7 +166,7 @@ forconfiguration:
 	return rst, cnt, nil
 }
 
-func (cc *ConsClient) getconsensus(cp conf.Provider, i int, prop *pb.Blueprint) (next *pb.Blueprint, cnt, cur int, err error) {
+func (cc *ConsClient) getconsensus(cp conf.Provider, i int, prop *bp.Blueprint) (next *bp.Blueprint, cnt, cur int, err error) {
 	ms := 1 * time.Millisecond
 	rnd := cc.Id
 	// The 24 higher bits of rnd (uint32) are a counter, the lower 8 bits the client id. Should separate the two in the future, to simplify things
@@ -179,7 +183,7 @@ prepare:
 			var promise *pb.GetPromiseReply
 
 			for j := 0; ; j++ {
-				promise, err = cnf.GetPromise(&pb.Prepare{
+				promise, err = cnf.GetPromise(context.Background(), &pb.Prepare{
 					CurC: uint32(cc.Blueps[i].Len()),
 					Rnd:  rnd})
 				if err != nil && j == 0 {
@@ -199,24 +203,24 @@ prepare:
 				}
 			}
 
-			cur = cc.HandleOneCur(i, promise.Reply.GetCur())
+			cur = cc.HandleOneCur(i, promise.GetCur())
 			if i < cur {
 				glog.V(3).Infof("C%d: Prepare returned new current conf.\n", cc.Id)
 				return nil, cnt, cur, nil
 			}
 
-			rrnd := promise.Reply.Rnd
+			rrnd := promise.Rnd
 			switch {
-			case promise.Reply.GetDec() != nil:
-				next = promise.Reply.GetDec()
+			case promise.GetDec() != nil:
+				next = promise.GetDec()
 				if glog.V(3) {
 					glog.Infof("C%d: Promise reported decided value.\n", cc.Id)
 				}
 				return
 			case rrnd <= rnd:
 				// Find the right value to propose, then procede to Accept.
-				if promise.Reply.GetVal() != nil {
-					next = promise.Reply.Val.Val
+				if promise.GetVal() != nil {
+					next = promise.Val.Val
 					if glog.V(3) {
 						glog.Infof("C%d: Re-propose a value.\n", cc.Id)
 					}
@@ -256,9 +260,9 @@ prepare:
 		var learn *pb.AcceptReply
 
 		for j := 0; ; j++ {
-			learn, err = cnf.Accept(&pb.Propose{
+			learn, err = cnf.Accept(context.Background(), &pb.Propose{
 				CurC: uint32(cc.Blueps[i].Len()),
-				Val:  &pb.CV{rnd, next},
+				Val:  &pb.CV{Rnd: rnd, Val: next},
 			})
 			cnt++
 			if err != nil && j == 0 {
@@ -277,13 +281,13 @@ prepare:
 			}
 		}
 
-		cur = cc.HandleOneCur(cur, learn.Reply.GetCur())
+		cur = cc.HandleOneCur(cur, learn.GetCur())
 		if i < cur {
 			glog.V(3).Infof("C%d: Accept returned new current conf.\n", cc.Id)
 			return
 		}
 
-		if learn.Reply.GetDec() == nil && !learn.Reply.Learned {
+		if learn.GetDec() == nil && !learn.Learned {
 			if glog.V(3) {
 				glog.Infof("C%d: Did not learn, redo prepare.\n", cc.Id)
 			}
@@ -291,8 +295,8 @@ prepare:
 			continue prepare
 		}
 
-		if learn.Reply.GetDec() != nil {
-			next = learn.Reply.GetDec()
+		if learn.GetDec() != nil {
+			next = learn.GetDec()
 		}
 
 		glog.V(4).Infof("C%d: Did Learn a value.", cc.Id)

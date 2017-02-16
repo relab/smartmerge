@@ -41,6 +41,28 @@ func difference(A, B []uint32) (C []uint32) {
 	return C
 }
 
+func Union(A, B []uint32) (C []uint32) {
+	return union(A, B)
+}
+
+func union(A, B []uint32) (C []uint32) {
+	C = make([]uint32, len(A))
+	copy(C, A)
+	for _, id := range B {
+		copy := true
+		for _, id2 := range A {
+			if id == id2 {
+				copy = false
+				break
+			}
+		}
+		if copy {
+			C = append(C, id)
+		}
+	}
+	return C
+}
+
 func subset(A, B []uint32) bool {
 	for _, id := range A {
 		exists := false

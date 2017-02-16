@@ -49,7 +49,7 @@ service SMandConsRegister {
 		option (gorums.qc) = true;
 	}
 
-	// Consensus propagate learned value
+	// Fwd is used to forward a reconfiguration-proposal to a leader.
 	// Only used in the consensus based algorithm (RAMBO)
 	rpc Fwd(Proposal) returns (Ack) {
 		option (gorums.qc) = true;

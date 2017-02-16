@@ -72,7 +72,7 @@ func StartAdvInConf(port int, init *pb.Blueprint, initC uint32, noabort bool) (*
 
 	var opts []grpc.ServerOption
 	grpcServer = grpc.NewServer(opts...)
-	pb.RegisterAdvRegisterServer(grpcServer, rs)
+	pb.RegisterSMandConsRegisterServer(grpcServer, rs)
 	go grpcServer.Serve(lis)
 	haveServer = true
 

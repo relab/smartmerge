@@ -17,7 +17,6 @@ type Provider interface {
 	ReadC(*bp.Blueprint, []uint32) *pb.Configuration
 	WriteC(*bp.Blueprint, []uint32) *pb.Configuration
 	SingleC(*bp.Blueprint) *pb.Configuration
-	GIDs([]uint32) []uint32
 	WriteCNoS(*bp.Blueprint, []uint32) *pb.Configuration
 }
 

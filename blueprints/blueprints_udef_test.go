@@ -15,47 +15,47 @@ var r1i = []uint32{one}
 var r2i = []uint32{tre}
 var a3i = []uint32{two, tre}
 
-// func TestUnion(t *testing.T) {
-// 	u1 := union(r1i, r2i)
-// 	for _, id := range u1 {
-// 		if (id != one) && id != tre {
-// 			t.Error("Union did introduce new element.")
-// 		}
-// 	}
-// 	if len(u1) != 2 {
-// 		t.Error("Union does not have the right number of elements.")
-// 	}
-//
-// 	u1 = union(a1i, a2i)
-//
-// 	for _, id := range u1 {
-// 		if id != one && id != tre && id != two {
-// 			t.Error("Union did introduce new element.")
-// 		}
-// 	}
-// 	if len(u1) != 3 {
-// 		t.Error("Union does not have the right number of elements.")
-// 	}
-// 	u1 = union(a1i, a0i)
-// 	if len(u1) != len(a1i) {
-// 		t.Error("Union with nil was not identity.")
-// 	}
-// 	for i, x := range u1 {
-// 		if x != a1i[i] {
-// 			t.Error("Union with nil was not identity.")
-// 		}
-// 	}
-// 	u1 = union(a0i, a1i)
-// 	if len(u1) != len(a1i) {
-// 		t.Error("Union with nil was not identity.")
-// 	}
-// 	for i, x := range u1 {
-// 		if x != a1i[i] {
-// 			t.Error("Union with nil was not identity.")
-// 		}
-// 	}
-// }
-//
+func TestUnion(t *testing.T) {
+	u1 := union(r1i, r2i)
+	for _, id := range u1 {
+		if (id != one) && id != tre {
+			t.Error("Union did introduce new element.")
+		}
+	}
+	if len(u1) != 2 {
+		t.Error("Union does not have the right number of elements.")
+	}
+
+	u1 = union(a1i, a2i)
+
+	for _, id := range u1 {
+		if id != one && id != tre && id != two {
+			t.Error("Union did introduce new element.")
+		}
+	}
+	if len(u1) != 3 {
+		t.Error("Union does not have the right number of elements.")
+	}
+	u1 = union(a1i, a0i)
+	if len(u1) != len(a1i) {
+		t.Error("Union with nil was not identity.")
+	}
+	for i, x := range u1 {
+		if x != a1i[i] {
+			t.Error("Union with nil was not identity.")
+		}
+	}
+	u1 = union(a0i, a1i)
+	if len(u1) != len(a1i) {
+		t.Error("Union with nil was not identity.")
+	}
+	for i, x := range u1 {
+		if x != a1i[i] {
+			t.Error("Union with nil was not identity.")
+		}
+	}
+}
+
 func TestDifference(t *testing.T) {
 	df := difference(a2i, r2i)
 	for _, id := range df {

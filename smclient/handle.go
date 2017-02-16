@@ -3,10 +3,16 @@ package smclient
 import (
 	"github.com/golang/glog"
 
+	bp "github.com/relab/smartMerge/blueprints"
 	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
+	"golang.org/x/net/context"
 )
 
+// SetNewCur truncates the list of blueprints.
+// The argument is the index of the new first element.
+// SetNewCur should be used to remove all earlier configurations
+// after installing a new current configuraiton.
 func (smc *SmClient) SetNewCur(cur int) {
 	if cur >= len(smc.Blueps) {
 		glog.Fatalln("Index for new cur out of bound.")
@@ -19,7 +25,14 @@ func (smc *SmClient) SetNewCur(cur int) {
 	smc.Blueps = smc.Blueps[cur:]
 }
 
-func (smc *SmClient) HandleOneCur(cur int, newCur *pb.Blueprint) int {
+// HandleOneCur can be used to add a new current configuration
+// during a traversal of the list of configurations/blueprints.
+// The new blueprint is inserted in the list.
+// The method also takes an argument
+// cur, indicating the current index in the list.
+// If the newly installed blueprint is more uptodate than the bluerprint
+// at that index, the index of the newly installed blueprint is returned.
+func (smc *SmClient) HandleOneCur(cur int, newCur *bp.Blueprint) int {
 	if newCur == nil {
 		return cur
 	}
@@ -29,6 +42,10 @@ func (smc *SmClient) HandleOneCur(cur int, newCur *pb.Blueprint) int {
 	return smc.findorinsert(cur, newCur)
 }
 
+// HandleNewCur can be used to update the list of blueprints/configurations
+// with a new confReply received during a traversal.
+// Functions similar to HandleOneCur, but can also update information about
+// configurations not yet installed.
 func (smc *SmClient) HandleNewCur(cur int, newCur *pb.ConfReply) int {
 	if newCur == nil {
 		return cur
@@ -44,7 +61,9 @@ func (smc *SmClient) HandleNewCur(cur int, newCur *pb.ConfReply) int {
 	return smc.findorinsert(cur, newCur.Cur)
 }
 
-func (smc *SmClient) HandleNext(i int, next []*pb.Blueprint) {
+// HandleNext inserts several new blueprints into the list.
+// Input should be ordered.
+func (smc *SmClient) HandleNext(i int, next []*bp.Blueprint) {
 	if len(next) == 0 {
 		return
 	}
@@ -56,7 +75,7 @@ func (smc *SmClient) HandleNext(i int, next []*pb.Blueprint) {
 	}
 }
 
-func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint) int {
+func (smc *SmClient) findorinsert(i int, blp *bp.Blueprint) int {
 	old := true
 	for ; i < len(smc.Blueps); i++ {
 		switch smc.Blueps[i].LearnedCompare(blp) {
@@ -77,7 +96,7 @@ func (smc *SmClient) findorinsert(i int, blp *pb.Blueprint) int {
 	return i
 }
 
-func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
+func (smc *SmClient) insert(i int, blp *bp.Blueprint) {
 	glog.V(3).Infof("Inserting new blueprint with length %d at place %d\n", blp.Len(), i)
 
 	smc.Blueps = append(smc.Blueps, blp)
@@ -91,11 +110,13 @@ func (smc *SmClient) insert(i int, blp *pb.Blueprint) {
 	}
 }
 
-func (smc *SmClient) SetCur(cp conf.Provider, cur *pb.Blueprint) {
+// SetCur informs the servers in the configuration, belonging to cur,
+// that this configuration is installed.
+func (smc *SmClient) SetCur(cp conf.Provider, cur *bp.Blueprint) {
 	cnf := cp.WriteC(cur, nil)
 
 	for j := 0; ; j++ {
-		_, err := cnf.SetCur(&pb.NewCur{
+		_, err := cnf.SetCur(context.Background(), &pb.NewCur{
 			CurC: uint32(cur.Len()),
 			Cur:  cur})
 

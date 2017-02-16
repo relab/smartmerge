@@ -8,10 +8,12 @@ But implement reconfiguration differently.
 package smclient
 
 import (
+	"context"
 	"errors"
 
 	"github.com/golang/glog"
 
+	bp "github.com/relab/smartMerge/blueprints"
 	conf "github.com/relab/smartMerge/confProvider"
 	pb "github.com/relab/smartMerge/proto"
 )
@@ -19,23 +21,24 @@ import (
 const Retry = 1
 const MinSize = 3
 
+// The smartMerge client. Stores a list of blueprints and the Id.
 type SmClient struct {
-	Blueps []*pb.Blueprint
+	Blueps []*bp.Blueprint
 	Id     uint32
 }
 
-func New(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*SmClient, error) {
+func New(initBlp *bp.Blueprint, id uint32, cp conf.Provider) (*SmClient, error) {
 	cnf := cp.FullC(initBlp)
 
 	glog.Infof("New Client with Id: %d\n", id)
 
-	_, err := cnf.SetCur(&pb.NewCur{Cur: initBlp, CurC: uint32(initBlp.Hash())})
+	_, err := cnf.SetCur(context.Background(), &pb.NewCur{Cur: initBlp, CurC: uint32(initBlp.Hash())})
 	if err != nil {
 		glog.Errorln("initial SetCur returned error: ", err)
 		return nil, errors.New("Initial SetCur failed.")
 	}
 	return &SmClient{
-		Blueps: []*pb.Blueprint{initBlp},
+		Blueps: []*bp.Blueprint{initBlp},
 		Id:     id,
 	}, nil
 }
@@ -120,6 +123,6 @@ func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {
 	return st
 }
 
-func (smc *SmClient) GetCur(cp conf.Provider) *pb.Blueprint {
+func (smc *SmClient) GetCur(cp conf.Provider) *bp.Blueprint {
 	return smc.Blueps[0].Copy()
 }

@@ -1,3 +1,4 @@
+// package main starts a register client.
 package main
 
 import (
@@ -16,16 +17,16 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	bp "github.com/relab/smartMerge/blueprints"
 	conf "github.com/relab/smartMerge/confProvider"
 	cc "github.com/relab/smartMerge/consclient"
 	"github.com/relab/smartMerge/doreconf"
-	dyna "github.com/relab/smartMerge/dynaclient"
+	//dyna "github.com/relab/smartMerge/dynaclient"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
 	pb "github.com/relab/smartMerge/proto"
-	qf "github.com/relab/smartMerge/qfuncs"
 	smc "github.com/relab/smartMerge/smclient"
-	ssr "github.com/relab/smartMerge/ssrclient"
+	//ssr "github.com/relab/smartMerge/ssrclient"
 	"github.com/relab/smartMerge/util"
 	"github.com/relab/smartMerge/util/bgen"
 	grpc "google.golang.org/grpc"
@@ -125,6 +126,7 @@ func benchmain() {
 	parseFlags()
 
 	//Turn garbage collection off.
+	//Should no longer be necessary for go1.5 and higher.
 	if *gcOff {
 		debug.SetGCPercent(-1)
 	}
@@ -138,14 +140,15 @@ func benchmain() {
 		return
 	}
 
-	initBlp := new(pb.Blueprint)
-	initBlp.Nodes = make([]*pb.Node, 0, len(ids))
+	initBlp := new(bp.Blueprint)
+	initBlp.Nodes = make([]*bp.Node, 0, len(ids))
 	for i, id := range ids {
 		if i >= *initsize {
 			break
 		}
-		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
+		initBlp.Nodes = append(initBlp.Nodes, &bp.Node{Id: id})
 	}
+	//FaultTolerance 15 ensures majority quorums are used, with up to 31 nodes.
 	initBlp.FaultTolerance = uint32(15)
 
 	checkFlags(*alg, *cprov, *opt)
@@ -212,22 +215,6 @@ func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.M
 		grpc.WithBlock(),
 		grpc.WithTimeout(3000*time.Millisecond),
 		grpc.WithInsecure()),
-		pb.WithAReadSQuorumFunc(qf.AReadSQF),
-		pb.WithAWriteSQuorumFunc(qf.AWriteSQF),
-		pb.WithAWriteNQuorumFunc(qf.AWriteNQF),
-		pb.WithSetCurQuorumFunc(qf.SetCurQF),
-		pb.WithLAPropQuorumFunc(qf.LAPropQF),
-		pb.WithSetStateQuorumFunc(qf.SetStateQF),
-		pb.WithGetPromiseQuorumFunc(qf.GetPromiseQF),
-		pb.WithAcceptQuorumFunc(qf.AcceptQF),
-		pb.WithDWriteNQuorumFunc(qf.DWriteNQF),
-		pb.WithDSetStateQuorumFunc(qf.DSetStateQF),
-		pb.WithDWriteNSetQuorumFunc(qf.DWriteNSetQF),
-		pb.WithDSetCurQuorumFunc(qf.DSetCurQF),
-		pb.WithGetOneNQuorumFunc(qf.GetOneNQF),
-		pb.WithSpSnOneQuorumFunc(qf.SpSnOneQF),
-		pb.WithSCommitQuorumFunc(qf.SCommitQF),
-		pb.WithSSetStateQuorumFunc(qf.SSetStateQF),
 	)
 	if err != nil {
 		glog.Errorln("Creating manager returned error: ", err)
@@ -239,16 +226,16 @@ func NewConfP(addrs []string, cprov string, id int) (cp conf.Provider, mgr *pb.M
 	case "norecontact":
 		break
 	case "thrifty":
-		cp = &conf.ThriftyConfP{cp}
+		cp = &conf.ThriftyConfP{Provider: cp}
 	case "normal", "":
-		cp = &conf.NormalConfP{cp}
+		cp = &conf.NormalConfP{Provider: cp}
 	default:
 		glog.Fatalf("confprovider %v is not supported.\n", cprov)
 	}
 	return
 }
 
-func NewClient(initB *pb.Blueprint, alg string, opt string, id int, cp conf.Provider) (cl RWRer, err error) {
+func NewClient(initB *bp.Blueprint, alg string, opt string, id int, cp conf.Provider) (cl RWRer, err error) {
 	switch alg {
 	case "", "sm":
 		switch opt {
@@ -259,10 +246,10 @@ func NewClient(initB *pb.Blueprint, alg string, opt string, id int, cp conf.Prov
 		default:
 			glog.Fatalf("optimization %v not supported.\n", opt)
 		}
-	case "dyna":
-		cl, err = dyna.New(initB, uint32(id), cp)
-	case "ssr":
-		cl, err = ssr.New(initB, uint32(id), cp)
+	// case "dyna":
+	// 	cl, err = dyna.New(initB, uint32(id), cp)
+	// case "ssr":
+	// 	cl, err = ssr.New(initB, uint32(id), cp)
 	case "cons":
 		switch opt {
 		case "", "no":
@@ -417,12 +404,24 @@ func handleSignal(signal os.Signal) bool {
 	}
 }
 
+// RWRer is a ReaderWriterReconfigurer.
+// This is the interface the different algorithms need to implement.
 type RWRer interface {
+	// RRead performs a regular read. It returns the read value, and an integer,
+	// indicating how many message round trips have been performed.
 	RRead(conf.Provider) ([]byte, int)
+	// Read performs an atomic read. It returns the read value, and an integer,
+	// indicating how many message round trips have been performed.
 	Read(conf.Provider) ([]byte, int)
+	// Write performs an atomic, or regular write. It returns an integer,
+	// indicating how many message round trips have been performed.
 	Write(cp conf.Provider, val []byte) int
-	Reconf(cp conf.Provider, prop *pb.Blueprint) (int, error)
-	GetCur(conf.Provider) *pb.Blueprint
+	// Reconf performs reconfiguration. It returns an integer,
+	// indicating how many message round trips have been performed.
+	Reconf(cp conf.Provider, prop *bp.Blueprint) (int, error)
+	// GetCur returns the last installed configuration a client knows of,
+	// this is purely local.
+	GetCur() *bp.Blueprint
 }
 
 func GetErrors(mgr *pb.Manager) map[uint32]error {

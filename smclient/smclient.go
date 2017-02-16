@@ -123,6 +123,6 @@ func (smc *SmClient) WriteValue(val *[]byte, st *pb.State) *pb.State {
 	return st
 }
 
-func (smc *SmClient) GetCur(cp conf.Provider) *bp.Blueprint {
+func (smc *SmClient) GetCur() *bp.Blueprint {
 	return smc.Blueps[0].Copy()
 }

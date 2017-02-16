@@ -10,15 +10,15 @@ type NormalConfP struct {
 	Provider
 }
 
-func (cp *NormalConfP) ReadC(blp *bp.Blueprint, rids []int) *pb.Configuration {
+func (cp *NormalConfP) ReadC(blp *bp.Blueprint, rids []uint32) *pb.Configuration {
 	return cp.Provider.FullC(blp)
 }
 
-func (cp *NormalConfP) WriteC(blp *bp.Blueprint, rids []int) *pb.Configuration {
+func (cp *NormalConfP) WriteC(blp *bp.Blueprint, rids []uint32) *pb.Configuration {
 	return cp.Provider.FullC(blp)
 }
 
-func (cp *NormalConfP) WriteCNoS(blp *bp.Blueprint, rids []int) *pb.Configuration {
+func (cp *NormalConfP) WriteCNoS(blp *bp.Blueprint, rids []uint32) *pb.Configuration {
 	return cp.Provider.FullC(blp)
 }
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	bp "github.com/relab/smartMerge/blueprints"
 	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
@@ -23,13 +24,13 @@ func usermain() {
 		return
 	}
 
-	initBlp := new(pb.Blueprint)
-	initBlp.Nodes = make([]*pb.Node, 0, len(ids))
+	initBlp := new(bp.Blueprint)
+	initBlp.Nodes = make([]*bp.Node, 0, len(ids))
 	for i, id := range ids {
 		if i >= *initsize {
 			break
 		}
-		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
+		initBlp.Nodes = append(initBlp.Nodes, &bp.Node{Id: id})
 	}
 	initBlp.FaultTolerance = uint32(15)
 
@@ -108,7 +109,7 @@ func usermain() {
 }
 
 func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
-	cur := c.GetCur(cp)
+	cur := c.GetCur()
 	fmt.Println("Current Blueprint is: ", cur.Nodes)
 	fmt.Println("Type 1 or 2 for add or remove?")
 	fmt.Println("  1: Add")
@@ -145,7 +146,7 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 			fmt.Println("Reconf returned error: ", err)
 		}
 		fmt.Printf("did %d accesses.\n", cnt)
-		fmt.Println("new blueprint is ", c.GetCur(cp).Nodes)
+		fmt.Println("new blueprint is ", c.GetCur().Nodes)
 		return
 	case 2:
 		fmt.Println("Ids in the current configuration:")
@@ -175,7 +176,7 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 		}
 
 		fmt.Printf("did %d accesses.\n", cnt)
-		fmt.Println("new blueprint is ", c.GetCur(cp).Nodes)
+		fmt.Println("new blueprint is ", c.GetCur().Nodes)
 		return
 	default:
 		return
@@ -184,14 +185,15 @@ func handleReconf(c RWRer, cp conf.Provider, ids []uint32) {
 }
 
 func PrintErrors(mgr *pb.Manager) {
-	errs := mgr.GetErrors()
 	founderrs := false
-	for id, e := range errs {
-		if !founderrs {
-			fmt.Println("Printing connection errors.")
+	for _, n := range mgr.Nodes() {
+		if err := n.LastErr(); err != nil {
+			if !founderrs {
+				fmt.Println("Printing connection errors.")
+			}
+			fmt.Printf("id %d: error %v\n", n.ID(), err)
+			founderrs = true
 		}
-		fmt.Printf("id %d: error %v\n", id, e)
-		founderrs = true
 	}
 	if !founderrs {
 		fmt.Println("No connection errors.")

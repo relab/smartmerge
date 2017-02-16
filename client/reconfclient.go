@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	bp "github.com/relab/smartMerge/blueprints"
 	conf "github.com/relab/smartMerge/confProvider"
 	"github.com/relab/smartMerge/elog"
 	e "github.com/relab/smartMerge/elog/event"
@@ -26,13 +27,13 @@ func expmain() {
 		return
 	}
 
-	initBlp := new(pb.Blueprint)
-	initBlp.Nodes = make([]*pb.Node, 0, len(ids))
+	initBlp := new(bp.Blueprint)
+	initBlp.Nodes = make([]*bp.Node, 0, len(ids))
 	for i, id := range ids {
 		if i >= *initsize {
 			break
 		}
-		initBlp.Nodes = append(initBlp.Nodes, &pb.Node{Id: id})
+		initBlp.Nodes = append(initBlp.Nodes, &bp.Node{Id: id})
 	}
 	initBlp.FaultTolerance = uint32(15)
 
@@ -124,7 +125,7 @@ func contremove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int
 
 	defer wg.Done()
 	for {
-		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
+		target := c.GetCur() //GetCur returns a copy, not the real thing.
 		if !target.Rem(ids[i]) {
 			glog.Infoln("Could not remove %v\n.", ids[i])
 		} else {
@@ -154,7 +155,7 @@ func contadd(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, w
 
 	defer wg.Done()
 	for {
-		target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
+		target := c.GetCur() //GetCur returns a copy, not the real thing.
 		if !target.Add(ids[i]) {
 			glog.V(4).Infoln("Could not add %v\n.", ids[i])
 		} else {
@@ -182,7 +183,7 @@ func contreplace(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i in
 		return
 	}
 
-	target := c.GetCur(cp) //GetCur returns a copy, not the real thing.
+	target := c.GetCur() //GetCur returns a copy, not the real thing.
 	defer wg.Done()
 	for {
 		if target.Rem(ids[i+*initsize]) {
@@ -210,7 +211,7 @@ func contreplace(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i in
 
 func replace(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	cur := c.GetCur(cp)
+	cur := c.GetCur()
 	if len(ids) <= *initsize+i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", *initsize+i+1)
 		return
@@ -234,7 +235,7 @@ func replace(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, w
 
 func remove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	cur := c.GetCur(cp)
+	cur := c.GetCur()
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
@@ -257,7 +258,7 @@ func remove(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg
 
 func adds(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	cur := c.GetCur(cp)
+	cur := c.GetCur()
 	if len(ids) <= i {
 		glog.Errorf("Configuration file does not hold %d processes.\n", i+1)
 		return
@@ -282,10 +283,6 @@ func adds(c RWRer, cp conf.Provider, ids []uint32, sc chan struct{}, i int, wg *
 }
 
 func createForwarder(cl RWRer, mgr *pb.Manager, lid uint32) (RWRer, error) {
-	ids := mgr.ToIds([]uint32{lid})
-	cnf, err := mgr.NewConfiguration(ids, 1, conf.ConfTimeout)
-	if err != nil {
-		return nil, err
-	}
-	return &FwdClient{cl, cnf}, nil
+	leader, _ := mgr.Node(lid)
+	return &FwdClient{cl, leader}, nil
 }

@@ -1,7 +1,11 @@
+// Package doreconf implmements a client that helps to perform reconfigurations,
+// when new, not yet installed configurations are found during Read or Write operations.
+// The client will have no advantage from using a norecontact configuration provider.
 package doreconf
 
 import (
 	"github.com/golang/glog"
+	bp "github.com/relab/smartMerge/blueprints"
 	conf "github.com/relab/smartMerge/confProvider"
 	cc "github.com/relab/smartMerge/consclient"
 	pb "github.com/relab/smartMerge/proto"
@@ -9,16 +13,16 @@ import (
 )
 
 type Reconfer interface {
-	Doreconf(conf.Provider, *pb.Blueprint, int, []byte) (*pb.State, int, error)
-	Reconf(conf.Provider, *pb.Blueprint) (int, error)
-	GetCur(conf.Provider) *pb.Blueprint
+	Doreconf(conf.Provider, *bp.Blueprint, int, []byte) (*pb.State, int, error)
+	Reconf(conf.Provider, *bp.Blueprint) (int, error)
+	GetCur() *bp.Blueprint
 }
 
 type DoreconfClient struct {
 	Reconfer
 }
 
-func NewSM(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
+func NewSM(initBlp *bp.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
 
 	rec, err := smc.New(initBlp, id, cp)
 
@@ -29,7 +33,7 @@ func NewSM(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient,
 	return &DoreconfClient{rec}, nil
 }
 
-func NewCons(initBlp *pb.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
+func NewCons(initBlp *bp.Blueprint, id uint32, cp conf.Provider) (*DoreconfClient, error) {
 
 	rec, err := cc.New(initBlp, id, cp)
 

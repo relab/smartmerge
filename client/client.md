@@ -16,8 +16,12 @@ This file describes the different options for running the client:
   exp for clients performing reconfigurations
 -id int
   client id
+-nclients int
+  number of clients, default 1
 ```
 The client will use an initial configuration containing the `-initsize` first servers in the configuration file.
+
+If `-nclient` is specified, several clients with consecutive ids, starting with the specified `-id` will be started.
 
 ###Configuration provider
 

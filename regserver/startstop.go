@@ -7,6 +7,7 @@ import (
 	"net"
 	"sync"
 
+	bp "github.com/relab/smartMerge/blueprints"
 	pb "github.com/relab/smartMerge/proto"
 	grpc "google.golang.org/grpc"
 )
@@ -17,6 +18,7 @@ var grpcServer *grpc.Server
 var mu sync.Mutex
 var haveServer = false
 
+// Stop stops the grpc server.
 func Stop() error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -31,31 +33,13 @@ func Stop() error {
 	return nil
 }
 
-func StartTest(port int) (*grpc.Server, error) {
-	rs := NewRegServer(false)
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	var opts []grpc.ServerOption
-	grpcServ := grpc.NewServer(opts...)
-	pb.RegisterAdvRegisterServer(grpcServ, rs)
-	go grpcServ.Serve(lis)
-	haveServer = true
-
-	return grpcServ, nil
-
+// Start a RegServer, as grpc server.
+func Start(port int, noabort bool) (*RegServer, error) {
+	return StartInConf(port, nil, uint32(0), noabort)
 }
 
-////////////////// SM Server //////////////////////
-
-func StartSM(port int, noabort bool) (*RegServer, error) {
-	return StartAdvInConf(port, nil, uint32(0), noabort)
-}
-
-func StartAdvInConf(port int, init *pb.Blueprint, initC uint32, noabort bool) (*RegServer, error) {
+// StartInConf starts a RegServer, as grpc server with special initial configuration.
+func StartInConf(port int, init *bp.Blueprint, initC uint32, noabort bool) (*RegServer, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if haveServer == true {
@@ -77,52 +61,4 @@ func StartAdvInConf(port int, init *pb.Blueprint, initC uint32, noabort bool) (*
 	haveServer = true
 
 	return rs, nil
-}
-
-func StartAdvTest(port int) (*grpc.Server, error) {
-	rs := NewRegServer(false)
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	var opts []grpc.ServerOption
-	grpcServ := grpc.NewServer(opts...)
-	pb.RegisterAdvRegisterServer(grpcServ, rs)
-	go grpcServ.Serve(lis)
-	haveServer = true
-
-	return grpcServ, nil
-
-}
-
-///////////////// Consensus Server ////////////////////
-
-func StartCons(port int, noabort bool) (*ConsServer, error) {
-	return StartConsInConf(port, nil, uint32(0), noabort)
-}
-
-func StartConsInConf(port int, init *pb.Blueprint, initC uint32, noabort bool) (*ConsServer, error) {
-	mu.Lock()
-	defer mu.Unlock()
-	if haveServer == true {
-		log.Println("Abort start of grpc server, since old server exists.")
-		return nil, errors.New("There already exists an old server.")
-	}
-
-	cs := NewConsServerWithCur(init, initC, noabort)
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	var opts []grpc.ServerOption
-	grpcServer = grpc.NewServer(opts...)
-	pb.RegisterAdvRegisterServer(grpcServer, cs)
-	go grpcServer.Serve(lis)
-	haveServer = true
-
-	return cs, nil
 }

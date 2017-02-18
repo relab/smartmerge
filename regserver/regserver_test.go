@@ -2,7 +2,6 @@ package regserver
 
 import (
 	"encoding/binary"
-	"fmt"
 	"testing"
 
 	bp "github.com/relab/smartMerge/blueprints"
@@ -51,13 +50,13 @@ func TestSetState(t *testing.T) {
 	rs.Next = []*bp.Blueprint{b12, b12x}
 	//Perfectly normal SetState
 	stest, err := rs.SetState(ctx, &pb.NewState{
-		Cur:     b2,
+		//Cur:     b2,
 		CurC:    uint32(b2.Len()),
 		State:   &pb.State{Value: nil, Timestamp: 2, Writer: 0},
 		LAState: b1,
 	})
-	if err != nil || rs.Cur != b2 || rs.CurC != uint32(b2.Len()) || rs.RState.Compare(&pb.State{Value: nil, Timestamp: 2, Writer: 0}) != 0 || !rs.LAState.Equals(b1) {
-		t.Error("first write did not work")
+	if err != nil || rs.RState.Compare(&pb.State{Value: nil, Timestamp: 2, Writer: 0}) != 0 || !rs.LAState.Equals(b1) {
+		t.Error("first write did not work.")
 	}
 	if len(stest.Next) != 2 {
 		t.Error("did not return correct next")
@@ -65,12 +64,12 @@ func TestSetState(t *testing.T) {
 
 	// Set state in Cur.
 	stest, _ = rs.SetState(ctx, &pb.NewState{
-		Cur:     b2,
+		//Cur:     b2,
 		CurC:    uint32(b2.Len()),
 		State:   &pb.State{Value: nil, Timestamp: 2, Writer: 1},
 		LAState: b2,
 	})
-	if rs.Cur != b2 || rs.CurC != uint32(b2.Len()) || rs.RState.Compare(&pb.State{Value: nil, Timestamp: 2, Writer: 1}) != 0 || !rs.LAState.Equals(b12) {
+	if rs.RState.Compare(&pb.State{Value: nil, Timestamp: 2, Writer: 1}) != 0 || !rs.LAState.Equals(b12) {
 		t.Error("did not set state correctly")
 	}
 	if len(stest.Next) != 2 {
@@ -82,15 +81,15 @@ func TestSetState(t *testing.T) {
 
 	// Clean next on set state
 	stest, _ = rs.SetState(ctx, &pb.NewState{
-		Cur:     b12,
+		//Cur:     b12,
 		CurC:    uint32(b12.Len()),
 		LAState: b12x,
 	})
-	if rs.Cur != b12 || rs.CurC != uint32(b12.Len()) || rs.RState.Compare(&pb.State{Value: nil, Timestamp: 2, Writer: 1}) != 0 || !rs.LAState.Equals(b12x) {
+	if rs.RState.Compare(&pb.State{Value: nil, Timestamp: 2, Writer: 1}) != 0 || !rs.LAState.Equals(b12x) {
 		t.Error("did not set state correctly")
 	}
-	if len(rs.Next) != 1 {
-		t.Error("did not clean up Next")
+	if len(rs.Next) != 2 {
+		t.Error("did not clean up Next, b12")
 	}
 	if len(stest.Next) != 1 {
 		t.Error("did not return correct next")
@@ -99,21 +98,24 @@ func TestSetState(t *testing.T) {
 		t.Error("did return wrong cur")
 	}
 
+	rs.Cur = b12.Copy()
+	rs.CurC = uint32(b12.Len())
+
 	// Set state in old cur
 	stest, _ = rs.SetState(ctx, &pb.NewState{
-		Cur:     b2,
+		//Cur:     b2,
 		CurC:    uint32(b2.Len()),
 		State:   &pb.State{Value: nil, Timestamp: 3, Writer: 0},
 		LAState: b123,
 	})
-	if rs.Cur != b12 || rs.CurC != uint32(b12.Len()) || rs.RState.Compare(&pb.State{Value: nil, Timestamp: 3, Writer: 0}) != 0 || !rs.LAState.Equals(b123) {
+	if rs.RState.Compare(&pb.State{Value: nil, Timestamp: 3, Writer: 0}) != 0 || !rs.LAState.Equals(b123) {
 		t.Error("did not set state correctly")
 	}
-	if len(rs.Next) != 1 {
+	if len(rs.Next) != 2 {
 		t.Error("did not clean up Next")
 	}
-	if stest.Cur != b12 {
-		t.Error("did return wrong cur")
+	if !stest.Cur.Equals(b12) {
+		t.Errorf("did return wrong cur, %v instead of %v", stest.Cur, b12)
 	}
 }
 
@@ -134,9 +136,6 @@ func TestLAProp(t *testing.T) {
 	if stest.LAState != nil {
 		t.Error("did return LAState")
 	}
-	if len(stest.Next) != 1 {
-		t.Error("wrong next")
-	}
 
 	rs.Cur = b2
 	rs.CurC = uint32(b2.Len())
@@ -151,9 +150,9 @@ func TestLAProp(t *testing.T) {
 	}
 
 	//Does not abort, but return cur, does not write old value.
-	stest, _ = rs.LAProp(ctx, &pb.LAProposal{Prop: b2, Conf: &pb.Conf{This: one, Cur: uint32(b2.Len())}})
-	if stest.Cur.Abort || stest.Cur.Cur != b2 {
-		t.Error("laprop did not return correct cur.")
+	stest, _ = rs.LAProp(ctx, &pb.LAProposal{Prop: b2, Conf: &pb.Conf{This: uint32(b2.Len()), Cur: uint32(b2.Len())}})
+	if stest.Cur.Abort {
+		t.Errorf("laprop did not return correct cur, Abort was %v, Cur was %v.", stest.Cur.Abort, stest.Cur.Cur)
 	}
 	if !stest.LAState.Equals(b12) {
 		//fmt.Println(stest.LAState)
@@ -179,8 +178,8 @@ func TestLAProp(t *testing.T) {
 
 	// Only send next that is large.
 	stest, _ = rs.LAProp(ctx, &pb.LAProposal{Prop: bx, Conf: &pb.Conf{Cur: uint32(b12.Len()), This: uint32(b12.Len())}})
-	if stest.Cur != nil {
-		t.Error("laprop did not return correct cur.")
+	if stest.Cur.Cur != nil || stest.Cur.Abort {
+		t.Errorf("laprop did not return correct cur, did get %v expecting nil.", stest.Cur)
 	}
 	if !rs.LAState.Equals(bx.Merge(b123)) {
 		t.Error("laprop did not result in correct state.")
@@ -191,14 +190,14 @@ func TestLAProp(t *testing.T) {
 
 }
 
-func TestAWriteN(t *testing.T) {
+func TestWriteNext(t *testing.T) {
 	rs := NewRegServer(false)
 	var bytes = make([]byte, 64)
 	bytes = Put(5, bytes)
 	s := &pb.State{Value: bytes, Timestamp: 2, Writer: 0}
 
 	// Test it returns no error and writes
-	stest, err := rs.AWriteN(ctx, &pb.WriteN{Next: b12})
+	stest, err := rs.WriteNext(ctx, &pb.WriteN{Next: b12})
 	if err != nil {
 		t.Error("Did return error")
 	}
@@ -212,7 +211,7 @@ func TestAWriteN(t *testing.T) {
 	rs.RState = s
 
 	//Can abort
-	stest, _ = rs.AWriteN(ctx, &pb.WriteN{Next: b12x, CurC: one})
+	stest, _ = rs.WriteNext(ctx, &pb.WriteN{Next: b12x, CurC: one})
 	if len(rs.Next) != 1 {
 		t.Error("did write next on abort")
 	}
@@ -221,9 +220,9 @@ func TestAWriteN(t *testing.T) {
 	}
 
 	//Does not abort, does not write duplicate next.
-	stest, _ = rs.AWriteN(ctx, &pb.WriteN{Next: b12, CurC: uint32(b2.Len())})
-	if stest.Cur != nil {
-		t.Error("writeN did not return correct cur.")
+	stest, _ = rs.WriteNext(ctx, &pb.WriteN{Next: b12, CurC: uint32(b2.Len())})
+	if stest.Cur.Cur != nil || stest.Cur.Abort {
+		t.Errorf("writeN did not return correct cur, instead %v.", stest.Cur)
 	}
 	if stest.State != s {
 		t.Error("writeN did not return state")
@@ -234,20 +233,20 @@ func TestAWriteN(t *testing.T) {
 	if stest.LAState != b12x {
 		t.Error("did not return LAState")
 	}
-	if len(stest.Next) != 1 {
+	if len(stest.GetCur().Next) != 1 {
 		t.Error("writeN did not return correct next")
 	}
 
 	// If noabort is true, does not abort, but sends cur, state and next.
 	rs.noabort = true
-	stest, _ = rs.AWriteN(ctx, &pb.WriteN{Next: b12x, CurC: one})
+	stest, _ = rs.WriteNext(ctx, &pb.WriteN{Next: b12x, CurC: one})
 	if stest.Cur.Abort || stest.Cur.Cur != b2 {
 		t.Error("writeN did not return correct cur.")
 	}
 	if stest.State != s {
 		t.Error("writeN returned wrong state")
 	}
-	if len(stest.Next) != 2 {
+	if len(stest.Cur.Next) != 2 {
 		t.Error("writeN did not return correct Next")
 	}
 	if len(rs.Next) != 2 {
@@ -258,23 +257,23 @@ func TestAWriteN(t *testing.T) {
 	}
 
 	// Only send next that is large.
-	stest, _ = rs.AWriteN(ctx, &pb.WriteN{CurC: uint32(b12.Len())})
-	if stest.Cur != nil {
+	stest, _ = rs.WriteNext(ctx, &pb.WriteN{CurC: uint32(b12.Len())})
+	if stest.Cur.Cur != nil || stest.Cur.Abort {
 		t.Error("writeN did not return correct cur.")
 	}
-	if len(stest.Next) != 1 {
+	if len(stest.Cur.Next) != 1 {
 		t.Error("writeN did not return correct Next")
 	}
 }
 
-func TestWriteAWriteS(t *testing.T) {
+func TestWriteWrite(t *testing.T) {
 	rs := NewRegServer(false)
 	var bytes = make([]byte, 64)
 	bytes = Put(5, bytes)
 	s := &pb.State{Value: bytes, Timestamp: 2, Writer: 0}
 
 	// Test it returns no error and writes
-	stest, err := rs.AWriteS(ctx, &pb.WriteS{State: s})
+	stest, err := rs.Write(ctx, &pb.WriteS{State: s})
 	if err != nil {
 		t.Error("Did return error")
 	}
@@ -287,19 +286,19 @@ func TestWriteAWriteS(t *testing.T) {
 	rs.CurC = uint32(b2.Len())
 
 	//Can abort
-	stest, _ = rs.AWriteS(ctx, &pb.WriteS{State: s0, Conf: &pb.Conf{Cur: one, This: one}})
+	stest, _ = rs.Write(ctx, &pb.WriteS{State: s0, Conf: &pb.Conf{Cur: one, This: one}})
 	if rs.RState == s0 {
 		t.Error("did write value with smaller timestamp")
 	}
-	if !stest.Cur.Abort || stest.Cur.Cur != b2 {
+	if !stest.Abort || stest.Cur != b2 {
 		t.Error("writeS did return correct abort")
 	}
 
 	//Does not abort, but sends cur, and new state.
 	s2 := &pb.State{Value: nil, Timestamp: 2, Writer: 1}
-	stest, _ = rs.AWriteS(ctx, &pb.WriteS{State: s2, Conf: &pb.Conf{This: one, Cur: uint32(b2.Len())}})
-	if stest.Cur.Abort || stest.Cur.Cur != b2 {
-		t.Error("writeS did not return correct cur.")
+	stest, _ = rs.Write(ctx, &pb.WriteS{State: s2, Conf: &pb.Conf{This: uint32(b2.Len()) + 1, Cur: uint32(b2.Len())}})
+	if stest.Abort || stest.Cur != nil {
+		t.Errorf("writeS did not return correct cur, instead %v, abort was %v.", stest.Cur, stest.Abort)
 	}
 	if rs.RState != s2 {
 		t.Error("writeS did not write")
@@ -309,8 +308,8 @@ func TestWriteAWriteS(t *testing.T) {
 	s3 := &pb.State{Value: nil, Timestamp: 3, Writer: 0}
 	rs.noabort = true
 	rs.Next = []*bp.Blueprint{b12, b12x}
-	stest, _ = rs.AWriteS(ctx, &pb.WriteS{State: s3, Conf: &pb.Conf{Cur: one, This: one}})
-	if stest.Cur.Abort || stest.Cur.Cur != b2 {
+	stest, _ = rs.Write(ctx, &pb.WriteS{State: s3, Conf: &pb.Conf{Cur: one, This: one}})
+	if stest.Abort || stest.Cur != b2 {
 		t.Error("writeS did not return correct cur.")
 	}
 	if rs.RState != s3 {
@@ -321,7 +320,7 @@ func TestWriteAWriteS(t *testing.T) {
 	}
 
 	// Only send next that is large.
-	stest, _ = rs.AWriteS(ctx, &pb.WriteS{Conf: &pb.Conf{Cur: uint32(b12.Len()), This: uint32(b12.Len())}})
+	stest, _ = rs.Write(ctx, &pb.WriteS{Conf: &pb.Conf{Cur: uint32(b12.Len()), This: uint32(b12.Len())}})
 	if stest.Cur != nil {
 		t.Error("writeS did not return correct cur.")
 	}
@@ -330,34 +329,36 @@ func TestWriteAWriteS(t *testing.T) {
 	}
 }
 
-func TestWriteAReadS(t *testing.T) {
+func TestWriteRead(t *testing.T) {
 	rs := NewRegServer(false)
 	var bytes = make([]byte, 64)
 	bytes = Put(5, bytes)
 	s := &pb.State{Value: bytes, Timestamp: 2, Writer: 0}
 
 	// Test it returns no error
-	stest, err := rs.AReadS(ctx, &pb.Conf{})
+	stest, err := rs.Read(ctx, &pb.Conf{})
 	if err != nil {
 		t.Error("Did return error")
 	}
-	fmt.Printf("Direct ReadS returned: %v\n", stest)
-	fmt.Printf("Should return: %v\n", &InitState)
+	if stest.State.Timestamp != 0 || stest.State.Writer != 0 {
+		t.Errorf("Direct ReadS returned: %v\n Should return: %v", stest, &pb.State{Value: make([]byte, 0), Timestamp: int32(0), Writer: uint32(0)})
+	}
 
 	rs.RState = s
 	rs.Cur = b2
 	rs.CurC = uint32(b2.Len())
 
 	//Can abort
-	stest, _ = rs.AReadS(ctx, &pb.Conf{Cur: one, This: one})
+	stest, _ = rs.Read(ctx, &pb.Conf{Cur: one, This: one})
 	if !stest.Cur.Abort || stest.Cur.Cur != b2 {
 		t.Error("read S did return correct abort")
 	}
 
 	//Does not abort, but sends cur, and new state.
-	stest, _ = rs.AReadS(ctx, &pb.Conf{This: one, Cur: uint32(b2.Len())})
-	if stest.Cur.Abort || stest.Cur.Cur != b2 {
-		t.Error("read S did not return correct cur.")
+	stest, _ = rs.Read(ctx, &pb.Conf{This: uint32(b2.Len()), Cur: uint32(b2.Len())})
+	if stest.Cur != nil {
+		//if stest.Cur.Abort || stest.Cur.Cur != b2 {
+		t.Errorf("read S did not return correct cur, but.")
 	}
 	if stest.State.Compare(s) != 0 {
 		t.Error("readS returned wrong state")
@@ -366,26 +367,26 @@ func TestWriteAReadS(t *testing.T) {
 	// If noabort is true, does not abort, but sends cur, state and next.
 	rs.noabort = true
 	rs.Next = []*bp.Blueprint{b12, b12x}
-	stest, _ = rs.AReadS(ctx, &pb.Conf{Cur: one, This: one})
+	stest, _ = rs.Read(ctx, &pb.Conf{Cur: one, This: one})
 	if stest.Cur.Abort || stest.Cur.Cur != b2 {
 		t.Error("read S did not return correct cur.")
 	}
 	if stest.State.Compare(s) != 0 {
 		t.Error("readS returned wrong state")
 	}
-	if len(stest.Next) != 2 {
+	if len(stest.Cur.Next) != 2 {
 		t.Error("readS did not return correct Next")
 	}
 
 	// Only send next that is large.
-	stest, _ = rs.AReadS(ctx, &pb.Conf{Cur: uint32(b12.Len()), This: uint32(b12.Len())})
-	if stest.Cur != nil {
-		t.Error("read S did not return correct cur.")
+	stest, _ = rs.Read(ctx, &pb.Conf{Cur: uint32(b12.Len()), This: uint32(b12.Len())})
+	if stest.Cur.Cur != nil {
+		t.Errorf("read S did not return correct cur, instead %v.", stest.Cur)
 	}
 	if stest.State.Compare(s) != 0 {
 		t.Error("readS returned wrong state")
 	}
-	if len(stest.Next) != 1 {
+	if len(stest.Cur.Next) != 1 {
 		t.Error("readS did not return correct Next")
 	}
 

@@ -36,6 +36,8 @@ go build
 ./client -conf addrList -alg=sm -initsize=3  //Starts a client with initial configuration containing 3 servers.
 ```
 
+See [client](client/client.md) and for a descriptions of the different options for clients. 
 Use `./client -help`to deplay all possible arguments/options.
+
 
 

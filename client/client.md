@@ -89,3 +89,12 @@ The `-nclients` option can be used to start several clients that will concurrent
 `-repl -id=2` starts a client that replaces the second server in the initial configuration with the second last server 
 in the configuration file. `-cont` can be used to start a server that continously performs the same reconfiguration, 
 e.g. replacing a server with a different one, if this reconfiguration is possible.
+
+### Processing logs
+Running the client in benchmarking or experiment mode will produce `.elog` files containing latency or throughput data.
+The directory `elog/util/efmt`contains a rudimentary program to process these files.
+```
+cd elog/util/efmt
+go install efmt
+```
+The `efmt` command takes processes latencies, according to how many round trips were needed to complete the operation. For SmartMerge or Rambo run  `efmt -normal=2 -file=myFile.elog`. You can also supply a list of several `.elog` files.

@@ -7,8 +7,8 @@ import (
 	"net"
 	"sync"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	pb "github.com/relab/smartMerge/proto"
+	bp "github.com/relab/smartmerge/blueprints"
+	pb "github.com/relab/smartmerge/proto"
 	grpc "google.golang.org/grpc"
 )
 

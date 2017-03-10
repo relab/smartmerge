@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	conf "github.com/relab/smartMerge/confProvider"
-	"github.com/relab/smartMerge/leader"
-	pb "github.com/relab/smartMerge/proto"
-	qf "github.com/relab/smartMerge/qfuncs"
-	"github.com/relab/smartMerge/regserver"
-	"github.com/relab/smartMerge/util"
+	conf "github.com/relab/smartmerge/confProvider"
+	"github.com/relab/smartmerge/leader"
+	pb "github.com/relab/smartmerge/proto"
+	qf "github.com/relab/smartmerge/qfuncs"
+	"github.com/relab/smartmerge/regserver"
+	"github.com/relab/smartmerge/util"
 	grpc "google.golang.org/grpc"
 )
 

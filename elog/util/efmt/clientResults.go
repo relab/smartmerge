@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	e "github.com/relab/smartMerge/elog/event"
+	e "github.com/relab/smartmerge/elog/event"
 )
 
 // Roundtrip repots the avg latency and number of request that performed n round trips.

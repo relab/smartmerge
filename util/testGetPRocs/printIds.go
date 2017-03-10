@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/relab/smartMerge/util"
+	"github.com/relab/smartmerge/util"
 )
 
 var (

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	e "github.com/relab/smartMerge/elog/event"
+	e "github.com/relab/smartmerge/elog/event"
 )
 
 const (

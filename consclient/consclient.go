@@ -7,9 +7,9 @@ package consclient
 import (
 	"github.com/golang/glog"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	conf "github.com/relab/smartMerge/confProvider"
-	smc "github.com/relab/smartMerge/smclient"
+	bp "github.com/relab/smartmerge/blueprints"
+	conf "github.com/relab/smartmerge/confProvider"
+	smc "github.com/relab/smartmerge/smclient"
 )
 
 // ConsClient wraps a SmClient.

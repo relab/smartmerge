@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	pr "github.com/relab/smartMerge/proto"
+	bp "github.com/relab/smartmerge/blueprints"
+	pr "github.com/relab/smartmerge/proto"
 )
 
 var qspec pr.QuorumSpec

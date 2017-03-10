@@ -6,12 +6,12 @@ import (
 	"os"
 	"time"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	conf "github.com/relab/smartMerge/confProvider"
-	"github.com/relab/smartMerge/elog"
-	e "github.com/relab/smartMerge/elog/event"
-	pb "github.com/relab/smartMerge/proto"
-	"github.com/relab/smartMerge/util"
+	bp "github.com/relab/smartmerge/blueprints"
+	conf "github.com/relab/smartmerge/confProvider"
+	"github.com/relab/smartmerge/elog"
+	e "github.com/relab/smartmerge/elog/event"
+	pb "github.com/relab/smartmerge/proto"
+	"github.com/relab/smartmerge/util"
 )
 
 func usermain() {

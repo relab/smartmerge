@@ -5,11 +5,11 @@ package doreconf
 
 import (
 	"github.com/golang/glog"
-	bp "github.com/relab/smartMerge/blueprints"
-	conf "github.com/relab/smartMerge/confProvider"
-	cc "github.com/relab/smartMerge/consclient"
-	pb "github.com/relab/smartMerge/proto"
-	smc "github.com/relab/smartMerge/smclient"
+	bp "github.com/relab/smartmerge/blueprints"
+	conf "github.com/relab/smartmerge/confProvider"
+	cc "github.com/relab/smartmerge/consclient"
+	pb "github.com/relab/smartmerge/proto"
+	smc "github.com/relab/smartmerge/smclient"
 )
 
 type Reconfer interface {

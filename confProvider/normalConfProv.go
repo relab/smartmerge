@@ -1,8 +1,8 @@
 package confProvider
 
 import (
-	bp "github.com/relab/smartMerge/blueprints"
-	pb "github.com/relab/smartMerge/proto"
+	bp "github.com/relab/smartmerge/blueprints"
+	pb "github.com/relab/smartmerge/proto"
 )
 
 // This Config provider always return a full configuration.

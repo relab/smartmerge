@@ -5,9 +5,9 @@ import (
 
 	"github.com/golang/glog"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	conf "github.com/relab/smartMerge/confProvider"
-	pb "github.com/relab/smartMerge/proto"
+	bp "github.com/relab/smartmerge/blueprints"
+	conf "github.com/relab/smartmerge/confProvider"
+	pb "github.com/relab/smartmerge/proto"
 )
 
 // The FwdClient implements a client, that, instead of performing reconfigurations

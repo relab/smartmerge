@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	bp "github.com/relab/smartMerge/blueprints"
-	pb "github.com/relab/smartMerge/proto"
-	qspec "github.com/relab/smartMerge/qfuncs"
+	bp "github.com/relab/smartmerge/blueprints"
+	pb "github.com/relab/smartmerge/proto"
+	qspec "github.com/relab/smartmerge/qfuncs"
 )
 
 var ConfTimeout = 1 * time.Second

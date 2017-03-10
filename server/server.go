@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang/glog"
 
-	"github.com/relab/smartMerge/regserver"
+	"github.com/relab/smartmerge/regserver"
 )
 
 var (

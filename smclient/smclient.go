@@ -13,15 +13,15 @@ import (
 
 	"github.com/golang/glog"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	conf "github.com/relab/smartMerge/confProvider"
-	pb "github.com/relab/smartMerge/proto"
+	bp "github.com/relab/smartmerge/blueprints"
+	conf "github.com/relab/smartmerge/confProvider"
+	pb "github.com/relab/smartmerge/proto"
 )
 
 const Retry = 1
 const MinSize = 3
 
-// The smartMerge client. Stores a list of blueprints and the Id.
+// The smartmerge client. Stores a list of blueprints and the Id.
 type SmClient struct {
 	Blueps []*bp.Blueprint
 	Id     uint32

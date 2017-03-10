@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	pb "github.com/relab/smartMerge/proto"
+	bp "github.com/relab/smartmerge/blueprints"
+	pb "github.com/relab/smartmerge/proto"
 	"golang.org/x/net/context"
 	//"google.golang.org/grpc"
 )

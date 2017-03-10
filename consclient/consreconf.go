@@ -8,10 +8,10 @@ import (
 
 	"github.com/golang/glog"
 
-	bp "github.com/relab/smartMerge/blueprints"
-	conf "github.com/relab/smartMerge/confProvider"
-	pb "github.com/relab/smartMerge/proto"
-	smc "github.com/relab/smartMerge/smclient"
+	bp "github.com/relab/smartmerge/blueprints"
+	conf "github.com/relab/smartmerge/confProvider"
+	pb "github.com/relab/smartmerge/proto"
+	smc "github.com/relab/smartmerge/smclient"
 )
 
 func (cc *ConsClient) Doreconf(cp conf.Provider, prop *bp.Blueprint, regular int, val []byte) (rst *pb.State, cnt int, err error) {

@@ -2,9 +2,9 @@ package leader
 
 import (
 	"github.com/golang/glog"
-	bp "github.com/relab/smartMerge/blueprints"
-	conf "github.com/relab/smartMerge/confProvider"
-	cs "github.com/relab/smartMerge/consclient"
+	bp "github.com/relab/smartmerge/blueprints"
+	conf "github.com/relab/smartmerge/confProvider"
+	cs "github.com/relab/smartmerge/consclient"
 )
 
 type Leader struct {

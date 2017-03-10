@@ -6,9 +6,9 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	bp "github.com/relab/smartMerge/blueprints"
-	l "github.com/relab/smartMerge/leader"
-	pb "github.com/relab/smartMerge/proto"
+	bp "github.com/relab/smartmerge/blueprints"
+	l "github.com/relab/smartmerge/leader"
+	pb "github.com/relab/smartmerge/proto"
 	"golang.org/x/net/context"
 )
 

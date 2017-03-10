@@ -408,3 +408,8 @@ func (bp *Blueprint) Copy() *Blueprint {
 	}
 	return b
 }
+
+// NSize returns the number of nodes in the configuration, described by a blueprint
+func (bp *Blueprint) NSize() int {
+	return len(bp.Ids())
+}

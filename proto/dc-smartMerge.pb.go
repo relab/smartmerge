@@ -33,13 +33,25 @@
 */
 package proto
 
-import proto1 "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _ "github.com/relab/gorums"
-import blueprints "github.com/relab/smartMerge/blueprints"
+import (
+	fmt "fmt"
 
-import bytes "bytes"
+	proto1 "github.com/gogo/protobuf/proto"
+
+	_ "github.com/relab/gorums"
+
+	bytes "bytes"
+
+	context "golang.org/x/net/context"
+
+	grpc "google.golang.org/grpc"
+
+	reflect "reflect"
+)
+
+import math "math"
+
+import blueprints "github.com/relab/smartMerge/blueprints"
 
 import (
 	"encoding/binary"
@@ -55,13 +67,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-import (
-	context "golang.org/x/net/context"
-	grpc "google.golang.org/grpc"
-)
-
 import strings "strings"
-import reflect "reflect"
 
 import io "io"
 

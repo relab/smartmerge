@@ -49,7 +49,7 @@ func MaxQuorum(q, n int) int {
 }
 
 func SMQSpecFromBP(b *bp.Blueprint) *SMQuorumSpec {
-	return NewSMQSpec(b.Quorum(), b.Size())
+	return NewSMQSpec(b.Quorum(), b.NSize())
 }
 
 // ConfResponder is an interface that wraps all messages that return a ConfReply.

@@ -46,13 +46,27 @@ func (cp *ThriftyNorecConfP) chooseQ(ids []uint32, q int) (quorum []uint32) {
 }
 
 func (cp *ThriftyNorecConfP) ReadC(blp *bp.Blueprint, rids []uint32) *pb.Configuration {
+	newcids, qs := cp.readC(blp, rids)
+	if newcids == nil {
+		return nil
+	}
+	cnf, err := cp.mgr.NewConfiguration(newcids, qs)
+	if err != nil {
+		glog.Fatalln("could not get read config")
+	}
+
+	return cnf
+}
+
+// readC is an easily testable version of ReadC
+func (cp *ThriftyNorecConfP) readC(blp *bp.Blueprint, rids []uint32) (newcids []uint32, qs *qspec.SMQuorumSpec) {
 	cids := blp.Ids()
 	rq := qspec.ReadQuorum(blp.Quorum(), len(cids))
-	newcids := bp.Difference(cids, rids) //Nodes in the configuration (cids), that have not yet replies (not in rids)
+	newcids = bp.Difference(cids, rids) //Nodes in the configuration (cids), that have not yet replies (not in rids)
 
 	if len(cids)-len(newcids) >= rq {
 		//We already have enough replies.
-		return nil
+		return nil, nil
 	}
 
 	// I already have y := len(cids) - len(newcids) many replies.
@@ -60,14 +74,9 @@ func (cp *ThriftyNorecConfP) ReadC(blp *bp.Blueprint, rids []uint32) *pb.Configu
 	newcids = cp.chooseQ(newcids, rq-(len(cids)-len(newcids)))
 
 	// With quorum size 1, a read quorum contains all processes.
-	qs := qspec.NewSMQSpec(1, len(newcids))
+	qs = qspec.NewSMQSpec(1, len(newcids))
 
-	cnf, err := cp.mgr.NewConfiguration(newcids, qs)
-	if err != nil {
-		glog.Fatalln("could not get read config")
-	}
-
-	return cnf
+	return newcids, qs
 }
 
 func (cp *ThriftyNorecConfP) WriteC(blp *bp.Blueprint, rids []uint32) *pb.Configuration {

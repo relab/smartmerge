@@ -29,7 +29,6 @@ func (smc *SmClient) get(cp conf.Provider) (rs *pb.State, cnt int) {
 		smc.checkrid(i, rid, cp)
 
 		cnf := cp.ReadC(smc.Blueps[i], rid)
-		glog.Infof("Blueprint %v")
 		if cnf == nil {
 			cnt++
 		}

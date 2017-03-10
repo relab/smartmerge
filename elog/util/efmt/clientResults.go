@@ -173,13 +173,15 @@ func (er EvaluationResult) String() string {
 func (r Result) String() string {
 	var str string
 	if len(r.perRoundtripData) > 0 {
-		str += "Latencies for different round trips numbers:"
+		str += "Latencies for different round trips numbers:\n"
 	}
 
 	for _, rt := range r.perRoundtripData {
-		str += fmt.Sprintf(
-			"  %d roundtrips: %d times with average latency %v\n",
-			rt.n, rt.count, rt.avgLat)
+		if rt.n != -1 {
+			str += fmt.Sprintf(
+				"  %d roundtrips: %d times with average latency %v\n",
+				rt.n, rt.count, rt.avgLat)
+		}
 	}
 	str += fmt.Sprintf("\nNormal roundtrip number is %d\n", r.normalRoundtrips)
 	str += fmt.Sprintf(

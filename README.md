@@ -5,6 +5,10 @@ We implemented our SmartMerge algorithm, Rambo, DynaStore and SpSnStore, which u
 
 The implementation utilizes our quorum-rpcs framework [gorums](http://github.com/relab/gorums).
 
+## New:
+
+Branch `master` contains an updated version of the SmartMerge and Rambo algorithm, that use the new version of Gorums. 
+The original code, including all 4 algorithms can still be found in the `original` branch.
 
 ## Howto Run: 
 Clone the repository into your [GOPATH](http://golang.org/doc/install).
